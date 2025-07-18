@@ -1,184 +1,150 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { useState, useEffect, createContext } from 'react';
+import { supabase } from '@/lib/supabase';
 
-const AuthContext = createContext({})
+// Crear contexto de autenticación MINIMALISTA
+const AuthContext = createContext({
+  user: null,
+  userProfile: null,
+  role: null,
+  permissions: {},
+  loading: true,
+  signIn: () => {},
+  signUp: () => {},
+  signOut: () => {},
+  hasPermission: () => false,
+});
 
-export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-}
+// Exportar el contexto
+export { AuthContext };
 
+// Proveedor de autenticación ULTRA-SIMPLIFICADO
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [initialized, setInitialized] = useState(false)
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true
-
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        console.log('🔍 Verificando sesión inicial...')
-        const { data: { session }, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error('❌ Error obteniendo sesión:', error.message)
-        } else if (session?.user && mounted) {
-          console.log('✅ Usuario autenticado:', session.user.email)
-          setUser({
-            id: session.user.id,
-            email: session.user.email,
-            role: 'admin', // Simplified for now
-            profile: {
-              nombre_completo: 'Carlos Villagra',
-              cargo: 'Director General MTZ Consultores Tributarios'
-            }
-          })
-        } else {
-          console.log('ℹ️ No hay sesión activa')
-        }
-      } catch (error) {
-        console.error('❌ Error en getInitialSession:', error)
-      } finally {
-        if (mounted) {
-          setLoading(false)
-          setInitialized(true)
-        }
-      }
-    }
-
-    getInitialSession()
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔄 Auth state changed:', event)
-        
-        if (mounted) {
-          if (event === 'SIGNED_IN' && session?.user) {
-            console.log('✅ Usuario logueado:', session.user.email)
-            setUser({
-              id: session.user.id,
-              email: session.user.email,
-              role: 'admin',
-              profile: {
-                nombre_completo: 'Carlos Villagra',
-                cargo: 'Director General MTZ Consultores Tributarios'
-              }
-            })
-          } else if (event === 'SIGNED_OUT') {
-            console.log('👋 Usuario deslogueado')
-            setUser(null)
-          }
-          setLoading(false)
-        }
-      }
-    )
-
-    return () => {
-      mounted = false
-      subscription?.unsubscribe()
-    }
-  }, [])
-
+  // Función de login ULTRA-SIMPLE
   const signIn = async (email, password) => {
     try {
-      setLoading(true)
-      console.log('🔐 Intentando login con:', email)
+      console.log('🔄 Intentando login con:', email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
-      })
+        password,
+      });
 
       if (error) {
-        console.error('❌ Error en login:', error.message)
-        throw error
+        console.error('❌ Error en login:', error);
+        return { data: null, error: error.message };
       }
 
-      console.log('✅ Login exitoso')
-      return { data, error: null }
+      console.log('✅ Login exitoso');
+      return { data, error: null };
     } catch (error) {
-      console.error('❌ Error en signIn:', error)
-      return { data: null, error }
-    } finally {
-      setLoading(false)
+      console.error('❌ Error en signIn:', error);
+      return { data: null, error: error.message };
     }
-  }
+  };
 
-  const signOut = async () => {
+  // Función de registro ULTRA-SIMPLE
+  const signUp = async (email, password, userData = {}) => {
     try {
-      setLoading(true)
-      console.log('👋 Cerrando sesión...')
-      
-      const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        console.error('❌ Error en logout:', error.message)
-        throw error
-      }
-
-      setUser(null)
-      console.log('✅ Logout exitoso')
-      return { error: null }
-    } catch (error) {
-      console.error('❌ Error en signOut:', error)
-      return { error }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const signUp = async (email, password, metadata = {}) => {
-    try {
-      setLoading(true)
-      console.log('📝 Registrando usuario:', email)
-      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: metadata
-        }
-      })
+      });
 
-      if (error) {
-        console.error('❌ Error en registro:', error.message)
-        throw error
-      }
-
-      console.log('✅ Registro exitoso')
-      return { data, error: null }
+      if (error) return { data: null, error: error.message };
+      return { data, error: null };
     } catch (error) {
-      console.error('❌ Error en signUp:', error)
-      return { data: null, error }
-    } finally {
-      setLoading(false)
+      return { data: null, error: error.message };
     }
-  }
+  };
 
-  const hasPermission = (permission) => {
-    // Simplified permission system
-    return user?.role === 'admin'
-  }
+  // Función de logout ULTRA-SIMPLE
+  const signOut = async () => {
+    try {
+      console.log('🔄 Cerrando sesión...');
+      await supabase.auth.signOut();
+      setUser(null);
+      console.log('✅ Sesión cerrada');
+    } catch (error) {
+      console.error('❌ Error en logout:', error);
+    }
+  };
+
+  // Verificar permisos ULTRA-SIMPLE
+  const hasPermission = () => true; // Por simplicidad, siempre permitir
+
+  // Inicialización ULTRA-SIMPLE
+  useEffect(() => {
+    let mounted = true;
+
+    const initAuth = async () => {
+      try {
+        console.log('🔄 Inicializando autenticación minimalista...');
+        
+        // Obtener sesión actual
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (mounted) {
+          if (session?.user) {
+            console.log('✅ Usuario encontrado:', session.user.email);
+            setUser(session.user);
+          } else {
+            console.log('ℹ️ No hay usuario autenticado');
+            setUser(null);
+          }
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('❌ Error en inicialización:', error);
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    };
+
+    initAuth();
+
+    // Escuchar cambios de auth ULTRA-SIMPLE
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      
+      console.log('🔄 Auth cambió:', event);
+      
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const value = {
     user,
+    userProfile: user ? {
+      id: user.id,
+      email: user.email,
+      nombre_completo: user.email.split('@')[0],
+    } : null,
+    role: 'admin', // Simplificado: todos son admin
+    permissions: {},
     loading,
-    initialized,
     signIn,
-    signOut,
     signUp,
-    hasPermission
-  }
+    signOut,
+    hasPermission,
+    isAuthenticated: !!user,
+  };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
-}
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export default AuthContext;
