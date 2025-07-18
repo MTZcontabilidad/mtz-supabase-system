@@ -19,8 +19,31 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'supabase-vendor': ['@supabase/supabase-js'],
+          'ui-vendor': ['lucide-react', 'recharts'],
+        }
+      }
+    },
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
   },
   optimizeDeps: {
-    include: ['lucide-react', 'react', 'react-dom'],
+    include: [
+      'lucide-react', 
+      'react', 
+      'react-dom', 
+      '@supabase/supabase-js',
+      'recharts',
+      'react-router-dom'
+    ],
   },
 });
