@@ -18,19 +18,51 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
+// Función de prueba para verificar conexión
+export const testSupabaseConnection = async () => {
+  try {
+    console.log('🔍 Probando conexión con Supabase...');
+    console.log('URL:', SUPABASE_URL);
+    console.log('Key configurada:', !!SUPABASE_ANON_KEY);
+
+    const { data, error } = await supabase
+      .from('clientes_contables')
+      .select('count')
+      .limit(1);
+
+    if (error) {
+      console.error('❌ Error de conexión:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ Conexión exitosa con Supabase');
+    return { success: true, data };
+  } catch (err) {
+    console.error('❌ Error en prueba de conexión:', err);
+    return { success: false, error: err.message };
+  }
+};
+
 // Funciones de utilidad simplificadas
 export const getClientes = async () => {
-  const { data, error } = await supabase
-    .from('clientes_contables')
-    .select('*')
-    .order('total_facturado', { ascending: false });
+  try {
+    console.log('🔄 Cargando clientes desde Supabase...');
+    const { data, error } = await supabase
+      .from('clientes_contables')
+      .select('*')
+      .order('total_facturado', { ascending: false });
 
-  if (error) {
-    console.error('Error obteniendo clientes:', error);
+    if (error) {
+      console.error('❌ Error obteniendo clientes:', error);
+      return [];
+    }
+
+    console.log(`✅ ${data?.length || 0} clientes cargados exitosamente`);
+    return data || [];
+  } catch (err) {
+    console.error('❌ Error en getClientes:', err);
     return [];
   }
-
-  return data || [];
 };
 
 export const buscarClientes = async termino => {

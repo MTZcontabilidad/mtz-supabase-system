@@ -1,6 +1,10 @@
 // 🚀 Hook Supabase MTZ - VERSIÓN SIMPLIFICADA SIN ERRORES
 import { useState, useEffect } from 'react';
-import { getClientes, buscarClientes } from '@/lib/supabase.js';
+import {
+  getClientes,
+  buscarClientes,
+  testSupabaseConnection,
+} from '@/lib/supabase.js';
 
 // =====================================================================
 // 🚀 HOOK PRINCIPAL: Dashboard Simplificado y Funcional
@@ -16,6 +20,17 @@ export const useSupabaseAvanzado = () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Probar conexión con Supabase
+      const connectionTest = await testSupabaseConnection();
+      if (!connectionTest.success) {
+        console.error(
+          '❌ Error de conexión con Supabase:',
+          connectionTest.error
+        );
+        setError(`Error de conexión: ${connectionTest.error}`);
+        return;
+      }
 
       // Obtener todos los clientes
       const clientes = await getClientes();
