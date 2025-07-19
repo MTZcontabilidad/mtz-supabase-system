@@ -1,94 +1,208 @@
-import useAuth from './useAuth';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase.js';
+import useAuth from '@/hooks/useAuth.js';
 
 /**
- * Hook para verificación de permisos específicos
- * Centraliza la lógica de autorización por recurso y acción
- * MEJORADO: Validación más robusta y logging para debugging
- *
- * @returns {Object} Objeto con flags de permisos y funciones de verificación
+ * Hook para manejar permisos granulares del sistema
+ * Basado en roles y asignaciones de clientes
  */
-const usePermissions = () => {
-  const { hasPermission, role, permissions, user } = useAuth();
+export const usePermissions = () => {
+  const { user, userProfile } = useAuth();
+  const [userRole, setUserRole] = useState(null);
+  const [userPermissions, setUserPermissions] = useState({});
+  const [assignedClients, setAssignedClients] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Función de validación mejorada con logging
-  const validatePermission = (resource, action) => {
-    if (!user) {
-      console.warn('🔒 Permiso denegado: Usuario no autenticado', {
-        resource,
-        action,
-      });
+  // Cargar rol y permisos del usuario
+  const loadUserRole = async () => {
+    if (!user) return;
+
+    try {
+      // Obtener información del usuario desde usuarios_sistema
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios_sistema')
+        .select(
+          `
+          *,
+          roles:rol_id (
+            nombre,
+            descripcion,
+            permisos
+          )
+        `
+        )
+        .eq('id', user.id)
+        .single();
+
+      if (userError) {
+        console.error('Error cargando rol de usuario:', userError);
+        return;
+      }
+
+      if (userData) {
+        setUserRole(userData.roles?.nombre || 'usuario');
+        setUserPermissions(userData.roles?.permisos || {});
+
+        // Si es usuario, cargar clientes asignados
+        if (userData.roles?.nombre === 'usuario') {
+          await loadAssignedClients(user.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error en loadUserRole:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cargar clientes asignados al usuario
+  const loadAssignedClients = async userId => {
+    try {
+      const { data: asignaciones, error } = await supabase
+        .from('asignaciones_clientes')
+        .select(
+          `
+          cliente_id,
+          permisos_especiales,
+          clientes_contables (
+            id_cliente,
+            razon_social,
+            rut
+          )
+        `
+        )
+        .eq('usuario_id', userId)
+        .eq('activo', true);
+
+      if (error) {
+        console.error('Error cargando asignaciones:', error);
+        return;
+      }
+
+      setAssignedClients(asignaciones || []);
+    } catch (error) {
+      console.error('Error en loadAssignedClients:', error);
+    }
+  };
+
+  // Verificar si el usuario tiene permiso para una acción específica
+  const hasPermission = (resource, action) => {
+    if (!userPermissions || !userPermissions[resource]) {
       return false;
     }
 
-    const hasAccess = hasPermission(`${resource}:${action}`);
-
-    if (!hasAccess) {
-      console.warn('🔒 Permiso denegado:', {
-        user: user.email,
-        resource,
-        action,
-        role,
-      });
-    } else {
-      console.log('✅ Permiso concedido:', {
-        user: user.email,
-        resource,
-        action,
-        role,
-      });
-    }
-
-    return hasAccess;
+    return userPermissions[resource][action] === true;
   };
 
+  // Verificar si el usuario puede acceder a un cliente específico
+  const canAccessClient = clientId => {
+    // Administradores y colaboradores pueden acceder a todos los clientes
+    if (userRole === 'administrador' || userRole === 'colaborador') {
+      return true;
+    }
+
+    // Usuarios solo pueden acceder a clientes asignados
+    if (userRole === 'usuario') {
+      return assignedClients.some(
+        asignacion => asignacion.cliente_id === clientId
+      );
+    }
+
+    return false;
+  };
+
+  // Obtener clientes a los que el usuario puede acceder
+  const getAccessibleClients = () => {
+    if (userRole === 'administrador' || userRole === 'colaborador') {
+      return 'all'; // Puede acceder a todos
+    }
+
+    if (userRole === 'usuario') {
+      return assignedClients.map(asignacion => asignacion.cliente_id);
+    }
+
+    return [];
+  };
+
+  // Verificar si el usuario puede realizar una acción en un cliente
+  const canPerformAction = (clientId, action) => {
+    if (!canAccessClient(clientId)) {
+      return false;
+    }
+
+    // Administradores pueden hacer todo
+    if (userRole === 'administrador') {
+      return true;
+    }
+
+    // Colaboradores tienen permisos limitados
+    if (userRole === 'colaborador') {
+      const restrictedActions = ['delete', 'assign', 'approve'];
+      return !restrictedActions.includes(action);
+    }
+
+    // Usuarios tienen permisos muy limitados
+    if (userRole === 'usuario') {
+      const allowedActions = ['read', 'write'];
+      return allowedActions.includes(action);
+    }
+
+    return false;
+  };
+
+  // Verificar si el usuario puede ver una página específica
+  const canViewPage = page => {
+    const pagePermissions = {
+      dashboard: 'read',
+      clientes: 'read',
+      cobranza: 'read',
+      requerimientos: 'read',
+      usuarios: 'read',
+      reportes: 'read',
+      analytics: 'read',
+      configuracion: 'read',
+    };
+
+    const requiredAction = pagePermissions[page];
+    if (!requiredAction) return false;
+
+    return hasPermission(page, requiredAction);
+  };
+
+  // Obtener permisos especiales para un cliente específico
+  const getClientSpecialPermissions = clientId => {
+    const asignacion = assignedClients.find(a => a.cliente_id === clientId);
+    return asignacion?.permisos_especiales || {};
+  };
+
+  // Cargar datos al montar
+  useEffect(() => {
+    loadUserRole();
+  }, [user]);
+
   return {
-    // =====================================================================
-    // PERMISOS DE CLIENTES
-    // =====================================================================
-    canViewClients: validatePermission('clientes', 'read'),
-    canCreateClients: validatePermission('clientes', 'write'),
-    canEditClients: validatePermission('clientes', 'write'),
-    canDeleteClients: validatePermission('clientes', 'delete'),
+    // Estados
+    userRole,
+    userPermissions,
+    assignedClients,
+    loading,
 
-    // =====================================================================
-    // PERMISOS DE USUARIOS
-    // =====================================================================
-    canViewUsers: validatePermission('usuarios', 'read'),
-    canCreateUsers: validatePermission('usuarios', 'write'),
-    canEditUsers: validatePermission('usuarios', 'write'),
-    canDeleteUsers: validatePermission('usuarios', 'delete'),
+    // Funciones de verificación
+    hasPermission,
+    canAccessClient,
+    canPerformAction,
+    canViewPage,
+    getAccessibleClients,
+    getClientSpecialPermissions,
 
-    // =====================================================================
-    // PERMISOS DE REPORTES
-    // =====================================================================
-    canViewReports: validatePermission('reportes', 'read'),
-    canCreateReports: validatePermission('reportes', 'write'),
-    canEditReports: validatePermission('reportes', 'write'),
-    canDeleteReports: validatePermission('reportes', 'delete'),
+    // Funciones de recarga
+    reloadPermissions: loadUserRole,
+    reloadAssignedClients: () => loadAssignedClients(user?.id),
 
-    // =====================================================================
-    // PERMISOS DE CONFIGURACIÓN
-    // =====================================================================
-    canViewConfig: validatePermission('configuracion', 'read'),
-    canEditConfig: validatePermission('configuracion', 'write'),
-
-    // =====================================================================
-    // PERMISOS DE ASIGNACIONES
-    // =====================================================================
-    canViewAssignments: validatePermission('asignaciones', 'read'),
-    canCreateAssignments: validatePermission('asignaciones', 'write'),
-    canEditAssignments: validatePermission('asignaciones', 'write'),
-    canDeleteAssignments: validatePermission('asignaciones', 'delete'),
-
-    // =====================================================================
-    // INFORMACIÓN DEL ROL
-    // =====================================================================
-    role,
-    permissions,
-    isAdmin: role === 'administrador',
-    isCollaborator: role === 'colaborador',
-    isExternal: role === 'externo',
-    isClient: role === 'cliente',
+    // Helpers
+    isAdmin: userRole === 'administrador',
+    isCollaborator: userRole === 'colaborador',
+    isUser: userRole === 'usuario',
   };
 };
 

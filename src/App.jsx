@@ -16,6 +16,7 @@ import AnalyticsPage from './pages/Analytics/AnalyticsPage.jsx';
 import ProyeccionesPage from './pages/Proyecciones/ProyeccionesPage.jsx';
 import SettingsPage from './pages/Settings/SettingsPage.jsx';
 import AdminUsersPanel from './pages/Admin/AdminUsersPanel.jsx';
+import UserManagementPage from './pages/Admin/UserManagementPage.jsx';
 import Layout from './components/layout/Layout.jsx';
 
 function App() {
@@ -83,6 +84,7 @@ function App() {
 
             {/* Administración */}
             <Route path='admin' element={<AdminUsersPanel />} />
+            <Route path='admin/users' element={<UserManagementPage />} />
           </Route>
 
           {/* Ruta 404 */}
