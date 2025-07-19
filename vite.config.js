@@ -2,7 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
-// https://vitejs.dev/config/
+// 🚨 CONFIGURACIÓN EMERGENCIA VITE
+// Configuración absolutamente robusta que IGNORE variables de entorno problemáticas
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -16,12 +18,7 @@ export default defineConfig({
     open: true,
     strictPort: true,
   },
-  // 🔧 CONFIGURACIÓN OPTIMIZADA PARA VARIABLES DE ENTORNO
-  define: {
-    // Forzar variables de entorno en build
-    __VITE_SUPABASE_URL__: JSON.stringify(process.env.VITE_SUPABASE_URL || 'https://bwgnmastihgndmtbqvkj.supabase.co'),
-    __VITE_SUPABASE_ANON_KEY__: JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3Z25tYXN0aWhnbmRtdGJxdmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI3MzMzNzgsImV4cCI6MjA2ODMwOTM3OH0.ZTOHO8HXeDrsmBomYXX516Leq9WdRuM7lunqNI2uC8I')
-  },
+  // 🚨 ELIMINAMOS define: completamente para evitar conflictos
   build: {
     outDir: 'dist',
     sourcemap: false,
@@ -37,11 +34,12 @@ export default defineConfig({
     },
     terserOptions: {
       compress: {
-        // 🚨 CRÍTICO: NO eliminar console en producción para debug
+        // 🚨 CRÍTICO: NO tocar console logs
         drop_console: false,
-        drop_debugger: true,
-        // Preservar variables de entorno
-        keep_fnames: true,
+        drop_debugger: false,
+        // No optimizar demasiado
+        passes: 1,
+        pure_getters: false,
       },
     },
   },
@@ -55,4 +53,8 @@ export default defineConfig({
       'react-router-dom'
     ],
   },
+  // 🚨 Configuración adicional para debug
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+  }
 });
