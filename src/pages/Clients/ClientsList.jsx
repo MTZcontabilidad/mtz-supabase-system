@@ -59,6 +59,7 @@ const ClientsList = () => {
   const [estadisticas, setEstadisticas] = useState({});
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   // Cargar TODOS los clientes directamente desde Supabase
   const cargarDatosClientes = async () => {
@@ -136,6 +137,7 @@ const ClientsList = () => {
 
         console.log('✅ Clientes procesados y cargados en tabla');
         setError(null);
+        setInitialized(true);
       } else {
         console.log('⚠️ No se encontraron clientes en la base de datos');
         setClientes([]);
@@ -145,6 +147,7 @@ const ClientsList = () => {
           facturacion_total: 0,
           promedio: 0,
         });
+        setInitialized(true);
       }
     } catch (error) {
       console.error('❌ Error cargando clientes:', error);
@@ -152,6 +155,7 @@ const ClientsList = () => {
       setClientes([]);
       setFilteredClientes([]);
       setEstadisticas({ total_clientes: 0, facturacion_total: 0, promedio: 0 });
+      setInitialized(true);
     } finally {
       setLoadingClientes(false);
     }
@@ -159,13 +163,32 @@ const ClientsList = () => {
 
   // Cargar datos cuando el componente se monte
   useEffect(() => {
+    console.log('🚀 ClientsList montado - Iniciando carga automática');
     cargarDatosClientes();
   }, []);
 
   // Debug: Monitorear cambios en filteredClientes
   useEffect(() => {
     console.log('🔍 DEBUG: filteredClientes cambió:', filteredClientes.length);
+    if (filteredClientes.length > 0) {
+      console.log(
+        '✅ Clientes disponibles para mostrar:',
+        filteredClientes.length
+      );
+    }
   }, [filteredClientes]);
+
+  // Forzar carga si no se ha inicializado después de 2 segundos
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!initialized && !loadingClientes) {
+        console.log('⏰ Forzando carga después de timeout');
+        cargarDatosClientes();
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [initialized, loadingClientes]);
 
   // Función para actualizar datos (conectada al botón Actualizar)
   const handleActualizar = async () => {
