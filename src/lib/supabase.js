@@ -1,4 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
+import { debugEnvironment } from '@/utils/debugEnv';
+
+// Debug de variables de entorno
+const envDebug = debugEnvironment();
 
 // Configuración del proyecto Supabase MTZ
 const supabaseUrl =
@@ -10,6 +14,12 @@ const supabaseKey =
 
 // Crear cliente Supabase
 export const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Debug de configuración
+console.log('🔧 Configuración Supabase:');
+console.log('URL:', supabaseUrl);
+console.log('Key configurada:', !!supabaseKey);
+console.log('Variables de entorno válidas:', envDebug.hasValidConfig);
 
 /**
  * Utilidades centralizadas para MTZ
