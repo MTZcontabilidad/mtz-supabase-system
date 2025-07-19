@@ -57,6 +57,7 @@ const ClientsList = () => {
   const [searchResults, setSearchResults] = useState(null);
   const [estadisticas, setEstadisticas] = useState({});
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Cargar TODOS los clientes directamente desde Supabase
   const cargarDatosClientes = async () => {
@@ -164,6 +165,7 @@ const ClientsList = () => {
     }
 
     try {
+      setLoading(true);
       const resultados = await buscarClientesInteligente(termino);
 
       if (resultados?.resultados) {
@@ -187,6 +189,8 @@ const ClientsList = () => {
       }
     } catch (error) {
       console.error('Error en búsqueda:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -272,42 +276,50 @@ const ClientsList = () => {
   };
 
   // Guardar cliente
-  const handleSave = clienteData => {
-    if (editingCliente) {
-      // Actualizar cliente existente
-      setClientes(prev =>
-        prev.map(c =>
-          c.id_cliente === editingCliente.id_cliente
-            ? { ...c, ...clienteData }
-            : c
-        )
-      );
-      setFilteredClientes(prev =>
-        prev.map(c =>
-          c.id_cliente === editingCliente.id_cliente
-            ? { ...c, ...clienteData }
-            : c
-        )
-      );
-    } else {
-      // Crear nuevo cliente
-      const newCliente = {
-        id_cliente: 'NEW' + Date.now(),
-        posicion: clientes.length + 1,
-        ...clienteData,
-        fecha_registro: new Date().toISOString().split('T')[0],
-      };
-      setClientes(prev => [...prev, newCliente]);
-      setFilteredClientes(prev => [...prev, newCliente]);
-    }
+  const handleSave = async clienteData => {
+    try {
+      setLoading(true);
+      if (editingCliente) {
+        // Actualizar cliente existente
+        setClientes(prev =>
+          prev.map(c =>
+            c.id_cliente === editingCliente.id_cliente
+              ? { ...c, ...clienteData }
+              : c
+          )
+        );
+        setFilteredClientes(prev =>
+          prev.map(c =>
+            c.id_cliente === editingCliente.id_cliente
+              ? { ...c, ...clienteData }
+              : c
+          )
+        );
+      } else {
+        // Crear nuevo cliente
+        const newCliente = {
+          id_cliente: 'NEW' + Date.now(),
+          posicion: clientes.length + 1,
+          ...clienteData,
+          fecha_registro: new Date().toISOString().split('T')[0],
+        };
+        setClientes(prev => [...prev, newCliente]);
+        setFilteredClientes(prev => [...prev, newCliente]);
+      }
 
-    setShowForm(false);
-    setEditingCliente(null);
+      setShowForm(false);
+      setEditingCliente(null);
+    } catch (error) {
+      console.error('Error guardando cliente:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Manejar carga masiva
   const handleCargaMasiva = async clienteData => {
     try {
+      setLoading(true);
       const newCliente = {
         id_cliente: 'IMPORT' + Date.now(),
         posicion: clientes.length + 1,
@@ -320,6 +332,8 @@ const ClientsList = () => {
     } catch (error) {
       console.error('Error al importar:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
