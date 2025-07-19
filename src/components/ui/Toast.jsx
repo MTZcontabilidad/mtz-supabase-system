@@ -1,7 +1,7 @@
 import React from 'react';
 import * as ToastPrimitive from '@radix-ui/react-toast';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
-import { cn } from '../../utils/helpers';
+import { cn } from '../../utils/helpers.js';
 
 /**
  * Toast Component
