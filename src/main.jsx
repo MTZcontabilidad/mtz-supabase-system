@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
-import './styles/globals.css';
+import './index.css';
 
 // Configurar el router con future flags para eliminar warnings
 const router = (
