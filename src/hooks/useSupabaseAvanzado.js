@@ -4,6 +4,8 @@ import {
   getClientes,
   buscarClientes,
   testSupabaseConnection,
+  testAllTables,
+  MTZ_CONFIG,
 } from '@/lib/supabase.js';
 
 // =====================================================================
@@ -21,6 +23,9 @@ export const useSupabaseAvanzado = () => {
       setLoading(true);
       setError(null);
 
+      // Mostrar configuración actual
+      console.log('🔍 CONFIGURACIÓN ACTUAL:', MTZ_CONFIG);
+
       // Probar conexión con Supabase
       const connectionTest = await testSupabaseConnection();
       if (!connectionTest.success) {
@@ -31,6 +36,11 @@ export const useSupabaseAvanzado = () => {
         setError(`Error de conexión: ${connectionTest.error}`);
         return;
       }
+
+      // Probar todas las tablas
+      console.log('🔍 Probando acceso a todas las tablas...');
+      const tableTest = await testAllTables();
+      console.log('📊 Resultados de tablas:', tableTest);
 
       // Obtener todos los clientes
       const clientes = await getClientes();
