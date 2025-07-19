@@ -9,6 +9,10 @@ import Register from './pages/Auth/Register.jsx';
 import LandingPage from './pages/Landing/LandingPage.jsx';
 import Dashboard from './pages/Dashboard/Dashboard.jsx';
 import ClientsList from './pages/Clients/ClientsList.jsx';
+import ReportsPage from './pages/Reports/ReportsPage.jsx';
+import AnalyticsPage from './pages/Analytics/AnalyticsPage.jsx';
+import ProyeccionesPage from './pages/Proyecciones/ProyeccionesPage.jsx';
+import SettingsPage from './pages/Settings/SettingsPage.jsx';
 import AdminUsersPanel from './pages/Admin/AdminUsersPanel.jsx';
 import Layout from './components/layout/Layout.jsx';
 
@@ -56,6 +60,18 @@ function App() {
 
             {/* Clientes */}
             <Route path='clients' element={<ClientsList />} />
+
+            {/* Reportes */}
+            <Route path='reports' element={<ReportsPage />} />
+
+            {/* Analytics */}
+            <Route path='analytics' element={<AnalyticsPage />} />
+
+            {/* Proyecciones */}
+            <Route path='proyecciones' element={<ProyeccionesPage />} />
+
+            {/* Configuración */}
+            <Route path='settings' element={<SettingsPage />} />
 
             {/* Administración */}
             <Route path='admin' element={<AdminUsersPanel />} />
