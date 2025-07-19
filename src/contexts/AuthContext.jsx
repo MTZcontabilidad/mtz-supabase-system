@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext } from 'react';
-import { supabase } from '../lib/supabase.js';
+import { supabase } from '@/lib/supabase.js';
 
 // Crear contexto de autenticación MINIMALISTA
 const AuthContext = createContext({
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
         setLoginAttempts(0);
       }
 
-      console.log('🔄 Intentando login con:', email);
+      // console.log('🔄 Intentando login con:', email);
       setLastLoginAttempt(now);
       setLoginAttempts(prev => prev + 1);
 
@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
 
       // Resetear contador en login exitoso
       setLoginAttempts(0);
-      console.log('✅ Login exitoso');
+      // console.log('✅ Login exitoso');
       return { data, error: null };
     } catch (error) {
       console.error('❌ Error en signIn:', error);
@@ -91,10 +91,10 @@ export const AuthProvider = ({ children }) => {
   // Función de logout ULTRA-SIMPLE
   const signOut = async () => {
     try {
-      console.log('🔄 Cerrando sesión...');
+      // console.log('🔄 Cerrando sesión...');
       await supabase.auth.signOut();
       setUser(null);
-      console.log('✅ Sesión cerrada');
+      // console.log('✅ Sesión cerrada');
     } catch (error) {
       console.error('❌ Error en logout:', error);
     }

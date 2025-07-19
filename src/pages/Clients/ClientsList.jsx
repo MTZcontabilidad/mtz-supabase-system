@@ -36,12 +36,6 @@ import { formatCurrency, formatRUT } from '@/utils/helpers.js';
 import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '@/utils/constants.js';
 import { getClientes } from '@/lib/supabase.js';
 
-// 🔧 Debug tools (solo en desarrollo)
-// Removido import dinámico para evitar errores en build de producción
-// if (process.env.NODE_ENV === 'development') {
-//   import('../../utils/supabaseDebug.js');
-// }
-
 /**
  * ClientsList Component - Versión Optimizada
  * Lista de clientes integrada con Supabase y búsqueda inteligente
