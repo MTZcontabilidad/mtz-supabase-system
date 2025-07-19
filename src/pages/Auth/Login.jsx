@@ -55,7 +55,7 @@ const Login = () => {
   return (
     <div className='min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8'>
       <div className='sm:mx-auto sm:w-full sm:max-w-md'>
-        {/* Logo y TÃ­tulo */}
+        {/* Logo y Título */}
         <div className='flex justify-center'>
           <div className='flex items-center space-x-3'>
             <div className='bg-blue-600 p-3 rounded-lg'>
@@ -71,23 +71,23 @@ const Login = () => {
         </div>
 
         <h2 className='mt-6 text-center text-3xl font-extrabold text-gray-900'>
-          Iniciar SesiÃ³n
+          Iniciar Sesión
         </h2>
         <p className='mt-2 text-center text-sm text-gray-600'>
-          Accede a tu sistema de gestiÃ³n empresarial
+          Accede a tu sistema de gestión empresarial
         </p>
       </div>
 
       <div className='mt-8 sm:mx-auto sm:w-full sm:max-w-md'>
         <div className='bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10 border border-gray-200'>
-          {/* BotÃ³n Demo */}
+          {/* Botón Demo */}
           <div className='mb-6'>
             <Button
               variant='ghost'
               onClick={fillDemoCredentials}
               className='w-full text-sm border border-blue-200 hover:bg-blue-50'
             >
-              ðŸš€ Usar Credenciales Demo (Carlos Villagra)
+              🚀 Usar Credenciales Demo (Carlos Villagra)
             </Button>
           </div>
 
@@ -133,7 +133,7 @@ const Login = () => {
                 htmlFor='password'
                 className='block text-sm font-medium text-gray-700'
               >
-                ContraseÃ±a
+                Contraseña
               </label>
               <div className='mt-1 relative'>
                 <Input
@@ -144,7 +144,7 @@ const Login = () => {
                   required
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder='Tu contraseÃ±a'
+                  placeholder='Tu contraseña'
                   disabled={loading}
                 />
                 <button
@@ -183,7 +183,7 @@ const Login = () => {
                   to='/reset-password'
                   className='font-medium text-blue-600 hover:text-blue-500'
                 >
-                  Â¿Olvidaste tu contraseÃ±a?
+                  ¿Olvidaste tu contraseña?
                 </Link>
               </div>
             </div>
@@ -199,10 +199,10 @@ const Login = () => {
                 {loading ? (
                   <>
                     <Loader2 className='animate-spin -ml-1 mr-3 h-5 w-5' />
-                    Iniciando sesiÃ³n...
+                    Iniciando sesión...
                   </>
                 ) : (
-                  'Iniciar SesiÃ³n'
+                  'Iniciar Sesión'
                 )}
               </Button>
             </div>
@@ -216,7 +216,7 @@ const Login = () => {
               </div>
               <div className='relative flex justify-center text-sm'>
                 <span className='px-2 bg-white text-gray-500'>
-                  Â¿No tienes cuenta?
+                  ¿No tienes cuenta?
                 </span>
               </div>
             </div>
@@ -234,11 +234,11 @@ const Login = () => {
             </div>
           </div>
 
-          {/* InformaciÃ³n del sistema */}
+          {/* Información del sistema */}
           <div className='mt-6 pt-6 border-t border-gray-200'>
             <div className='text-xs text-gray-500 text-center space-y-1'>
               <p>MTZ Ouroborus AI v3.0</p>
-              <p>Sistema de GestiÃ³n Empresarial</p>
+              <p>Sistema de Gestión Empresarial</p>
               <p className='text-blue-600'>Powered by Supabase + React</p>
             </div>
           </div>
