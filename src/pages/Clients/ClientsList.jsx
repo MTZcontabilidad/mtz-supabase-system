@@ -14,489 +14,310 @@ import {
   TrendingUp,
   AlertCircle,
 } from 'lucide-react';
-import { Button, Card, Badge, Input } from '@/components/ui';
+import { Button, Card, Badge, Input } from '../../components/ui';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/Dialog';
-import DataTable from '@/components/shared/DataTable';
-import SearchFilters from '@/components/clientes/SearchFilters';
-import ClienteForm from '@/components/clientes/ClienteForm';
-import CargaMasiva from '@/components/clientes/CargaMasiva';
-import ExportData from '@/components/shared/ExportData';
-import useAuth from '@/hooks/useAuth';
-import useSupabaseAvanzado from '@/hooks/useSupabaseAvanzado';
-import { formatCurrency, formatRUT } from '@/utils/helpers';
-import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '@/utils/constants';
+} from '../../components/ui/Dialog';
+import DataTable from '../../components/shared/DataTable';
+import SearchFilters from '../../components/clientes/SearchFilters';
+import ClienteForm from '../../components/clientes/ClienteForm';
+import CargaMasiva from '../../components/clientes/CargaMasiva';
+import ExportData from '../../components/shared/ExportData';
+import useAuth from '../../hooks/useAuth';
+import useSupabaseAvanzado from '../../hooks/useSupabaseAvanzado';
+import { formatCurrency, formatRUT } from '../../utils/helpers';
+import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '../../utils/constants';
 
 // 🔧 Debug tools (solo en desarrollo)
 if (process.env.NODE_ENV === 'development') {
-  import('@/utils/supabaseDebug');
+  import('../../utils/supabaseDebug');
 }
 
 /**
  * ClientsList Component - Versión Optimizada
- * Lista de clientes integrada con Supabase y búsqueda inteligente
+ * Lista de clientes con funcionalidades avanzadas:
+ * - Búsqueda y filtros inteligentes
+ * - Paginación optimizada
+ * - Carga masiva de datos
+ * - Exportación múltiple formato
+ * - Gestión CRUD completa
  */
 const ClientsList = () => {
-  const { user } = useAuth();
-  const { loading, error, dashboardData, buscarClientesInteligente, refetch } =
-    useSupabaseAvanzado();
+  const { role, hasPermission } = useAuth();
+  const {
+    clientes,
+    loading,
+    error,
+    loadClientes,
+    createCliente,
+    updateCliente,
+    deleteCliente,
+    refreshData
+  } = useSupabaseAvanzado();
 
-  const [clientes, setClientes] = useState([]);
-  const [filteredClientes, setFilteredClientes] = useState([]);
-  const [loadingClientes, setLoadingClientes] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  // Estados del componente
+  const [selectedCliente, setSelectedCliente] = useState(null);
+  const [showClienteForm, setShowClienteForm] = useState(false);
   const [showCargaMasiva, setShowCargaMasiva] = useState(false);
   const [showExportData, setShowExportData] = useState(false);
-  const [editingCliente, setEditingCliente] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({});
   const [showFilters, setShowFilters] = useState(false);
-  // const [selectedClientes, setSelectedClientes] = useState([]); // Removido - DataTable no soporta selección
-  const [searchResults, setSearchResults] = useState(null);
-  const [estadisticas, setEstadisticas] = useState({});
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [clienteToDelete, setClienteToDelete] = useState(null);
+  const [filters, setFilters] = useState({
+    search: '',
+    estado: [],
+    tipo_empresa: [],
+    region: [],
+    fecha_desde: '',
+    fecha_hasta: ''
+  });
 
-  // Cargar TODOS los clientes directamente desde Supabase
-  const cargarDatosClientes = async () => {
-    try {
-      setLoadingClientes(true);
-      console.log('🔄 Cargando todos los clientes...');
-      
-      // Importar utilidades de Supabase
-      const { supabaseUtils } = await import('@/lib/supabase');
-      
-      // Obtener todos los clientes
-      const todosLosClientes = await supabaseUtils.getClientes();
-      
-      if (todosLosClientes && todosLosClientes.length > 0) {
-        console.log(`✅ ${todosLosClientes.length} clientes encontrados en BD`);
-        
-        // Agregar datos adicionales para la tabla
-        const clientesConDatos = todosLosClientes.map((cliente, index) => ({
-          ...cliente,
-          posicion: index + 1,
-          // Generar datos adicionales basados en los datos reales
-          tipo_empresa:
-            cliente.total_facturado > 10000000
-              ? 'SPA'
-              : cliente.total_facturado > 5000000
-                ? 'LTDA'
-                : cliente.total_facturado > 1000000
-                  ? 'SA'
-                  : 'EIRL',
-          rubro: cliente.razon_social.includes('INVERSIONES')
-            ? 'Inversiones'
-            : cliente.razon_social.includes('GPS')
-              ? 'Tecnología GPS'
-              : cliente.razon_social.includes('MINERO')
-                ? 'Minería'
-                : cliente.razon_social.includes('AGRICOLA')
-                  ? 'Agricultura'
-                  : cliente.razon_social.includes('CONSTRUCTORA')
-                    ? 'Construcción'
-                    : 'Servicios Generales',
-          // Usar datos reales o generar si no existen
-          telefono: cliente.telefono || '+56 9 ' + Math.floor(Math.random() * 90000000 + 10000000),
-          email: cliente.email || 
-            cliente.razon_social
-              .toLowerCase()
-              .replace(/[^a-z0-9]/g, '')
-              .substring(0, 15) + '@empresa.cl',
-          direccion_completa: cliente.direccion || 'Dirección registrada',
-          fecha_registro: cliente.created_at || new Date().toISOString().split('T')[0],
-        }));
-        
-        setClientes(clientesConDatos);
-        setFilteredClientes(clientesConDatos);
-        
-        // Calcular estadísticas desde los datos reales
-        const facturacionTotal = clientesConDatos.reduce(
-          (sum, c) => sum + parseFloat(c.total_facturado || 0),
-          0
-        );
-        
-        setEstadisticas({
-          total_clientes: clientesConDatos.length,
-          facturacion_total: facturacionTotal,
-          promedio: clientesConDatos.length > 0 ? facturacionTotal / clientesConDatos.length : 0,
-        });
-        
-        console.log('✅ Clientes procesados y cargados en tabla');
-      } else {
-        console.log('⚠️ No se encontraron clientes en la base de datos');
-        setClientes([]);
-        setFilteredClientes([]);
-        setEstadisticas({ total_clientes: 0, facturacion_total: 0, promedio: 0 });
-      }
-    } catch (error) {
-      console.error('❌ Error cargando clientes:', error);
-      setClientes([]);
-      setFilteredClientes([]);
-      setEstadisticas({ total_clientes: 0, facturacion_total: 0, promedio: 0 });
-    } finally {
-      setLoadingClientes(false);
-    }
-  };
-
-  // Cargar datos cuando el componente se monte
+  // Cargar clientes al montar
   useEffect(() => {
-    cargarDatosClientes();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    loadClientes();
+  }, []);
 
-  // Manejar búsqueda inteligente
-  const handleBusquedaInteligente = async termino => {
-    if (!termino.trim()) {
-      setSearchResults(null);
-      setFilteredClientes(clientes); // Volver a todos los clientes
-      return;
-    }
-
-    try {
-      const resultados = await buscarClientesInteligente(termino);
-
-      if (resultados?.resultados) {
-        // Procesar resultados con datos adicionales
-        const resultadosConDatos = resultados.resultados.map(cliente => ({
-          ...cliente,
-          posicion:
-            clientes.findIndex(c => c.id_cliente === cliente.id_cliente) + 1 ||
-            999,
-          // Mantener estructura similar al resto
-          numero_facturas:
-            Math.floor(parseFloat(cliente.total_facturado || 0) / 100000) || 1,
-          promedio_factura:
-            parseFloat(cliente.total_facturado || 0) /
-            (Math.floor(parseFloat(cliente.total_facturado || 0) / 100000) ||
-              1),
-        }));
-
-        setSearchResults(resultados);
-        setFilteredClientes(resultadosConDatos); // Actualizar directamente
-      }
-    } catch (error) {
-      console.error('Error en búsqueda:', error);
-    }
-  };
-
-  // Efecto para búsqueda con debounce
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      handleBusquedaInteligente(searchTerm);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Aplicar filtros adicionales
-  useEffect(() => {
-    // No aplicar filtros si hay búsqueda activa (se manejan por separado)
-    if (searchTerm || searchResults) {
-      return;
-    }
-
-    // Solo aplicar filtros cuando no hay búsqueda
-    let filtered = [...clientes];
-
-    // Aplicar filtros específicos
-    Object.keys(filters).forEach(key => {
-      if (filters[key]) {
-        filtered = filtered.filter(cliente => {
-          if (key === 'estado') {
-            return cliente.estado === filters[key];
-          }
-          if (key === 'tipo_empresa') {
-            return cliente.tipo_empresa === filters[key];
-          }
-          if (key === 'rubro') {
-            return cliente.rubro === filters[key];
-          }
-          if (key === 'categoria_cliente') {
-            return cliente.categoria === filters[key];
-          }
-          return true;
-        });
-      }
-    });
-
-    setFilteredClientes(filtered);
-  }, [filters, clientes, searchTerm, searchResults]);
-
-  // Manejar acciones de cliente
-  const handleAction = (action, cliente) => {
-    switch (action) {
-      case 'edit':
-        setEditingCliente(cliente);
-        setShowForm(true);
-        break;
-      case 'delete':
-        handleDelete(cliente);
-        break;
-      case 'view':
-        handleView(cliente);
-        break;
-      default:
-        break;
-    }
-  };
-
-  // Eliminar cliente
-  const handleDelete = cliente => {
-    if (
-      window.confirm(`¿Estás seguro de eliminar a ${cliente.razon_social}?`)
-    ) {
-      setClientes(prev =>
-        prev.filter(c => c.id_cliente !== cliente.id_cliente)
-      );
-      setFilteredClientes(prev =>
-        prev.filter(c => c.id_cliente !== cliente.id_cliente)
-      );
-    }
-  };
-
-  // Ver cliente
-  const handleView = cliente => {
-    console.log('Ver cliente:', cliente);
-    // Implementar vista detallada
-  };
-
-  // Guardar cliente
-  const handleSave = clienteData => {
-    if (editingCliente) {
-      // Actualizar cliente existente
-      setClientes(prev =>
-        prev.map(c =>
-          c.id_cliente === editingCliente.id_cliente
-            ? { ...c, ...clienteData }
-            : c
-        )
-      );
-      setFilteredClientes(prev =>
-        prev.map(c =>
-          c.id_cliente === editingCliente.id_cliente
-            ? { ...c, ...clienteData }
-            : c
-        )
-      );
-    } else {
-      // Crear nuevo cliente
-      const newCliente = {
-        id_cliente: 'NEW' + Date.now(),
-        posicion: clientes.length + 1,
-        ...clienteData,
-        fecha_registro: new Date().toISOString().split('T')[0],
-      };
-      setClientes(prev => [...prev, newCliente]);
-      setFilteredClientes(prev => [...prev, newCliente]);
-    }
-
-    setShowForm(false);
-    setEditingCliente(null);
-  };
-
-  // Manejar carga masiva
-  const handleCargaMasiva = async clienteData => {
-    try {
-      const newCliente = {
-        id_cliente: 'IMPORT' + Date.now(),
-        posicion: clientes.length + 1,
-        ...clienteData,
-        fecha_registro: new Date().toISOString().split('T')[0],
-      };
-      setClientes(prev => [...prev, newCliente]);
-      setFilteredClientes(prev => [...prev, newCliente]);
-      return true;
-    } catch (error) {
-      console.error('Error al importar:', error);
-      throw error;
-    }
-  };
-
-  // Limpiar búsqueda y filtros
-  const limpiarBusquedaYFiltros = () => {
-    setSearchTerm('');
-    setFilters({});
-    setSearchResults(null);
-    setFilteredClientes(clientes);
-  };
-
-  // Columnas para la tabla
+  // Configuración de columnas para la tabla
   const columns = [
     {
-      key: 'posicion',
-      label: '#',
+      key: 'nombre_empresa',
+      title: 'Empresa',
       sortable: true,
-      render: value => (
-        <div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
-          <span className='text-sm font-bold text-blue-600'>#{value}</span>
+      render: (value, row) => (
+        <div>
+          <div className='font-medium text-gray-900'>{value}</div>
+          <div className='text-sm text-gray-500'>{formatRUT(row.rut)}</div>
         </div>
       ),
     },
     {
-      key: 'id_cliente',
-      label: 'Código',
+      key: 'nombre_contacto',
+      title: 'Contacto',
       sortable: true,
-      render: value => (
-        <span className='font-mono text-sm bg-gray-100 px-2 py-1 rounded'>
-          {value}
-        </span>
+      render: (value, row) => (
+        <div>
+          <div className='font-medium text-gray-900'>{value}</div>
+          <div className='text-sm text-gray-500'>{row.email}</div>
+        </div>
       ),
     },
     {
-      key: 'razon_social',
-      label: 'Razón Social',
-      sortable: true,
-      render: (value, cliente) => (
+      key: 'telefono',
+      title: 'Teléfono',
+      render: (value) => (
+        <span className='text-gray-900'>{value}</span>
+      ),
+    },
+    {
+      key: 'ciudad',
+      title: 'Ubicación',
+      render: (value, row) => (
         <div>
-          <div className='font-medium text-gray-900'>{value}</div>
-          <div className='text-sm text-gray-500'>
-            {cliente.categoria && (
-              <Badge
-                variant={
-                  cliente.categoria === 'VIP'
-                    ? 'default'
-                    : cliente.categoria === 'Premium'
-                      ? 'secondary'
-                      : cliente.categoria === 'Top'
-                        ? 'success'
-                        : 'outline'
-                }
-                size='sm'
-                className='mr-2'
-              >
-                {cliente.categoria}
-              </Badge>
-            )}
-            {cliente.rut && formatRUT(cliente.rut)}
-          </div>
+          <div className='text-gray-900'>{value}</div>
+          <div className='text-sm text-gray-500'>{row.region}</div>
         </div>
       ),
     },
     {
       key: 'tipo_empresa',
-      label: 'Tipo',
-      sortable: true,
-      render: value => (
-        <Badge variant='outline' size='sm'>
-          {value}
-        </Badge>
-      ),
+      title: 'Tipo',
+      render: (value) => {
+        const tipo = TIPOS_EMPRESA.find(t => t.value === value);
+        return (
+          <Badge variant='outline' size='sm'>
+            {tipo?.label || value}
+          </Badge>
+        );
+      },
     },
     {
-      key: 'rubro',
-      label: 'Rubro',
-      sortable: true,
-      render: value => <span className='text-sm text-gray-600'>{value}</span>,
+      key: 'estado',
+      title: 'Estado',
+      render: (value) => {
+        const estado = ESTADOS_CLIENTE.find(e => e.value === value);
+        const variants = {
+          activo: 'success',
+          inactivo: 'secondary',
+          prospecto: 'warning',
+          suspendido: 'danger'
+        };
+        return (
+          <Badge variant={variants[value] || 'outline'} size='sm'>
+            {estado?.label || value}
+          </Badge>
+        );
+      },
     },
     {
-      key: 'total_facturado',
-      label: 'Total Facturado',
-      sortable: true,
-      render: value => (
-        <div className='text-right'>
-          <div className='font-semibold text-gray-900'>
-            {formatCurrency(value)}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'participacion_pct',
-      label: 'Participación',
-      sortable: true,
-      render: value => (
-        <div className='text-center'>
-          <span className='text-sm font-medium text-blue-600'>
-            {value ? `${value}%` : 'N/A'}
-          </span>
-        </div>
-      ),
-    },
-    {
-      key: 'prioridad',
-      label: 'Prioridad',
-      sortable: true,
-      render: value => (
-        <Badge
-          variant={
-            value === 'CRÍTICA'
-              ? 'destructive'
-              : value === 'ALTA'
-                ? 'warning'
-                : value === 'MEDIA'
-                  ? 'secondary'
-                  : 'outline'
-          }
-          size='sm'
-        >
-          {value || 'BAJA'}
-        </Badge>
-      ),
-    },
-    {
-      key: 'actions',
-      label: 'Acciones',
-      render: (_, cliente) => (
-        <div className='flex items-center gap-1'>
+      key: 'acciones',
+      title: 'Acciones',
+      render: (_, row) => (
+        <div className='flex items-center gap-2'>
           <Button
-            size='sm'
             variant='ghost'
-            onClick={() => handleAction('view', cliente)}
-            title='Ver detalles'
-          >
-            <Eye className='h-4 w-4' />
-          </Button>
-          <Button
             size='sm'
-            variant='ghost'
-            onClick={() => handleAction('edit', cliente)}
-            title='Editar'
+            onClick={() => handleViewCliente(row)}
           >
-            <Edit className='h-4 w-4' />
+            <Eye className='w-4 h-4' />
           </Button>
-          <Button
-            size='sm'
-            variant='ghost'
-            onClick={() => handleAction('delete', cliente)}
-            title='Eliminar'
-            className='text-red-600 hover:text-red-700'
-          >
-            <Trash2 className='h-4 w-4' />
-          </Button>
+          {hasPermission('clientes.update') && (
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={() => handleEditCliente(row)}
+            >
+              <Edit className='w-4 h-4' />
+            </Button>
+          )}
+          {hasPermission('clientes.delete') && (
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={() => handleDeleteCliente(row)}
+              className='text-red-600 hover:text-red-700'
+            >
+              <Trash2 className='w-4 h-4' />
+            </Button>
+          )}
         </div>
       ),
     },
   ];
 
-  // Columnas para exportación
-  const exportColumns = [
-    { key: 'posicion', label: 'Posición', format: 'number' },
-    { key: 'id_cliente', label: 'Código Cliente', format: 'text' },
-    { key: 'razon_social', label: 'Razón Social', format: 'text' },
-    { key: 'categoria', label: 'Categoría', format: 'text' },
-    { key: 'total_facturado', label: 'Total Facturado', format: 'currency' },
-    { key: 'participacion_pct', label: 'Participación %', format: 'number' },
-    { key: 'prioridad', label: 'Prioridad', format: 'text' },
-    { key: 'tipo_empresa', label: 'Tipo Empresa', format: 'text' },
-    { key: 'rubro', label: 'Rubro', format: 'text' },
-    { key: 'estado', label: 'Estado', format: 'text' },
-  ];
+  // Filtrar clientes basado en filtros activos
+  const filteredClientes = React.useMemo(() => {
+    if (!clientes) return [];
 
-  if (error && clientes.length === 0) {
+    return clientes.filter(cliente => {
+      // Búsqueda de texto
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        const searchFields = [
+          cliente.nombre_empresa,
+          cliente.rut,
+          cliente.nombre_contacto,
+          cliente.email,
+          cliente.telefono
+        ];
+        
+        const matches = searchFields.some(field => 
+          field?.toLowerCase().includes(searchTerm)
+        );
+        
+        if (!matches) return false;
+      }
+
+      // Filtros de estado
+      if (filters.estado?.length && !filters.estado.includes(cliente.estado)) {
+        return false;
+      }
+
+      // Filtros de tipo de empresa
+      if (filters.tipo_empresa?.length && !filters.tipo_empresa.includes(cliente.tipo_empresa)) {
+        return false;
+      }
+
+      // Filtros de región
+      if (filters.region?.length && !filters.region.includes(cliente.region)) {
+        return false;
+      }
+
+      // Filtros de fecha
+      if (filters.fecha_desde || filters.fecha_hasta) {
+        const clienteDate = new Date(cliente.created_at);
+        if (filters.fecha_desde && clienteDate < new Date(filters.fecha_desde)) {
+          return false;
+        }
+        if (filters.fecha_hasta && clienteDate > new Date(filters.fecha_hasta)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [clientes, filters]);
+
+  // Handlers
+  const handleNewCliente = () => {
+    setSelectedCliente(null);
+    setShowClienteForm(true);
+  };
+
+  const handleEditCliente = (cliente) => {
+    setSelectedCliente(cliente);
+    setShowClienteForm(true);
+  };
+
+  const handleViewCliente = (cliente) => {
+    // Implementar vista detallada del cliente
+    console.log('Ver cliente:', cliente);
+  };
+
+  const handleDeleteCliente = (cliente) => {
+    setClienteToDelete(cliente);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (clienteToDelete) {
+      try {
+        await deleteCliente(clienteToDelete.id);
+        setShowDeleteDialog(false);
+        setClienteToDelete(null);
+      } catch (error) {
+        console.error('Error eliminando cliente:', error);
+      }
+    }
+  };
+
+  const handleSaveCliente = async (clienteData) => {
+    try {
+      if (selectedCliente) {
+        await updateCliente(selectedCliente.id, clienteData);
+      } else {
+        await createCliente(clienteData);
+      }
+      setShowClienteForm(false);
+      setSelectedCliente(null);
+    } catch (error) {
+      console.error('Error guardando cliente:', error);
+      throw error;
+    }
+  };
+
+  const handleFiltersChange = (newFilters) => {
+    setFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      search: '',
+      estado: [],
+      tipo_empresa: [],
+      region: [],
+      fecha_desde: '',
+      fecha_hasta: ''
+    });
+  };
+
+  const handleRefresh = async () => {
+    await refreshData();
+  };
+
+  if (error) {
     return (
-      <div className='flex items-center justify-center h-64'>
-        <div className='text-center'>
+      <div className='text-center py-12'>
+        <div className='bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto'>
           <AlertCircle className='h-12 w-12 text-red-500 mx-auto mb-4' />
-          <h2 className='text-2xl font-bold text-red-600 mb-4'>
-            Error al cargar clientes
-          </h2>
-          <p className='text-gray-600 mb-4'>{error}</p>
-          <Button onClick={cargarDatosClientes}>
-            <RefreshCw className='h-4 w-4 mr-2' />
-            Reintentar
+          <h3 className='text-lg font-medium text-red-900 mb-2'>Error al cargar clientes</h3>
+          <p className='text-red-700 mb-4'>{error}</p>
+          <Button onClick={handleRefresh} variant='outline'>
+            <RefreshCw className='w-4 h-4 mr-2' />
+            Intentar de nuevo
           </Button>
         </div>
       </div>
@@ -506,211 +327,209 @@ const ClientsList = () => {
   return (
     <div className='space-y-6'>
       {/* Header */}
-      <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4'>
+      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
         <div>
-          <h1 className='text-3xl font-bold text-gray-900 flex items-center gap-2'>
-            <Users className='h-8 w-8 text-blue-600' />
-            Gestión de Clientes
-          </h1>
-          <p className='text-gray-600'>
-            Lista inteligente con datos reales de Supabase
+          <h1 className='text-2xl font-bold text-gray-900'>Gestión de Clientes</h1>
+          <p className='text-gray-600 mt-1'>
+            Administra tu cartera de clientes de forma eficiente
           </p>
-          {searchResults && (
-            <p className='text-sm text-blue-600 mt-1'>
-              🔍 Búsqueda: &quot;{searchResults.termino_buscado}&quot; -{' '}
-              {searchResults.total_encontrados} resultados
-            </p>
-          )}
         </div>
-
-        <div className='flex flex-wrap gap-2'>
-          <Button onClick={cargarDatosClientes} disabled={loading || loadingClientes}>
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${loading || loadingClientes ? 'animate-spin' : ''}`}
-            />
+        <div className='flex flex-wrap gap-3'>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className='w-4 h-4 mr-2' />
+            Filtros
+          </Button>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Actualizar
           </Button>
-          <Button onClick={() => setShowCargaMasiva(true)}>
-            <Upload className='h-4 w-4 mr-2' />
-            Carga Masiva
-          </Button>
-          <Button variant='outline' onClick={() => setShowExportData(true)}>
-            <Download className='h-4 w-4 mr-2' />
-            Exportar
-          </Button>
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className='h-4 w-4 mr-2' />
-            Nuevo Cliente
-          </Button>
-        </div>
-      </div>
-
-      {/* Búsqueda inteligente */}
-      <Card className='p-6'>
-        <div className='flex flex-col lg:flex-row gap-4'>
-          {/* Búsqueda */}
-          <div className='flex-1'>
-            <div className='relative'>
-              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
-              <Input
-                placeholder='Búsqueda inteligente: razón social, RUT, código, rubro...'
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className='pl-10'
-              />
-              {searchTerm && (
-                <div className='absolute right-3 top-1/2 transform -translate-y-1/2'>
-                  {loading ? (
-                    <RefreshCw className='h-4 w-4 text-blue-500 animate-spin' />
-                  ) : (
-                    <Badge variant='outline' size='sm'>
-                      {filteredClientes.length}
-                    </Badge>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Controles */}
-          <div className='flex gap-2'>
-            <Button
-              variant='outline'
-              onClick={() => setShowFilters(!showFilters)}
-              className={showFilters ? 'bg-blue-50 border-blue-200' : ''}
-            >
-              <Filter className='h-4 w-4 mr-2' />
-              Filtros
-              {Object.keys(filters).filter(key => filters[key]).length > 0 && (
-                <Badge variant='secondary' size='sm' className='ml-2'>
-                  {Object.keys(filters).filter(key => filters[key]).length}
-                </Badge>
-              )}
-            </Button>
-
-            <Button variant='outline' onClick={limpiarBusquedaYFiltros}>
-              <RefreshCw className='h-4 w-4 mr-2' />
-              Limpiar
-            </Button>
-          </div>
-        </div>
-
-        {/* Filtros expandibles */}
-        {showFilters && (
-          <div className='mt-4 pt-4 border-t'>
-            <SearchFilters
-              filters={filters}
-              onFiltersChange={setFilters}
-              estados={ESTADOS_CLIENTE}
-              tiposEmpresa={TIPOS_EMPRESA}
-            />
-          </div>
-        )}
-      </Card>
-
-      {/* Estadísticas en tiempo real */}
-      <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-        <Card className='p-4'>
-          <div className='text-center'>
-            <p className='text-2xl font-bold text-blue-600'>
-              {estadisticas?.total_clientes || clientes.length}
-            </p>
-            <p className='text-sm text-gray-600'>Total Clientes</p>
-          </div>
-        </Card>
-        <Card className='p-4'>
-          <div className='text-center'>
-            <p className='text-2xl font-bold text-green-600'>
-              {clientes.filter(c => c.estado === 'Activo').length}
-            </p>
-            <p className='text-sm text-gray-600'>Activos</p>
-          </div>
-        </Card>
-        <Card className='p-4'>
-          <div className='text-center'>
-            <p className='text-2xl font-bold text-yellow-600'>
-              {formatCurrency(
-                estadisticas?.facturacion_total ||
-                  clientes.reduce(
-                    (sum, c) => sum + parseFloat(c.total_facturado || 0),
-                    0
-                  )
-              )}
-            </p>
-            <p className='text-sm text-gray-600'>Total Facturado</p>
-          </div>
-        </Card>
-        <Card className='p-4'>
-          <div className='text-center'>
-            <p className='text-2xl font-bold text-purple-600'>
-              {formatCurrency(
-                estadisticas?.promedio ||
-                  (clientes.length > 0
-                    ? clientes.reduce(
-                        (sum, c) => sum + parseFloat(c.total_facturado || 0),
-                        0
-                      ) / clientes.length
-                    : 0)
-              )}
-            </p>
-            <p className='text-sm text-gray-600'>Promedio Cliente</p>
-          </div>
-        </Card>
-      </div>
-
-      {/* Tabla de clientes */}
-      <Card className='p-6'>
-        <div className='flex items-center justify-between mb-4'>
-          <h3 className='text-lg font-semibold text-gray-900'>
-            {searchResults
-              ? `Resultados de búsqueda (${searchResults.total_encontrados})`
-              : `Lista de clientes (${filteredClientes.length})`}
-          </h3>
-          {searchResults && (
+          {hasPermission('clientes.export') && (
             <Button
               variant='outline'
               size='sm'
-              onClick={() => {
-                setSearchTerm('');
-                setSearchResults(null);
-                setFilteredClientes(clientes);
-              }}
+              onClick={() => setShowExportData(true)}
             >
-              Ver todos los clientes
+              <Download className='w-4 h-4 mr-2' />
+              Exportar
+            </Button>
+          )}
+          {hasPermission('clientes.import') && (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => setShowCargaMasiva(true)}
+            >
+              <Upload className='w-4 h-4 mr-2' />
+              Carga Masiva
+            </Button>
+          )}
+          {hasPermission('clientes.create') && (
+            <Button onClick={handleNewCliente}>
+              <Plus className='w-4 h-4 mr-2' />
+              Nuevo Cliente
             </Button>
           )}
         </div>
+      </div>
 
+      {/* Estadísticas rápidas */}
+      <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+        <Card className='p-4'>
+          <div className='flex items-center gap-3'>
+            <div className='p-2 bg-blue-50 rounded-lg'>
+              <Users className='w-5 h-5 text-blue-600' />
+            </div>
+            <div>
+              <p className='text-sm text-gray-600'>Total Clientes</p>
+              <p className='text-xl font-bold text-gray-900'>{clientes?.length || 0}</p>
+            </div>
+          </div>
+        </Card>
+        <Card className='p-4'>
+          <div className='flex items-center gap-3'>
+            <div className='p-2 bg-green-50 rounded-lg'>
+              <TrendingUp className='w-5 h-5 text-green-600' />
+            </div>
+            <div>
+              <p className='text-sm text-gray-600'>Activos</p>
+              <p className='text-xl font-bold text-gray-900'>
+                {clientes?.filter(c => c.estado === 'activo').length || 0}
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Card className='p-4'>
+          <div className='flex items-center gap-3'>
+            <div className='p-2 bg-yellow-50 rounded-lg'>
+              <AlertCircle className='w-5 h-5 text-yellow-600' />
+            </div>
+            <div>
+              <p className='text-sm text-gray-600'>Prospectos</p>
+              <p className='text-xl font-bold text-gray-900'>
+                {clientes?.filter(c => c.estado === 'prospecto').length || 0}
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Card className='p-4'>
+          <div className='flex items-center gap-3'>
+            <div className='p-2 bg-purple-50 rounded-lg'>
+              <Filter className='w-5 h-5 text-purple-600' />
+            </div>
+            <div>
+              <p className='text-sm text-gray-600'>Filtrados</p>
+              <p className='text-xl font-bold text-gray-900'>{filteredClientes.length}</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Filtros */}
+      {showFilters && (
+        <SearchFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onClearFilters={handleClearFilters}
+        />
+      )}
+
+      {/* Tabla de clientes */}
+      <Card>
         <DataTable
           data={filteredClientes}
           columns={columns}
-          loading={loadingClientes}
-          searchable={false}
+          loading={loading}
+          searchConfig={{
+            searchable: true,
+            searchPlaceholder: 'Buscar clientes...',
+            searchFields: ['nombre_empresa', 'rut', 'nombre_contacto', 'email', 'telefono']
+          }}
+          paginationConfig={{
+            enabled: true,
+            pageSize: 15,
+            showPageInfo: true,
+            showPageSizeSelector: true
+          }}
+          onRowClick={(cliente) => handleViewCliente(cliente)}
+          onExport={() => setShowExportData(true)}
         />
       </Card>
 
-      {/* Componentes modales */}
-      <ClienteForm
-        open={showForm}
-        onOpenChange={setShowForm}
-        cliente={editingCliente}
-        onSave={handleSave}
-      />
+      {/* Modales */}
+      {showClienteForm && (
+        <ClienteForm
+          isOpen={showClienteForm}
+          onClose={() => {
+            setShowClienteForm(false);
+            setSelectedCliente(null);
+          }}
+          cliente={selectedCliente}
+          onSave={handleSaveCliente}
+        />
+      )}
 
-      <CargaMasiva
-        open={showCargaMasiva}
-        onOpenChange={setShowCargaMasiva}
-        onImport={handleCargaMasiva}
-        loading={loading}
-      />
+      {showCargaMasiva && (
+        <CargaMasiva
+          isOpen={showCargaMasiva}
+          onClose={() => setShowCargaMasiva(false)}
+          onUploadComplete={(results) => {
+            console.log('Carga masiva completada:', results);
+            handleRefresh();
+          }}
+        />
+      )}
 
-      <ExportData
-        open={showExportData}
-        onOpenChange={setShowExportData}
-        data={filteredClientes}
-        columns={exportColumns}
-        filename='clientes-mtz-inteligente'
-      />
+      {showExportData && (
+        <ExportData
+          isOpen={showExportData}
+          onClose={() => setShowExportData(false)}
+          data={filteredClientes}
+          filename='clientes-export'
+        />
+      )}
+
+      {/* Diálogo de confirmación de eliminación */}
+      {showDeleteDialog && (
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirmar Eliminación</DialogTitle>
+            </DialogHeader>
+            <div className='py-4'>
+              <p className='text-gray-600'>
+                ¿Estás seguro de que deseas eliminar el cliente{' '}
+                <strong>{clienteToDelete?.nombre_empresa}</strong>?
+              </p>
+              <p className='text-sm text-red-600 mt-2'>
+                Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button
+                variant='outline'
+                onClick={() => setShowDeleteDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant='destructive'
+                onClick={confirmDelete}
+              >
+                Eliminar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
