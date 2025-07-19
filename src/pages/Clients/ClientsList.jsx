@@ -64,104 +64,87 @@ const ClientsList = () => {
   // Cargar TODOS los clientes directamente desde Supabase
   const cargarDatosClientes = async () => {
     try {
+      console.log('🔄 Iniciando carga de clientes...');
       setLoadingClientes(true);
-      console.log('🔄 Cargando todos los clientes...');
 
-      // Obtener todos los clientes directamente
-      const { data: todosLosClientes, error } = await supabase
+      // Verificar conexión con Supabase
+      console.log('🔍 Probando conexión con Supabase...');
+      const { data: testData, error: testError } = await supabase
+        .from('clientes_contables')
+        .select('count')
+        .limit(1);
+
+      if (testError) {
+        console.error('❌ Error de conexión:', testError);
+        throw new Error('Error de conexión con Supabase');
+      }
+
+      console.log('✅ Conexión exitosa con Supabase');
+
+      // Cargar clientes
+      console.log('📥 Cargando clientes desde BD...');
+      const { data: clientesData, error } = await supabase
         .from('clientes_contables')
         .select('*')
-        .order('razon_social');
+        .order('id_cliente', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error cargando clientes:', error);
+        throw error;
+      }
 
-      if (todosLosClientes && todosLosClientes.length > 0) {
-        console.log(`✅ ${todosLosClientes.length} clientes encontrados en BD`);
+      console.log('✅', clientesData.length, 'clientes encontrados en BD');
 
-        // Procesar clientes de forma simple
-        const clientesProcesados = todosLosClientes.map((cliente, index) => ({
-          ...cliente,
-          posicion: index + 1,
-          tipo_empresa:
-            cliente.total_facturado > 10000000
-              ? 'SPA'
-              : cliente.total_facturado > 5000000
-                ? 'LTDA'
-                : cliente.total_facturado > 1000000
-                  ? 'SA'
-                  : 'EIRL',
-          rubro: cliente.razon_social.includes('INVERSIONES')
-            ? 'Inversiones'
-            : cliente.razon_social.includes('GPS')
-              ? 'Tecnología GPS'
-              : cliente.razon_social.includes('MINERO')
-                ? 'Minería'
-                : cliente.razon_social.includes('AGRICOLA')
-                  ? 'Agricultura'
-                  : cliente.razon_social.includes('CONSTRUCTORA')
-                    ? 'Construcción'
-                    : 'Servicios Generales',
-          categoria:
-            cliente.total_facturado > 10000000
-              ? 'VIP'
-              : cliente.total_facturado > 5000000
-                ? 'Premium'
-                : cliente.total_facturado > 1000000
-                  ? 'Top'
-                  : 'Estándar',
-        }));
-
-        setClientes(clientesProcesados);
-        setFilteredClientes(clientesProcesados);
-
-        console.log('🔍 DEBUG: Clientes procesados:', clientesProcesados);
-        console.log(
-          '🔍 DEBUG: filteredClientes después de set:',
-          clientesProcesados.length
-        );
-        console.log(
-          '🔍 DEBUG: Estado actual - clientes:',
-          clientesProcesados.length,
-          'filteredClientes:',
-          clientesProcesados.length
-        );
-
-        // Calcular estadísticas
-        const facturacionTotal = clientesProcesados.reduce(
-          (sum, c) => sum + parseFloat(c.total_facturado || 0),
-          0
-        );
-
-        setEstadisticas({
-          total_clientes: clientesProcesados.length,
-          facturacion_total: facturacionTotal,
-          promedio:
-            clientesProcesados.length > 0
-              ? facturacionTotal / clientesProcesados.length
-              : 0,
-        });
-
-        console.log('✅ Clientes procesados y cargados en tabla');
-        setError(null);
-        setInitialized(true);
-      } else {
-        console.log('⚠️ No se encontraron clientes en la base de datos');
+      if (!clientesData || clientesData.length === 0) {
+        console.log('⚠️ No hay clientes en la BD');
         setClientes([]);
         setFilteredClientes([]);
-        setEstadisticas({
-          total_clientes: 0,
-          facturacion_total: 0,
-          promedio: 0,
-        });
-        setInitialized(true);
+        setLoadingClientes(false);
+        return;
       }
+
+      // Procesar clientes
+      const clientesProcesados = clientesData.map((cliente, index) => ({
+        ...cliente,
+        posicion: index + 1,
+        total_facturado: parseFloat(cliente.total_facturado || 0),
+        estado: cliente.estado || 'Activo',
+      }));
+
+      console.log('🔍 DEBUG: Clientes procesados:', clientesProcesados);
+      console.log(
+        '🔍 DEBUG: filteredClientes después de set:',
+        clientesProcesados.length
+      );
+
+      // Actualizar estado de manera síncrona
+      setClientes(clientesProcesados);
+      setFilteredClientes(clientesProcesados);
+
+      console.log(
+        '✅',
+        clientesProcesados.length,
+        'clientes cargados exitosamente'
+      );
+
+      // Calcular estadísticas
+      const totalFacturado = clientesProcesados.reduce(
+        (sum, c) => sum + parseFloat(c.total_facturado || 0),
+        0
+      );
+
+      setEstadisticas({
+        total: clientesProcesados.length,
+        activos: clientesProcesados.filter(c => c.estado === 'Activo').length,
+        total_facturado: totalFacturado,
+        promedio: totalFacturado / clientesProcesados.length,
+      });
+
+      console.log('✅ Clientes procesados y cargados en tabla');
     } catch (error) {
-      console.error('❌ Error cargando clientes:', error);
-      setError(error.message);
+      console.error('❌ Error en cargarDatosClientes:', error);
       setClientes([]);
       setFilteredClientes([]);
-      setEstadisticas({ total_clientes: 0, facturacion_total: 0, promedio: 0 });
-      setInitialized(true);
     } finally {
       setLoadingClientes(false);
     }
@@ -171,19 +154,6 @@ const ClientsList = () => {
   useEffect(() => {
     console.log('🚀 ClientsList montado - Iniciando carga automática');
     cargarDatosClientes();
-
-    // Log adicional para monitorear cambios de estado
-    const interval = setInterval(() => {
-      console.log('📊 ESTADO ACTUAL:', {
-        clientes: clientes.length,
-        filteredClientes: filteredClientes.length,
-        loadingClientes,
-        searchTerm,
-        searchResults: !!searchResults,
-      });
-    }, 2000);
-
-    return () => clearInterval(interval);
   }, []);
 
   // Debug: Monitorear cambios en filteredClientes
@@ -255,12 +225,30 @@ const ClientsList = () => {
 
   // Efecto para búsqueda con debounce
   useEffect(() => {
+    if (!searchTerm.trim()) {
+      // Si no hay término de búsqueda, restaurar todos los clientes
+      setFilteredClientes(clientes);
+      setSearchResults(null);
+      return;
+    }
+
     const timer = setTimeout(() => {
       handleBusquedaInteligente(searchTerm);
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, clientes]);
+
+  // Efecto para sincronizar filteredClientes con clientes cuando no hay búsqueda
+  useEffect(() => {
+    if (!searchTerm && !searchResults && clientes.length > 0) {
+      console.log(
+        '🔄 Sincronizando filteredClientes con clientes:',
+        clientes.length
+      );
+      setFilteredClientes(clientes);
+    }
+  }, [clientes, searchTerm, searchResults]);
 
   // Aplicar filtros adicionales
   useEffect(() => {
@@ -700,7 +688,7 @@ const ClientsList = () => {
         <Card className='p-4'>
           <div className='text-center'>
             <p className='text-2xl font-bold text-blue-600'>
-              {estadisticas?.total_clientes || clientes.length}
+              {estadisticas?.total || clientes.length}
             </p>
             <p className='text-sm text-gray-600'>Total Clientes</p>
           </div>
@@ -717,7 +705,7 @@ const ClientsList = () => {
           <div className='text-center'>
             <p className='text-2xl font-bold text-yellow-600'>
               {formatCurrency(
-                estadisticas?.facturacion_total ||
+                estadisticas?.total_facturado ||
                   clientes.reduce(
                     (sum, c) => sum + parseFloat(c.total_facturado || 0),
                     0
