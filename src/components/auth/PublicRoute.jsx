@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import useAuth from '@/hooks/useAuth';
+import useAuth from '../../hooks/useAuth';
 
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -18,14 +18,14 @@ const PublicRoute = ({ children }) => {
     );
   }
 
-  // Si hay usuario, redirigir al dashboard
+  // Si el usuario ya está autenticado, redirigir al dashboard
   if (user) {
-    console.log('✅ Usuario autenticado, redirigiendo al dashboard');
+    console.log('🌐 PublicRoute - Usuario autenticado, redirigiendo a dashboard');
     return <Navigate to='/app/dashboard' replace />;
   }
 
-  // Si no hay usuario, mostrar contenido público
-  console.log('ℹ️ No hay usuario, mostrando página pública');
+  // Si no hay usuario, mostrar la página pública
+  console.log('🌐 PublicRoute - Sin usuario, renderizando página pública');
   return children;
 };
 

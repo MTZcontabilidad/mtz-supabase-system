@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import useAuth from '@/hooks/useAuth';
+import useAuth from '../../hooks/useAuth';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -18,14 +18,14 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  // Si no hay usuario, redirigir a login
+  // Redirigir a login si no hay usuario
   if (!user) {
-    console.log('❌ No hay usuario, redirigiendo a login');
-    return <Navigate to='/login' replace />;
+    console.log('🔒 ProtectedRoute - Redirigiendo a login (sin usuario)');
+    return <Navigate to='/login' state={{ from: location }} replace />;
   }
 
-  // Si hay usuario, mostrar contenido
-  console.log('✅ Usuario autenticado, mostrando contenido');
+  // Render los children si el usuario está autenticado
+  console.log('🔒 ProtectedRoute - Usuario autenticado, renderizando children');
   return children;
 };
 

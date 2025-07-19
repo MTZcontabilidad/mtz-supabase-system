@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/supabase';
 
 // Crear contexto de autenticación MINIMALISTA
 const AuthContext = createContext({
@@ -14,137 +14,231 @@ const AuthContext = createContext({
   hasPermission: () => false,
 });
 
-// Exportar el contexto
-export { AuthContext };
-
-// Proveedor de autenticación ULTRA-SIMPLIFICADO
-export const AuthProvider = ({ children }) => {
+// AuthProvider SÚPER SIMPLIFICADO
+const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [role, setRole] = useState(null);
+  const [permissions, setPermissions] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Función de login ULTRA-SIMPLE
-  const signIn = async (email, password) => {
+  // ==========================================
+  // 🔥 CONFIGURACIÓN DE SESIÓN AL CARGAR
+  // ==========================================
+  useEffect(() => {
+    console.log('🔥 AuthContext - Inicializando...');
+
+    // Obtener sesión inicial
+    const getInitialSession = async () => {
+      try {
+        console.log('🔍 AuthContext - Obteniendo sesión inicial...');
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error('❌ Error obteniendo sesión inicial:', error);
+          setLoading(false);
+          return;
+        }
+
+        if (session?.user) {
+          console.log('✅ Sesión inicial encontrada:', session.user.email);
+          setUser(session.user);
+          await loadUserProfile(session.user);
+        } else {
+          console.log('📝 No hay sesión inicial');
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error('❌ Error en getInitialSession:', error);
+        setLoading(false);
+      }
+    };
+
+    getInitialSession();
+
+    // Escuchar cambios de autenticación
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 AuthContext - Auth state change:', event);
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log('✅ Usuario logueado:', session.user.email);
+        setUser(session.user);
+        await loadUserProfile(session.user);
+      } else if (event === 'SIGNED_OUT' || !session) {
+        console.log('🚪 Usuario deslogueado');
+        setUser(null);
+        setUserProfile(null);
+        setRole(null);
+        setPermissions({});
+      }
+
+      setLoading(false);
+    });
+
+    return () => {
+      console.log('🧹 AuthContext - Cleanup subscription');
+      subscription?.unsubscribe();
+    };
+  }, []);
+
+  // ==========================================
+  // 🔍 CARGAR PERFIL DE USUARIO
+  // ==========================================
+  const loadUserProfile = async user => {
     try {
-      console.log('🔄 Intentando login con:', email);
-      
+      console.log('👤 Cargando perfil para:', user.email);
+
+      const { data: profile, error } = await supabase
+        .from('usuarios')
+        .select(
+          `
+          id,
+          email,
+          nombre_completo,
+          rol,
+          activo,
+          created_at
+        `
+        )
+        .eq('email', user.email)
+        .single();
+
+      if (error) {
+        console.warn('⚠️ Error cargando perfil (puede ser normal):', error);
+        // Si no existe el perfil, asumir rol 'user'
+        setRole('user');
+        setPermissions({ dashboard: true, clientes: true });
+        return;
+      }
+
+      if (profile) {
+        console.log('✅ Perfil cargado:', profile);
+        setUserProfile(profile);
+        setRole(profile.rol || 'user');
+
+        // Configurar permisos básicos basados en rol
+        const userPermissions = {
+          dashboard: true,
+          clientes: true,
+          admin: profile.rol === 'admin',
+        };
+        setPermissions(userPermissions);
+      }
+    } catch (error) {
+      console.error('❌ Error en loadUserProfile:', error);
+      // En caso de error, asumir permisos básicos
+      setRole('user');
+      setPermissions({ dashboard: true, clientes: true });
+    }
+  };
+
+  // ==========================================
+  // 🔐 FUNCIONES DE AUTENTICACIÓN
+  // ==========================================
+
+  const signIn = async ({ email, password }) => {
+    try {
+      console.log('🔐 Intentando login para:', email);
+      setLoading(true);
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error('❌ Error en login:', error);
-        return { data: null, error: error.message };
+        console.error('❌ Error en signIn:', error);
+        setLoading(false);
+        return { error };
       }
 
       console.log('✅ Login exitoso');
-      return { data, error: null };
+      return { data };
     } catch (error) {
-      console.error('❌ Error en signIn:', error);
-      return { data: null, error: error.message };
+      console.error('❌ Error inesperado en signIn:', error);
+      setLoading(false);
+      return { error: { message: 'Error inesperado en el login' } };
     }
   };
 
-  // Función de registro ULTRA-SIMPLE
-  const signUp = async (email, password, userData = {}) => {
+  const signUp = async ({ email, password, fullName }) => {
     try {
+      console.log('📝 Intentando registro para:', email);
+      setLoading(true);
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            nombre_completo: fullName,
+          },
+        },
       });
 
-      if (error) return { data: null, error: error.message };
-      return { data, error: null };
+      setLoading(false);
+
+      if (error) {
+        console.error('❌ Error en signUp:', error);
+        return { error };
+      }
+
+      console.log('✅ Registro exitoso');
+      return { data };
     } catch (error) {
-      return { data: null, error: error.message };
+      console.error('❌ Error inesperado en signUp:', error);
+      setLoading(false);
+      return { error: { message: 'Error inesperado en el registro' } };
     }
   };
 
-  // Función de logout ULTRA-SIMPLE
   const signOut = async () => {
     try {
-      console.log('🔄 Cerrando sesión...');
-      await supabase.auth.signOut();
-      setUser(null);
+      console.log('🚪 Cerrando sesión...');
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('❌ Error en signOut:', error);
+        return { error };
+      }
       console.log('✅ Sesión cerrada');
+      return { success: true };
     } catch (error) {
-      console.error('❌ Error en logout:', error);
+      console.error('❌ Error inesperado en signOut:', error);
+      return { error: { message: 'Error inesperado al cerrar sesión' } };
     }
   };
 
-  // Verificar permisos ULTRA-SIMPLE
-  const hasPermission = () => true; // Por simplicidad, siempre permitir
+  // ==========================================
+  // 🔒 FUNCIÓN DE PERMISOS
+  // ==========================================
+  const hasPermission = permission => {
+    return permissions[permission] || false;
+  };
 
-  // Inicialización ULTRA-SIMPLE
-  useEffect(() => {
-    let mounted = true;
-
-    const initAuth = async () => {
-      try {
-        console.log('🔄 Inicializando autenticación minimalista...');
-        
-        // Obtener sesión actual
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (mounted) {
-          if (session?.user) {
-            console.log('✅ Usuario encontrado:', session.user.email);
-            setUser(session.user);
-          } else {
-            console.log('ℹ️ No hay usuario autenticado');
-            setUser(null);
-          }
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('❌ Error en inicialización:', error);
-        if (mounted) {
-          setUser(null);
-          setLoading(false);
-        }
-      }
-    };
-
-    initAuth();
-
-    // Escuchar cambios de auth ULTRA-SIMPLE
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
-      
-      console.log('🔄 Auth cambió:', event);
-      
-      if (session?.user) {
-        setUser(session.user);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const value = {
+  // ==========================================
+  // 📦 CONTEXTO VALUE
+  // ==========================================
+  const contextValue = {
     user,
-    userProfile: user ? {
-      id: user.id,
-      email: user.email,
-      nombre_completo: user.email.split('@')[0],
-    } : null,
-    role: 'admin', // Simplificado: todos son admin
-    permissions: {},
+    userProfile,
+    role,
+    permissions,
     loading,
     signIn,
     signUp,
     signOut,
     hasPermission,
-    isAuthenticated: !!user,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+  );
 };
 
-export default AuthContext;
+export { AuthContext, AuthProvider };
