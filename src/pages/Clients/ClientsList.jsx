@@ -355,124 +355,118 @@ const ClientsList = () => {
   const columns = [
     {
       key: 'posicion',
-      label: '#',
-      sortable: true,
-      render: value => (
+      header: '#',
+      cell: item => (
         <div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
-          <span className='text-sm font-bold text-blue-600'>#{value}</span>
+          <span className='text-sm font-bold text-blue-600'>
+            #{item.posicion}
+          </span>
         </div>
       ),
     },
     {
       key: 'id_cliente',
-      label: 'Código',
-      sortable: true,
-      render: value => (
+      header: 'Código',
+      cell: item => (
         <span className='font-mono text-sm bg-gray-100 px-2 py-1 rounded'>
-          {value}
+          {item.id_cliente}
         </span>
       ),
     },
     {
       key: 'razon_social',
-      label: 'Razón Social',
-      sortable: true,
-      render: (value, cliente) => (
+      header: 'Razón Social',
+      cell: item => (
         <div>
-          <div className='font-medium text-gray-900'>{value}</div>
+          <div className='font-medium text-gray-900'>{item.razon_social}</div>
           <div className='text-sm text-gray-500'>
-            {cliente.categoria && (
+            {item.categoria && (
               <Badge
                 variant={
-                  cliente.categoria === 'VIP'
+                  item.categoria === 'VIP'
                     ? 'default'
-                    : cliente.categoria === 'Premium'
+                    : item.categoria === 'Premium'
                       ? 'secondary'
-                      : cliente.categoria === 'Top'
+                      : item.categoria === 'Top'
                         ? 'success'
                         : 'outline'
                 }
                 size='sm'
                 className='mr-2'
               >
-                {cliente.categoria}
+                {item.categoria}
               </Badge>
             )}
-            {cliente.rut && formatRUT(cliente.rut)}
+            {item.rut && formatRUT(item.rut)}
           </div>
         </div>
       ),
     },
     {
       key: 'tipo_empresa',
-      label: 'Tipo',
-      sortable: true,
-      render: value => (
+      header: 'Tipo',
+      cell: item => (
         <Badge variant='outline' size='sm'>
-          {value}
+          {item.tipo_empresa}
         </Badge>
       ),
     },
     {
       key: 'rubro',
-      label: 'Rubro',
-      sortable: true,
-      render: value => <span className='text-sm text-gray-600'>{value}</span>,
+      header: 'Rubro',
+      cell: item => <span className='text-sm text-gray-600'>{item.rubro}</span>,
     },
     {
       key: 'total_facturado',
-      label: 'Total Facturado',
-      sortable: true,
-      render: value => (
+      header: 'Total Facturado',
+      cell: item => (
         <div className='text-right'>
           <div className='font-semibold text-gray-900'>
-            {formatCurrency(value)}
+            {formatCurrency(item.total_facturado)}
           </div>
         </div>
       ),
     },
     {
       key: 'participacion_pct',
-      label: 'Participación',
-      sortable: true,
-      render: value => (
+      header: 'Participación',
+      cell: item => (
         <div className='text-center'>
           <span className='text-sm font-medium text-blue-600'>
-            {value ? `${value}%` : 'N/A'}
+            {item.participacion_pct ? `${item.participacion_pct}%` : 'N/A'}
           </span>
         </div>
       ),
     },
     {
       key: 'prioridad',
-      label: 'Prioridad',
-      sortable: true,
-      render: value => (
+      header: 'Prioridad',
+      cell: item => (
         <Badge
           variant={
-            value === 'CRÍTICA'
+            item.prioridad === 'CRÍTICA'
               ? 'destructive'
-              : value === 'ALTA'
+              : item.prioridad === 'ALTA'
                 ? 'warning'
-                : value === 'MEDIA'
+                : item.prioridad === 'MEDIA'
                   ? 'secondary'
                   : 'outline'
           }
           size='sm'
         >
-          {value || 'BAJA'}
+          {item.prioridad || 'BAJA'}
         </Badge>
       ),
     },
     {
       key: 'actions',
-      label: 'Acciones',
-      render: (_, cliente) => (
+      header: 'Acciones',
+      cell: item => (
         <div className='flex items-center gap-1'>
           <Button
             size='sm'
             variant='ghost'
-            onClick={() => handleAction('view', cliente)}
+            onClick={() => handleAction('view', item)}
             title='Ver detalles'
           >
             <Eye className='h-4 w-4' />
@@ -480,7 +474,7 @@ const ClientsList = () => {
           <Button
             size='sm'
             variant='ghost'
-            onClick={() => handleAction('edit', cliente)}
+            onClick={() => handleAction('edit', item)}
             title='Editar'
           >
             <Edit className='h-4 w-4' />
@@ -488,7 +482,7 @@ const ClientsList = () => {
           <Button
             size='sm'
             variant='ghost'
-            onClick={() => handleAction('delete', cliente)}
+            onClick={() => handleAction('delete', item)}
             title='Eliminar'
             className='text-red-600 hover:text-red-700'
           >
