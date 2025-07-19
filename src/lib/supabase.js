@@ -1,107 +1,83 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
-// Configuración de Supabase para MTZ
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://bwgnmastihgndmtbqvkj.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3Z25tYXN0aWhnbmRtdGJxdmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI3MzMzNzgsImV4cCI6MjA2ODMwOTM3OH0.ZTOHO8HXeDrsmBomYXX516Leq9WdRuM7lunqNI2uC8I'
+// 🔧 CONFIGURACIÓN SIMPLE Y DIRECTA
+const supabaseUrl = 'https://bwgnmastihgndmtbqvkj.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3Z25tYXN0aWhnbmRtdGJxdmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI3MzMzNzgsImV4cCI6MjA2ODMwOTM3OH0.ZTOHO8HXeDrsmBomYXX516Leq9WdRuM7lunqNI2uC8I';
 
-// Crear cliente de Supabase
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
+// Debug simple
+console.log('🚀 MTZ Sistema Iniciando...');
+console.log('✅ Configuración Supabase aplicada');
+
+// Crear cliente simple
+export const supabase = createClient(supabaseUrl, supabaseKey);
+
+/**
+ * Utilidades básicas para MTZ
+ */
+export const supabaseUtils = {
+  
+  async getClientes() {
+    const { data, error } = await supabase
+      .from('clientes_contables')
+      .select('*')
+      .order('total_facturado', { ascending: false });
+
+    if (error) {
+      console.error('Error obteniendo clientes:', error);
+      return [];
     }
-  }
-})
 
-// Función helper para manejar errores de Supabase
-export const handleSupabaseError = (error) => {
-  console.error('Error de Supabase:', error)
-  
-  if (error.message.includes('JWT')) {
-    return 'Sesión expirada. Por favor, inicia sesión nuevamente.'
-  }
-  
-  if (error.message.includes('row-level security')) {
-    return 'No tienes permisos para realizar esta acción.'
-  }
-  
-  return error.message || 'Error desconocido en la base de datos'
-}
-
-// Funciones de utilidad para autenticación
-export const authUtils = {
-  // Obtener usuario actual
-  getCurrentUser: async () => {
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error) throw error
-    return user
+    return data || [];
   },
 
-  // Cerrar sesión
-  signOut: async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-  },
-
-  // Verificar si el usuario está autenticado
-  isAuthenticated: async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    return !!session
-  }
-}
-
-// Funciones de utilidad para clientes
-export const clientUtils = {
-  // Obtener todos los clientes
-  getAllClients: async () => {
+  async buscarClientes(termino) {
     const { data, error } = await supabase
       .from('clientes_contables')
       .select('*')
-      .order('razon_social', { ascending: true })
-    
-    if (error) throw error
-    return data
+      .or(`razon_social.ilike.%${termino}%,rut.ilike.%${termino}%,email.ilike.%${termino}%`)
+      .order('total_facturado', { ascending: false });
+
+    if (error) {
+      console.error('Error buscando clientes:', error);
+      return [];
+    }
+
+    return data || [];
   },
 
-  // Obtener cliente por ID
-  getClientById: async (clientId) => {
+  async getEstadisticasDashboard() {
     const { data, error } = await supabase
       .from('clientes_contables')
-      .select('*')
-      .eq('id_cliente', clientId)
-      .single()
-    
-    if (error) throw error
-    return data
+      .select('total_facturado, estado, numero_facturas');
+
+    if (error) {
+      console.error('Error obteniendo estadísticas:', error);
+      return {
+        totalClientes: 0,
+        facturacionTotal: 0,
+        clientesActivos: 0,
+        promedioFacturacion: 0,
+      };
+    }
+
+    const totalClientes = data.length;
+    const facturacionTotal = data.reduce(
+      (sum, cliente) => sum + parseFloat(cliente.total_facturado || 0),
+      0
+    );
+    const clientesActivos = data.filter(
+      cliente => cliente.estado === 'Activo'
+    ).length;
+    const promedioFacturacion =
+      totalClientes > 0 ? facturacionTotal / totalClientes : 0;
+
+    return {
+      totalClientes,
+      facturacionTotal,
+      clientesActivos,
+      promedioFacturacion,
+    };
   },
+};
 
-  // Crear nuevo cliente
-  createClient: async (clientData) => {
-    const { data, error } = await supabase
-      .from('clientes_contables')
-      .insert([clientData])
-      .select()
-    
-    if (error) throw error
-    return data[0]
-  },
-
-  // Actualizar cliente
-  updateClient: async (clientId, updates) => {
-    const { data, error } = await supabase
-      .from('clientes_contables')
-      .update(updates)
-      .eq('id_cliente', clientId)
-      .select()
-    
-    if (error) throw error
-    return data[0]
-  }
-}
-
-export default supabase
+export default supabase;
