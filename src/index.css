@@ -18,7 +18,7 @@
   }
 
   .btn-primary {
-    @apply bg-mtz-primary text-white hover:bg-blue-700 focus:ring-blue-500;
+    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
   }
 
   .btn-secondary {
@@ -26,15 +26,15 @@
   }
 
   .btn-success {
-    @apply bg-mtz-accent text-white hover:bg-green-700 focus:ring-green-500;
+    @apply bg-success-600 text-white hover:bg-success-700 focus:ring-success-500;
   }
 
   .btn-warning {
-    @apply bg-mtz-warning text-white hover:bg-yellow-700 focus:ring-yellow-500;
+    @apply bg-warning-600 text-white hover:bg-warning-700 focus:ring-warning-500;
   }
 
   .btn-danger {
-    @apply bg-mtz-error text-white hover:bg-red-700 focus:ring-red-500;
+    @apply bg-danger-600 text-white hover:bg-danger-700 focus:ring-danger-500;
   }
 
   .card {
@@ -42,7 +42,7 @@
   }
 
   .input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mtz-primary focus:border-transparent;
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-transparent;
   }
 
   .badge {
