@@ -4,7 +4,6 @@
 // Componentes base
 export { default as Button } from './Button.jsx';
 export { default as Input } from './Input.jsx';
-export { default as Card } from './Card.jsx';
 export { default as Badge } from './Badge.jsx';
 export { default as Modal } from './Modal.jsx';
 export { default as LoadingSpinner } from './LoadingSpinner.jsx';
@@ -22,22 +21,17 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-  DialogClose,
 } from './Dialog.jsx';
 
 export {
+  Toast,
   ToastProvider,
   ToastViewport,
-  Toast,
+  ToastContent,
+  ToastClose,
   ToastTitle,
   ToastDescription,
-  ToastClose,
   ToastAction,
+  ToastWithIcon,
+  useToast,
 } from './Toast.jsx';
-
-// Componentes compartidos
-export { default as DataTable } from '../shared/DataTable.jsx';
-
-// Componentes de clientes
-export { default as SearchFilters } from '../clientes/SearchFilters.jsx';
-export { default as ClienteForm } from '../clientes/ClienteForm.jsx';
