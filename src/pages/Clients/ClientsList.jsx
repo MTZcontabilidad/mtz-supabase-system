@@ -156,28 +156,32 @@ const ClientsList = () => {
     cargarDatosClientes();
   }, []);
 
-  // Debug: Monitorear cambios en filteredClientes
+  // Efecto para búsqueda con debounce
   useEffect(() => {
-    console.log('🔍 DEBUG: filteredClientes cambió:', filteredClientes.length);
-    if (filteredClientes.length > 0) {
-      console.log(
-        '✅ Clientes disponibles para mostrar:',
-        filteredClientes.length
-      );
+    if (!searchTerm.trim()) {
+      // Si no hay término de búsqueda, restaurar todos los clientes
+      setFilteredClientes(clientes);
+      setSearchResults(null);
+      return;
     }
-  }, [filteredClientes]);
 
-  // Forzar carga si no se ha inicializado después de 2 segundos
-  useEffect(() => {
     const timer = setTimeout(() => {
-      if (!initialized && !loadingClientes) {
-        console.log('⏰ Forzando carga después de timeout');
-        cargarDatosClientes();
-      }
-    }, 2000);
+      handleBusquedaInteligente(searchTerm);
+    }, 500);
 
     return () => clearTimeout(timer);
-  }, [initialized, loadingClientes]);
+  }, [searchTerm]); // Removido clientes de las dependencias
+
+  // Efecto para sincronizar filteredClientes con clientes cuando no hay búsqueda
+  useEffect(() => {
+    if (!searchTerm && !searchResults && clientes.length > 0) {
+      console.log(
+        '🔄 Sincronizando filteredClientes con clientes:',
+        clientes.length
+      );
+      setFilteredClientes(clientes);
+    }
+  }, [clientes]); // Solo depende de clientes, no de searchTerm ni searchResults
 
   // Función para actualizar datos (conectada al botón Actualizar)
   const handleActualizar = async () => {
@@ -222,33 +226,6 @@ const ClientsList = () => {
       setLoading(false);
     }
   };
-
-  // Efecto para búsqueda con debounce
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      // Si no hay término de búsqueda, restaurar todos los clientes
-      setFilteredClientes(clientes);
-      setSearchResults(null);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      handleBusquedaInteligente(searchTerm);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm, clientes]);
-
-  // Efecto para sincronizar filteredClientes con clientes cuando no hay búsqueda
-  useEffect(() => {
-    if (!searchTerm && !searchResults && clientes.length > 0) {
-      console.log(
-        '🔄 Sincronizando filteredClientes con clientes:',
-        clientes.length
-      );
-      setFilteredClientes(clientes);
-    }
-  }, [clientes, searchTerm, searchResults]);
 
   // Aplicar filtros adicionales
   useEffect(() => {
@@ -758,16 +735,8 @@ const ClientsList = () => {
 
         {/* Tabla simple y funcional */}
         {(() => {
-          console.log('🔍 RENDERIZANDO TABLA:', {
-            loadingClientes,
-            filteredClientesLength: filteredClientes.length,
-            clientesLength: clientes.length,
-            searchTerm,
-            searchResults: !!searchResults,
-          });
-
+          // Solo log una vez por render, no en cada re-render
           if (loadingClientes) {
-            console.log('🔄 Mostrando loading...');
             return (
               <div className='text-center py-8'>
                 <RefreshCw className='h-8 w-8 mx-auto animate-spin text-blue-500' />
@@ -777,9 +746,6 @@ const ClientsList = () => {
           }
 
           if (filteredClientes.length === 0) {
-            console.log(
-              '❌ Mostrando "No hay clientes" - filteredClientes.length === 0'
-            );
             return (
               <div className='text-center py-8'>
                 <Users className='h-12 w-12 mx-auto text-gray-400' />
@@ -794,11 +760,6 @@ const ClientsList = () => {
             );
           }
 
-          console.log(
-            '✅ Mostrando tabla con',
-            filteredClientes.length,
-            'clientes'
-          );
           return (
             <div className='overflow-x-auto'>
               <table className='w-full border-collapse'>
