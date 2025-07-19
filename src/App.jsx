@@ -17,8 +17,8 @@ function App() {
     <AuthProvider>
       <div className='min-h-screen bg-gray-50'>
         <Routes>
-          {/* Ruta raíz - redirigir al login */}
-          <Route path='/' element={<Navigate to='/login' replace />} />
+          {/* Ruta raíz - LandingPage */}
+          <Route path='/' element={<LandingPage />} />
 
           {/* Rutas públicas */}
           <Route
