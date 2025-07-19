@@ -14,7 +14,7 @@ Hola Claude, necesito que uses tus capacidades MCP para **configurar y verificar
 - **Tipo:** Sistema de gestión empresarial con IA conversacional
 - **Stack:** React 18 + Vite + Supabase + Vercel
 - **Estado:** ✅ DESPLEGADO EN PRODUCCIÓN
-- **URL Producción:** https://mtz-supabase-system-r9fbhnqha.vercel.app
+- **URL Producción:** https://mtz-supabase-system-iuvivm3ph.vercel.app
 - **URL GitHub:** https://github.com/MTZcontabilidad/mtz-supabase-system
 
 ### **Credenciales Supabase:**
@@ -158,7 +158,7 @@ mcp_Browserbase_multi_browserbase_stagehand_session_create({
 // Navegar a la aplicación
 mcp_Browserbase_multi_browserbase_stagehand_navigate_session({
   sessionId: 'session-id',
-  url: 'https://mtz-supabase-system-r9fbhnqha.vercel.app',
+  url: 'https://mtz-supabase-system-iuvivm3ph.vercel.app',
 });
 
 // Probar login
