@@ -56,6 +56,7 @@ const ClientsList = () => {
   // const [selectedClientes, setSelectedClientes] = useState([]); // Removido - DataTable no soporta selección
   const [searchResults, setSearchResults] = useState(null);
   const [estadisticas, setEstadisticas] = useState({});
+  const [error, setError] = useState(null);
 
   // Cargar TODOS los clientes directamente desde Supabase
   const cargarDatosClientes = async () => {
@@ -127,6 +128,7 @@ const ClientsList = () => {
         });
 
         console.log('✅ Clientes procesados y cargados en tabla');
+        setError(null); // Limpiar error si la carga es exitosa
       } else {
         console.log('⚠️ No se encontraron clientes en la base de datos');
         setClientes([]);
@@ -139,6 +141,7 @@ const ClientsList = () => {
       }
     } catch (error) {
       console.error('❌ Error cargando clientes:', error);
+      setError(error.message);
       setClientes([]);
       setFilteredClientes([]);
       setEstadisticas({ total_clientes: 0, facturacion_total: 0, promedio: 0 });
