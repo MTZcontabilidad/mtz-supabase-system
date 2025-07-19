@@ -28,140 +28,140 @@ import useSupabaseAvanzado from '../../hooks/useSupabaseAvanzado.js';
  * Integrado con consultas optimizadas de Supabase
  */
 const Dashboard = () => {
-  const { role } = useAuth();
-  const {
-    dashboardData,
-    loading,
-    error,
-    loadDashboardData,
-    refreshData
-  } = useSupabaseAvanzado();
+  const { user } = useAuth();
+  const { loading, error, dashboardData, refetch } = useSupabaseAvanzado();
 
-  // Estados del dashboard
   const [showCargaMasiva, setShowCargaMasiva] = useState(false);
   const [showExportData, setShowExportData] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
 
-  // Cargar datos al montar el componente
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  // Datos optimizados directos (sin Promise.all ni setInterval)
+  const metricasTiempoReal = dashboardData;
+  const rankingClientes = { top_clientes: dashboardData?.top_clientes || [] };
+  const proyecciones = {
+    proyecciones_2025: dashboardData?.proyecciones_2025 || {},
+    oportunidades_detectadas: dashboardData?.oportunidades_detectadas || [],
+  };
+  const ultimaActualizacion = new Date(dashboardData?.timestamp || Date.now());
 
-  // Función para refrescar datos manualmente
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await refreshData();
-    setTimeout(() => setRefreshing(false), 1000);
+  // Función para formatear moneda
+  const formatCurrency = amount => {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount || 0);
   };
 
-  // Métricas del dashboard (fallback si no hay datos)
-  const metrics = dashboardData || {
-    totalClientes: 125,
-    clientesActivos: 98,
-    facturacionTotal: 2540000,
-    ventasMes: 185000,
-    crecimientoMensual: 12.5,
-    satisfaccionCliente: 94.2,
-    proyectosActivos: 23,
-    tareasPendientes: 7
+  // Función para formatear números
+  const formatNumber = num => {
+    return new Intl.NumberFormat('es-CL').format(num || 0);
   };
 
-  const quickStats = [
-    {
-      title: 'Total Clientes',
-      value: metrics.totalClientes || 0,
-      change: '+8.2%',
-      icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-    },
-    {
-      title: 'Facturación Total',
-      value: `$${(metrics.facturacionTotal || 0).toLocaleString()}`,
-      change: '+15.3%',
-      icon: DollarSign,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-    },
-    {
-      title: 'Crecimiento',
-      value: `${metrics.crecimientoMensual || 0}%`,
-      change: '+2.1%',
-      icon: TrendingUp,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-    },
-    {
-      title: 'Satisfacción',
-      value: `${metrics.satisfaccionCliente || 0}%`,
-      change: '+0.8%',
-      icon: Star,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-50',
-    },
-  ];
+  // Generar datos para gráficos
+  const generateChartData = () => {
+    if (!rankingClientes?.top_clientes)
+      return { clientesPorCategoria: [], topClientes: [] };
 
-  const actividadReciente = [
-    {
-      id: 1,
-      tipo: 'nuevo_cliente',
-      titulo: 'Nuevo cliente registrado',
-      descripcion: 'Empresa Tech Innovations S.A.',
-      tiempo: 'Hace 2 horas',
-      icon: Users,
-      color: 'text-green-600',
-    },
-    {
-      id: 2,
-      tipo: 'factura',
-      titulo: 'Factura generada',
-      descripcion: 'Factura #2024-001 por $850.000',
-      tiempo: 'Hace 4 horas',
-      icon: FileText,
-      color: 'text-blue-600',
-    },
-    {
-      id: 3,
-      tipo: 'reunion',
-      titulo: 'Reunión programada',
-      descripcion: 'Revisión proyecto MTZ Analytics',
-      tiempo: 'Hace 6 horas',
-      icon: Calendar,
-      color: 'text-purple-600',
-    },
-    {
-      id: 4,
-      tipo: 'alerta',
-      titulo: 'Pago pendiente',
-      descripcion: 'Cliente XYZ - Factura vencida',
-      tiempo: 'Hace 1 día',
-      icon: AlertTriangle,
-      color: 'text-red-600',
-    },
-  ];
+    // Distribución por categoría
+    const categorias = {};
+    rankingClientes.top_clientes.forEach(cliente => {
+      const categoria = cliente.categoria || 'Sin Categoría';
+      if (!categorias[categoria]) {
+        categorias[categoria] = { count: 0, facturacion: 0 };
+      }
+      categorias[categoria].count++;
+      categorias[categoria].facturacion += cliente.total_facturado;
+    });
 
-  if (loading) {
+    const clientesPorCategoria = Object.entries(categorias).map(
+      ([categoria, data]) => ({
+        name: categoria,
+        clientes: data.count,
+        facturacion: data.facturacion,
+        color:
+          categoria === 'VIP'
+            ? '#8B5CF6'
+            : categoria === 'Premium'
+              ? '#3B82F6'
+              : categoria === 'Top'
+                ? '#10B981'
+                : categoria === 'Regular'
+                  ? '#F59E0B'
+                  : '#6B7280',
+      })
+    );
+
+    // Top clientes para gráfico
+    const topClientes = rankingClientes.top_clientes
+      .slice(0, 5)
+      .map(cliente => ({
+        name:
+          cliente.razon_social.length > 20
+            ? cliente.razon_social.substring(0, 20) + '...'
+            : cliente.razon_social,
+        facturacion: cliente.total_facturado,
+        participacion: cliente.participacion_pct,
+      }));
+
+    return { clientesPorCategoria, topClientes };
+  };
+
+  const chartData = generateChartData();
+
+  // Obtener alertas importantes
+  const getAlertas = () => {
+    if (!rankingClientes?.top_clientes) return [];
+
+    const alertas = [];
+
+    rankingClientes.top_clientes.forEach(cliente => {
+      if (cliente.prioridad === 'CRÍTICA') {
+        alertas.push({
+          tipo: 'critica',
+          titulo: 'Cliente Estratégico',
+          mensaje: `${cliente.razon_social} requiere atención inmediata`,
+          valor: formatCurrency(cliente.total_facturado),
+          icon: AlertTriangle,
+          color: 'text-red-600',
+        });
+      } else if (cliente.prioridad === 'ALTA') {
+        alertas.push({
+          tipo: 'alta',
+          titulo: 'Seguimiento VIP',
+          mensaje: `${cliente.razon_social} requiere seguimiento especializado`,
+          valor: formatCurrency(cliente.total_facturado),
+          icon: Star,
+          color: 'text-yellow-600',
+        });
+      }
+    });
+
+    return alertas.slice(0, 3); // Mostrar máximo 3 alertas
+  };
+
+  const alertas = getAlertas();
+
+  if (loading && !metricasTiempoReal) {
     return (
-      <div className='flex items-center justify-center min-h-96'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4'></div>
-          <p className='text-gray-600'>Cargando dashboard...</p>
-        </div>
+      <div className='flex items-center justify-center h-64'>
+        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+        <span className='ml-3 text-lg'>Cargando análisis ejecutivo...</span>
       </div>
     );
   }
 
-  if (error) {
+  if (error && !metricasTiempoReal) {
     return (
-      <div className='text-center py-12'>
-        <div className='bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto'>
-          <AlertTriangle className='h-12 w-12 text-red-500 mx-auto mb-4' />
-          <h3 className='text-lg font-medium text-red-900 mb-2'>Error al cargar datos</h3>
-          <p className='text-red-700 mb-4'>{error}</p>
-          <Button onClick={handleRefresh} variant='outline'>
-            <RefreshCw className='w-4 h-4 mr-2' />
-            Intentar de nuevo
+      <div className='flex items-center justify-center h-64'>
+        <div className='text-center'>
+          <h2 className='text-2xl font-bold text-red-600 mb-4'>
+            Error al cargar dashboard
+          </h2>
+          <p className='text-gray-600 mb-4'>{error}</p>
+          <Button onClick={refetch}>
+            <RefreshCw className='h-4 w-4 mr-2' />
+            Reintentar
           </Button>
         </div>
       </div>
@@ -170,223 +170,355 @@ const Dashboard = () => {
 
   return (
     <div className='space-y-6'>
-      {/* Header con título y acciones */}
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
+      {/* Header con información en tiempo real */}
+      <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Dashboard Ejecutivo</h1>
-          <p className='text-gray-600 mt-1'>
-            Resumen general y métricas clave del sistema MTZ
+          <h1 className='text-3xl font-bold text-gray-900 flex items-center gap-2'>
+            <Zap className='h-8 w-8 text-blue-600' />
+            Dashboard Ejecutivo MTZ
+          </h1>
+          <p className='text-gray-600 flex items-center gap-2 mt-1'>
+            <span>
+              Bienvenido, {user?.user_metadata?.full_name || user?.email}
+            </span>
+            <Badge variant='outline' className='ml-2'>
+              {metricasTiempoReal?.sistema_status?.estado || 'Cargando...'}
+            </Badge>
+          </p>
+          <p className='text-sm text-gray-500 mt-1'>
+            Última actualización:{' '}
+            {ultimaActualizacion.toLocaleTimeString('es-CL')} | Latencia:{' '}
+            {metricasTiempoReal?.sistema_status?.latencia_promedio || 'N/A'}
           </p>
         </div>
-        <div className='flex gap-3'>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={handleRefresh}
-            disabled={refreshing}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+
+        <div className='flex flex-wrap gap-2'>
+          <Button onClick={refetch} disabled={loading}>
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`}
+            />
             Actualizar
           </Button>
-          {role === 'admin' && (
-            <>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setShowCargaMasiva(true)}
-              >
-                <Upload className='w-4 h-4 mr-2' />
-                Carga Masiva
-              </Button>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setShowExportData(true)}
-              >
-                <Download className='w-4 h-4 mr-2' />
-                Exportar
-              </Button>
-            </>
-          )}
+          <Button onClick={() => setShowCargaMasiva(true)}>
+            <Upload className='h-4 w-4 mr-2' />
+            Carga Masiva
+          </Button>
+          <Button variant='outline' onClick={() => setShowExportData(true)}>
+            <Download className='h-4 w-4 mr-2' />
+            Exportar
+          </Button>
         </div>
       </div>
 
-      {/* Estadísticas rápidas */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-        {quickStats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={index} className='p-6 hover:shadow-md transition-shadow'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <p className='text-sm font-medium text-gray-600'>{stat.title}</p>
-                  <p className='text-2xl font-bold text-gray-900 mt-1'>{stat.value}</p>
-                  <div className='flex items-center mt-2'>
-                    <span className='text-sm font-medium text-green-600'>{stat.change}</span>
-                    <span className='text-sm text-gray-500 ml-1'>vs mes anterior</span>
-                  </div>
-                </div>
-                <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                  <Icon className={`w-6 h-6 ${stat.color}`} />
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Gráficos y análisis */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-        {/* Gráfico de clientes */}
-        <Card className='p-6'>
-          <div className='flex items-center justify-between mb-6'>
-            <h3 className='text-lg font-semibold text-gray-900'>Análisis de Clientes</h3>
-            <div className='flex items-center gap-2'>
-              <select 
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className='text-sm border border-gray-300 rounded px-2 py-1'
+      {/* Alertas importantes */}
+      {alertas.length > 0 && (
+        <Card className='p-4 border-orange-200 bg-orange-50'>
+          <h3 className='text-lg font-semibold text-orange-800 mb-3 flex items-center gap-2'>
+            <AlertTriangle className='h-5 w-5' />
+            Alertas Importantes
+          </h3>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            {alertas.map((alerta, index) => (
+              <div
+                key={index}
+                className='flex items-start gap-3 p-3 bg-white rounded-lg border'
               >
-                <option value='week'>Esta semana</option>
-                <option value='month'>Este mes</option>
-                <option value='quarter'>Este trimestre</option>
-                <option value='year'>Este año</option>
-              </select>
+                <alerta.icon className={`h-5 w-5 mt-0.5 ${alerta.color}`} />
+                <div className='flex-1 min-w-0'>
+                  <p className='font-medium text-gray-900'>{alerta.titulo}</p>
+                  <p className='text-sm text-gray-600'>{alerta.mensaje}</p>
+                  <p className='text-sm font-semibold text-blue-600'>
+                    {alerta.valor}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Métricas principales en tiempo real */}
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+        <Card className='p-6 border-l-4 border-l-blue-500'>
+          <div className='flex items-center justify-between'>
+            <div>
+              <p className='text-sm font-medium text-gray-600'>
+                Clientes Activos
+              </p>
+              <p className='text-3xl font-bold text-gray-900'>
+                {formatNumber(
+                  metricasTiempoReal?.kpis_principales?.clientes_activos || 0
+                )}
+              </p>
+              <p className='text-sm text-blue-600 flex items-center gap-1'>
+                <Activity className='h-4 w-4' />
+                En tiempo real
+              </p>
+            </div>
+            <div className='p-3 bg-blue-100 rounded-full'>
+              <Users className='h-6 w-6 text-blue-600' />
             </div>
           </div>
-          <ClientesChart data={dashboardData?.chartData} />
         </Card>
 
-        {/* Actividad reciente */}
-        <Card className='p-6'>
-          <div className='flex items-center justify-between mb-6'>
-            <h3 className='text-lg font-semibold text-gray-900'>Actividad Reciente</h3>
-            <Badge variant='outline' size='sm'>
-              {actividadReciente.length} eventos
-            </Badge>
+        <Card className='p-6 border-l-4 border-l-green-500'>
+          <div className='flex items-center justify-between'>
+            <div>
+              <p className='text-sm font-medium text-gray-600'>
+                Facturación Total
+              </p>
+              <p className='text-3xl font-bold text-gray-900'>
+                {formatCurrency(
+                  metricasTiempoReal?.kpis_principales?.facturacion_total || 0
+                )}
+              </p>
+              <p className='text-sm text-green-600'>Portfolio completo</p>
+            </div>
+            <div className='p-3 bg-green-100 rounded-full'>
+              <DollarSign className='h-6 w-6 text-green-600' />
+            </div>
           </div>
+        </Card>
+
+        <Card className='p-6 border-l-4 border-l-yellow-500'>
+          <div className='flex items-center justify-between'>
+            <div>
+              <p className='text-sm font-medium text-gray-600'>
+                Ticket Promedio
+              </p>
+              <p className='text-3xl font-bold text-gray-900'>
+                {formatCurrency(
+                  metricasTiempoReal?.kpis_principales?.ticket_promedio || 0
+                )}
+              </p>
+              <p className='text-sm text-yellow-600'>Por cliente</p>
+            </div>
+            <div className='p-3 bg-yellow-100 rounded-full'>
+              <FileText className='h-6 w-6 text-yellow-600' />
+            </div>
+          </div>
+        </Card>
+
+        <Card className='p-6 border-l-4 border-l-purple-500'>
+          <div className='flex items-center justify-between'>
+            <div>
+              <p className='text-sm font-medium text-gray-600'>Score General</p>
+              <p className='text-3xl font-bold text-gray-900'>
+                {metricasTiempoReal?.salud_cartera?.score_general || 0}/10
+              </p>
+              <p className='text-sm text-purple-600'>
+                {metricasTiempoReal?.salud_cartera?.nivel_diversificacion ||
+                  'N/A'}
+              </p>
+            </div>
+            <div className='p-3 bg-purple-100 rounded-full'>
+              <Target className='h-6 w-6 text-purple-600' />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Proyecciones 2025 */}
+      {proyecciones?.proyecciones_2025 && (
+        <Card className='p-6'>
+          <h3 className='text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2'>
+            <TrendingUp className='h-6 w-6 text-green-600' />
+            Proyecciones Estratégicas 2025
+          </h3>
+          <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+            <div className='text-center p-4 bg-gray-50 rounded-lg'>
+              <p className='text-sm text-gray-600'>Facturación Actual</p>
+              <p className='text-2xl font-bold text-gray-900'>
+                {formatCurrency(
+                  proyecciones.proyecciones_2025.facturacion_actual
+                )}
+              </p>
+            </div>
+            <div className='text-center p-4 bg-blue-50 rounded-lg'>
+              <p className='text-sm text-blue-600'>Proyección Agosto</p>
+              <p className='text-2xl font-bold text-blue-700'>
+                {formatCurrency(
+                  proyecciones.proyecciones_2025.proyeccion_agosto
+                )}
+              </p>
+            </div>
+            <div className='text-center p-4 bg-green-50 rounded-lg'>
+              <p className='text-sm text-green-600'>Proyección Q4</p>
+              <p className='text-2xl font-bold text-green-700'>
+                {formatCurrency(proyecciones.proyecciones_2025.proyeccion_q4)}
+              </p>
+            </div>
+            <div className='text-center p-4 bg-yellow-50 rounded-lg'>
+              <p className='text-sm text-yellow-600'>Meta Anual</p>
+              <p className='text-2xl font-bold text-yellow-700'>
+                {formatCurrency(proyecciones.proyecciones_2025.meta_anual_2025)}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Gráficos */}
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+        {/* Top Clientes */}
+        <Card className='p-6'>
+          <h3 className='text-lg font-semibold text-gray-900 mb-4'>
+            Top 5 Clientes
+          </h3>
+          <ClientesChart
+            data={chartData.topClientes}
+            type='bar'
+            xKey='name'
+            yKey='facturacion'
+            height={300}
+          />
+        </Card>
+
+        {/* Distribución por Categoría */}
+        <Card className='p-6'>
+          <h3 className='text-lg font-semibold text-gray-900 mb-4'>
+            Distribución por Categoría
+          </h3>
+          <ClientesChart
+            data={chartData.clientesPorCategoria}
+            type='pie'
+            yKey='clientes'
+            height={300}
+          />
+        </Card>
+      </div>
+
+      {/* Ranking de clientes */}
+      {rankingClientes?.top_clientes && (
+        <Card className='p-6'>
+          <h3 className='text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2'>
+            <BarChart3 className='h-5 w-5' />
+            Ranking de Clientes
+          </h3>
           <div className='space-y-4'>
-            {actividadReciente.map(actividad => {
-              const Icon = actividad.icon;
-              return (
-                <div key={actividad.id} className='flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors'>
-                  <div className={`p-2 rounded-lg bg-gray-50`}>
-                    <Icon className={`w-4 h-4 ${actividad.color}`} />
+            {rankingClientes.top_clientes.slice(0, 8).map(cliente => (
+              <div
+                key={cliente.id_cliente}
+                className='flex items-center justify-between p-4 bg-gray-50 rounded-lg'
+              >
+                <div className='flex items-center gap-4'>
+                  <div className='w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center'>
+                    <span className='text-lg font-bold text-blue-600'>
+                      #{cliente.posicion}
+                    </span>
                   </div>
-                  <div className='flex-1 min-w-0'>
-                    <p className='text-sm font-medium text-gray-900 truncate'>
-                      {actividad.titulo}
+                  <div>
+                    <p className='font-semibold text-gray-900'>
+                      {cliente.razon_social}
                     </p>
-                    <p className='text-sm text-gray-600 truncate'>
-                      {actividad.descripcion}
+                    <p className='text-sm text-gray-500'>
+                      {cliente.categoria && (
+                        <Badge
+                          variant={
+                            cliente.categoria === 'VIP'
+                              ? 'default'
+                              : cliente.categoria === 'Premium'
+                                ? 'secondary'
+                                : cliente.categoria === 'Top'
+                                  ? 'success'
+                                  : 'outline'
+                          }
+                          className='mr-2'
+                        >
+                          {cliente.categoria}
+                        </Badge>
+                      )}
+                      {cliente.participacion_pct}% del total
                     </p>
-                    <p className='text-xs text-gray-500 mt-1'>{actividad.tiempo}</p>
                   </div>
                 </div>
-              );
-            })}
+                <div className='text-right'>
+                  <p className='text-lg font-bold text-gray-900'>
+                    {formatCurrency(cliente.total_facturado)}
+                  </p>
+                  <Badge
+                    variant={
+                      cliente.prioridad === 'CRÍTICA'
+                        ? 'destructive'
+                        : cliente.prioridad === 'ALTA'
+                          ? 'warning'
+                          : cliente.prioridad === 'MEDIA'
+                            ? 'secondary'
+                            : 'outline'
+                    }
+                  >
+                    {cliente.prioridad}
+                  </Badge>
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
-      </div>
-
-      {/* Métricas avanzadas */}
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-        <Card className='p-6'>
-          <div className='flex items-center gap-3 mb-4'>
-            <div className='p-2 bg-blue-50 rounded-lg'>
-              <Target className='w-5 h-5 text-blue-600' />
-            </div>
-            <h3 className='font-semibold text-gray-900'>Objetivos del Mes</h3>
-          </div>
-          <div className='space-y-3'>
-            <div>
-              <div className='flex justify-between text-sm mb-1'>
-                <span>Nuevos Clientes</span>
-                <span>8/12</span>
-              </div>
-              <div className='w-full bg-gray-200 rounded-full h-2'>
-                <div className='bg-blue-600 h-2 rounded-full' style={{ width: '67%' }}></div>
-              </div>
-            </div>
-            <div>
-              <div className='flex justify-between text-sm mb-1'>
-                <span>Facturación</span>
-                <span>$185k/$200k</span>
-              </div>
-              <div className='w-full bg-gray-200 rounded-full h-2'>
-                <div className='bg-green-600 h-2 rounded-full' style={{ width: '92%' }}></div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className='p-6'>
-          <div className='flex items-center gap-3 mb-4'>
-            <div className='p-2 bg-green-50 rounded-lg'>
-              <Activity className='w-5 h-5 text-green-600' />
-            </div>
-            <h3 className='font-semibold text-gray-900'>Performance</h3>
-          </div>
-          <div className='space-y-2'>
-            <div className='flex justify-between text-sm'>
-              <span>Tiempo respuesta</span>
-              <Badge variant='success' size='sm'>Excelente</Badge>
-            </div>
-            <div className='flex justify-between text-sm'>
-              <span>Uptime sistema</span>
-              <span className='font-medium'>99.9%</span>
-            </div>
-            <div className='flex justify-between text-sm'>
-              <span>Satisfacción</span>
-              <span className='font-medium text-green-600'>94.2%</span>
-            </div>
-          </div>
-        </Card>
-
-        <Card className='p-6'>
-          <div className='flex items-center gap-3 mb-4'>
-            <div className='p-2 bg-purple-50 rounded-lg'>
-              <Zap className='w-5 h-5 text-purple-600' />
-            </div>
-            <h3 className='font-semibold text-gray-900'>Acciones Rápidas</h3>
-          </div>
-          <div className='space-y-2'>
-            <Button variant='outline' size='sm' className='w-full justify-start'>
-              <Users className='w-4 h-4 mr-2' />
-              Nuevo Cliente
-            </Button>
-            <Button variant='outline' size='sm' className='w-full justify-start'>
-              <FileText className='w-4 h-4 mr-2' />
-              Generar Reporte
-            </Button>
-            <Button variant='outline' size='sm' className='w-full justify-start'>
-              <BarChart3 className='w-4 h-4 mr-2' />
-              Ver Analytics
-            </Button>
-          </div>
-        </Card>
-      </div>
-
-      {/* Modales */}
-      {showCargaMasiva && (
-        <CargaMasiva
-          isOpen={showCargaMasiva}
-          onClose={() => setShowCargaMasiva(false)}
-          onUploadComplete={(results) => {
-            console.log('Carga masiva completada:', results);
-            handleRefresh();
-          }}
-        />
       )}
 
-      {showExportData && (
-        <ExportData
-          isOpen={showExportData}
-          onClose={() => setShowExportData(false)}
-          data={dashboardData?.rawData || []}
-          filename='dashboard-export'
-        />
+      {/* Oportunidades identificadas */}
+      {proyecciones?.oportunidades_detectadas && (
+        <Card className='p-6'>
+          <h3 className='text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2'>
+            <Target className='h-5 w-5 text-green-600' />
+            Oportunidades Identificadas
+          </h3>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            {proyecciones.oportunidades_detectadas.map((oportunidad, index) => (
+              <div
+                key={index}
+                className='p-4 bg-green-50 rounded-lg border border-green-200'
+              >
+                <h4 className='font-semibold text-green-800'>
+                  {oportunidad.tipo}
+                </h4>
+                <p className='text-2xl font-bold text-green-700 my-2'>
+                  {formatCurrency(oportunidad.valor_estimado)}
+                </p>
+                <p className='text-sm text-green-600'>
+                  Probabilidad: {oportunidad.probabilidad}
+                </p>
+                {oportunidad.clientes_objetivo && (
+                  <p className='text-sm text-gray-600'>
+                    {oportunidad.clientes_objetivo} clientes objetivo
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
+
+      {/* Componentes modales */}
+      <CargaMasiva
+        open={showCargaMasiva}
+        onOpenChange={setShowCargaMasiva}
+        onImport={() => {}} // Implementar según necesidades
+        loading={loading}
+      />
+
+      <ExportData
+        open={showExportData}
+        onOpenChange={setShowExportData}
+        data={rankingClientes?.top_clientes || []}
+        columns={[
+          { key: 'posicion', label: 'Posición', format: 'number' },
+          { key: 'razon_social', label: 'Razón Social', format: 'text' },
+          {
+            key: 'total_facturado',
+            label: 'Total Facturado',
+            format: 'currency',
+          },
+          {
+            key: 'participacion_pct',
+            label: 'Participación %',
+            format: 'number',
+          },
+          { key: 'categoria', label: 'Categoría', format: 'text' },
+          { key: 'prioridad', label: 'Prioridad', format: 'text' },
+        ]}
+        filename='ranking-clientes-mtz'
+      />
     </div>
   );
 };
