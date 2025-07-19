@@ -18,79 +18,41 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
-/**
- * Utilidades MTZ
- */
-export const supabaseUtils = {
-  async getClientes() {
-    const { data, error } = await supabase
-      .from('clientes_contables')
-      .select('*')
-      .order('total_facturado', { ascending: false });
+// Funciones de utilidad simplificadas
+export const getClientes = async () => {
+  const { data, error } = await supabase
+    .from('clientes_contables')
+    .select('*')
+    .order('total_facturado', { ascending: false });
 
-    if (error) {
-      console.error('Error obteniendo clientes:', error);
-      return [];
-    }
+  if (error) {
+    console.error('Error obteniendo clientes:', error);
+    return [];
+  }
 
-    return data || [];
-  },
+  return data || [];
+};
 
-  async getEstadisticasDashboard() {
-    const { data, error } = await supabase
-      .from('clientes_contables')
-      .select('total_facturado, estado, numero_facturas');
+export const buscarClientes = async termino => {
+  if (!termino.trim()) {
+    return [];
+  }
 
-    if (error) {
-      console.error('Error obteniendo estadísticas:', error);
-      return {
-        totalClientes: 0,
-        facturacionTotal: 0,
-        clientesActivos: 0,
-        promedioFacturacion: 0,
-      };
-    }
+  const { data, error } = await supabase
+    .from('clientes_contables')
+    .select('*')
+    .or(
+      `razon_social.ilike.%${termino}%,rut.ilike.%${termino}%,id_cliente.ilike.%${termino}%`
+    )
+    .order('total_facturado', { ascending: false })
+    .limit(20);
 
-    const totalClientes = data.length;
-    const facturacionTotal = data.reduce(
-      (sum, cliente) => sum + parseFloat(cliente.total_facturado || 0),
-      0
-    );
-    const clientesActivos = data.filter(
-      cliente => cliente.estado === 'Activo'
-    ).length;
-    const promedioFacturacion =
-      totalClientes > 0 ? facturacionTotal / totalClientes : 0;
+  if (error) {
+    console.error('Error buscando clientes:', error);
+    return [];
+  }
 
-    return {
-      totalClientes,
-      facturacionTotal,
-      clientesActivos,
-      promedioFacturacion,
-    };
-  },
-
-  async buscarClientes(termino) {
-    if (!termino.trim()) {
-      return [];
-    }
-
-    const { data, error } = await supabase
-      .from('clientes_contables')
-      .select('*')
-      .or(
-        `razon_social.ilike.%${termino}%,rut.ilike.%${termino}%,id_cliente.ilike.%${termino}%`
-      )
-      .order('total_facturado', { ascending: false })
-      .limit(20);
-
-    if (error) {
-      console.error('Error buscando clientes:', error);
-      return [];
-    }
-
-    return data || [];
-  },
+  return data || [];
 };
 
 // Exportar configuración para debug

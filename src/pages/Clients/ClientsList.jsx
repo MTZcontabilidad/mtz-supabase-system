@@ -34,7 +34,7 @@ import useAuth from '@/hooks/useAuth.js';
 import useSupabaseAvanzado from '@/hooks/useSupabaseAvanzado.js';
 import { formatCurrency, formatRUT } from '@/utils/helpers.js';
 import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '@/utils/constants.js';
-import { supabaseUtils } from '@/lib/supabase.js';
+import { getClientes } from '@/lib/supabase.js';
 
 // 🔧 Debug tools (solo en desarrollo)
 // Removido import dinámico para evitar errores en build de producción
@@ -72,7 +72,7 @@ const ClientsList = () => {
       console.log('🔄 Cargando todos los clientes...');
 
       // Obtener todos los clientes
-      const todosLosClientes = await supabaseUtils.getClientes();
+      const todosLosClientes = await getClientes();
 
       if (todosLosClientes && todosLosClientes.length > 0) {
         console.log(`✅ ${todosLosClientes.length} clientes encontrados en BD`);

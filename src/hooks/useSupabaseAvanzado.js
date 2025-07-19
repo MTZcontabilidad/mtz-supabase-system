@@ -1,9 +1,9 @@
 // 🚀 Hook Supabase MTZ - VERSIÓN SIMPLIFICADA SIN ERRORES
 import { useState, useEffect } from 'react';
-import { supabaseUtils } from '../lib/supabase.js';
+import { getClientes, buscarClientes } from '../lib/supabase.js';
 
 // =====================================================================
-// 🚀 HOOK PRINCIPAL: Dashboard Simplificado y Funcional (usando supabaseUtils)
+// 🚀 HOOK PRINCIPAL: Dashboard Simplificado y Funcional
 // =====================================================================
 
 export const useSupabaseAvanzado = () => {
@@ -17,8 +17,8 @@ export const useSupabaseAvanzado = () => {
       setLoading(true);
       setError(null);
 
-      // Usar utilidad centralizada para obtener todos los clientes
-      const clientes = await supabaseUtils.getClientes();
+      // Obtener todos los clientes
+      const clientes = await getClientes();
       // Calcular métricas
       const clientesActivos = clientes.filter(c => c.estado === 'Activo');
       const facturacionTotal = clientesActivos.reduce(
@@ -126,13 +126,13 @@ export const useSupabaseAvanzado = () => {
     };
   };
 
-  // Usar utilidad centralizada para búsqueda inteligente
+  // Búsqueda inteligente de clientes
   const buscarClientesInteligente = async termino => {
     if (!termino.trim()) {
       return { resultados: [], total_encontrados: 0 };
     }
     try {
-      const data = await supabaseUtils.buscarClientes(termino);
+      const data = await buscarClientes(termino);
       return {
         resultados: data || [],
         total_encontrados: data?.length || 0,
