@@ -156,6 +156,12 @@ const ClientsList = () => {
     cargarDatosClientes();
   }, []);
 
+  // Función para actualizar datos (conectada al botón Actualizar)
+  const handleActualizar = async () => {
+    console.log('🔄 Botón Actualizar presionado');
+    await cargarDatosClientes();
+  };
+
   // Manejar búsqueda inteligente
   const handleBusquedaInteligente = async termino => {
     if (!termino.trim()) {

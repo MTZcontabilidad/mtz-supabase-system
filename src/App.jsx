@@ -9,6 +9,8 @@ import Register from './pages/Auth/Register.jsx';
 import LandingPage from './pages/Landing/LandingPage.jsx';
 import Dashboard from './pages/Dashboard/Dashboard.jsx';
 import ClientsList from './pages/Clients/ClientsList.jsx';
+import CobranzaPage from './pages/Cobranza/CobranzaPage.jsx';
+import RequerimientosPage from './pages/Requerimientos/RequerimientosPage.jsx';
 import ReportsPage from './pages/Reports/ReportsPage.jsx';
 import AnalyticsPage from './pages/Analytics/AnalyticsPage.jsx';
 import ProyeccionesPage from './pages/Proyecciones/ProyeccionesPage.jsx';
@@ -60,6 +62,12 @@ function App() {
 
             {/* Clientes */}
             <Route path='clients' element={<ClientsList />} />
+
+            {/* Cobranza */}
+            <Route path='cobranza' element={<CobranzaPage />} />
+
+            {/* Requerimientos */}
+            <Route path='requerimientos' element={<RequerimientosPage />} />
 
             {/* Reportes */}
             <Route path='reports' element={<ReportsPage />} />

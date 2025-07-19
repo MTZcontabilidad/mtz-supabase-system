@@ -10,6 +10,8 @@ import {
   Shield,
   Menu,
   X,
+  DollarSign,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/utils/helpers.js';
 import useAuth from '@/hooks/useAuth.js';
@@ -17,6 +19,8 @@ import useAuth from '@/hooks/useAuth.js';
 const navigation = [
   { name: 'Dashboard', href: '/app/dashboard', icon: LayoutDashboard },
   { name: 'Clientes', href: '/app/clients', icon: Users },
+  { name: 'Cobranza', href: '/app/cobranza', icon: DollarSign },
+  { name: 'Requerimientos', href: '/app/requerimientos', icon: ClipboardList },
   { name: 'Reportes', href: '/app/reports', icon: FileText },
   { name: 'Analytics', href: '/app/analytics', icon: BarChart3 },
   { name: 'Proyecciones', href: '/app/proyecciones', icon: TrendingUp },
