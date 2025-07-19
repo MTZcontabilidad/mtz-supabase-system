@@ -65,17 +65,21 @@ const ClientsList = () => {
       setLoadingClientes(true);
       console.log('🔄 Cargando todos los clientes...');
 
-      // Obtener todos los clientes
-      const todosLosClientes = await getClientes();
+      // Obtener todos los clientes directamente
+      const { data: todosLosClientes, error } = await supabase
+        .from('clientes_contables')
+        .select('*')
+        .order('razon_social');
+
+      if (error) throw error;
 
       if (todosLosClientes && todosLosClientes.length > 0) {
         console.log(`✅ ${todosLosClientes.length} clientes encontrados en BD`);
 
-        // Agregar datos adicionales para la tabla
-        const clientesConDatos = todosLosClientes.map((cliente, index) => ({
+        // Procesar clientes de forma simple
+        const clientesProcesados = todosLosClientes.map((cliente, index) => ({
           ...cliente,
           posicion: index + 1,
-          // Generar datos adicionales basados en los datos reales
           tipo_empresa:
             cliente.total_facturado > 10000000
               ? 'SPA'
@@ -95,41 +99,42 @@ const ClientsList = () => {
                   : cliente.razon_social.includes('CONSTRUCTORA')
                     ? 'Construcción'
                     : 'Servicios Generales',
-          // Usar datos reales o generar si no existen
-          telefono:
-            cliente.telefono ||
-            '+56 9 ' + Math.floor(Math.random() * 90000000 + 10000000),
-          email:
-            cliente.email ||
-            cliente.razon_social
-              .toLowerCase()
-              .replace(/[^a-z0-9]/g, '')
-              .substring(0, 15) + '@empresa.cl',
-          direccion_completa: cliente.direccion || 'Dirección registrada',
-          fecha_registro:
-            cliente.created_at || new Date().toISOString().split('T')[0],
+          categoria:
+            cliente.total_facturado > 10000000
+              ? 'VIP'
+              : cliente.total_facturado > 5000000
+                ? 'Premium'
+                : cliente.total_facturado > 1000000
+                  ? 'Top'
+                  : 'Estándar',
         }));
 
-        setClientes(clientesConDatos);
-        setFilteredClientes(clientesConDatos);
+        setClientes(clientesProcesados);
+        setFilteredClientes(clientesProcesados);
 
-        // Calcular estadísticas desde los datos reales
-        const facturacionTotal = clientesConDatos.reduce(
+        console.log('🔍 DEBUG: Clientes procesados:', clientesProcesados);
+        console.log(
+          '🔍 DEBUG: filteredClientes después de set:',
+          clientesProcesados.length
+        );
+
+        // Calcular estadísticas
+        const facturacionTotal = clientesProcesados.reduce(
           (sum, c) => sum + parseFloat(c.total_facturado || 0),
           0
         );
 
         setEstadisticas({
-          total_clientes: clientesConDatos.length,
+          total_clientes: clientesProcesados.length,
           facturacion_total: facturacionTotal,
           promedio:
-            clientesConDatos.length > 0
-              ? facturacionTotal / clientesConDatos.length
+            clientesProcesados.length > 0
+              ? facturacionTotal / clientesProcesados.length
               : 0,
         });
 
         console.log('✅ Clientes procesados y cargados en tabla');
-        setError(null); // Limpiar error si la carga es exitosa
+        setError(null);
       } else {
         console.log('⚠️ No se encontraron clientes en la base de datos');
         setClientes([]);
@@ -155,6 +160,11 @@ const ClientsList = () => {
   useEffect(() => {
     cargarDatosClientes();
   }, []);
+
+  // Debug: Monitorear cambios en filteredClientes
+  useEffect(() => {
+    console.log('🔍 DEBUG: filteredClientes cambió:', filteredClientes.length);
+  }, [filteredClientes]);
 
   // Función para actualizar datos (conectada al botón Actualizar)
   const handleActualizar = async () => {
@@ -706,12 +716,131 @@ const ClientsList = () => {
           )}
         </div>
 
-        <DataTable
-          data={filteredClientes}
-          columns={columns}
-          loading={loadingClientes}
-          searchable={false}
-        />
+        {/* Tabla simple y funcional */}
+        {loadingClientes ? (
+          <div className='text-center py-8'>
+            <RefreshCw className='h-8 w-8 mx-auto animate-spin text-blue-500' />
+            <p className='mt-2 text-gray-600'>Cargando clientes...</p>
+          </div>
+        ) : filteredClientes.length === 0 ? (
+          <div className='text-center py-8'>
+            <Users className='h-12 w-12 mx-auto text-gray-400' />
+            <p className='mt-2 text-gray-600'>No hay clientes para mostrar</p>
+          </div>
+        ) : (
+          <div className='overflow-x-auto'>
+            <table className='w-full border-collapse'>
+              <thead>
+                <tr className='border-b border-gray-200 bg-gray-50'>
+                  <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
+                    #
+                  </th>
+                  <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
+                    Código
+                  </th>
+                  <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
+                    Razón Social
+                  </th>
+                  <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
+                    RUT
+                  </th>
+                  <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
+                    Tipo
+                  </th>
+                  <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
+                    Rubro
+                  </th>
+                  <th className='px-4 py-3 text-right text-sm font-medium text-gray-700'>
+                    Total Facturado
+                  </th>
+                  <th className='px-4 py-3 text-center text-sm font-medium text-gray-700'>
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredClientes.map((cliente, index) => (
+                  <tr
+                    key={cliente.id_cliente}
+                    className='border-b border-gray-100 hover:bg-gray-50 transition-colors'
+                  >
+                    <td className='px-4 py-3 text-sm text-gray-900'>
+                      <div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
+                        <span className='text-sm font-bold text-blue-600'>
+                          #{index + 1}
+                        </span>
+                      </div>
+                    </td>
+                    <td className='px-4 py-3 text-sm text-gray-900'>
+                      <span className='font-mono text-sm bg-gray-100 px-2 py-1 rounded'>
+                        {cliente.id_cliente}
+                      </span>
+                    </td>
+                    <td className='px-4 py-3 text-sm text-gray-900'>
+                      <div>
+                        <div className='font-medium text-gray-900'>
+                          {cliente.razon_social}
+                        </div>
+                        <div className='text-sm text-gray-500'>
+                          {cliente.categoria && (
+                            <Badge variant='outline' size='sm' className='mr-2'>
+                              {cliente.categoria}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className='px-4 py-3 text-sm text-gray-900'>
+                      {cliente.rut && formatRUT(cliente.rut)}
+                    </td>
+                    <td className='px-4 py-3 text-sm text-gray-900'>
+                      <Badge variant='outline' size='sm'>
+                        {cliente.tipo_empresa}
+                      </Badge>
+                    </td>
+                    <td className='px-4 py-3 text-sm text-gray-600'>
+                      {cliente.rubro}
+                    </td>
+                    <td className='px-4 py-3 text-sm text-gray-900 text-right'>
+                      <div className='font-semibold text-gray-900'>
+                        {formatCurrency(cliente.total_facturado)}
+                      </div>
+                    </td>
+                    <td className='px-4 py-3 text-sm text-gray-900'>
+                      <div className='flex items-center gap-1'>
+                        <Button
+                          size='sm'
+                          variant='ghost'
+                          onClick={() => handleAction('view', cliente)}
+                          title='Ver detalles'
+                        >
+                          <Eye className='h-4 w-4' />
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='ghost'
+                          onClick={() => handleAction('edit', cliente)}
+                          title='Editar'
+                        >
+                          <Edit className='h-4 w-4' />
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='ghost'
+                          onClick={() => handleAction('delete', cliente)}
+                          title='Eliminar'
+                          className='text-red-600 hover:text-red-700'
+                        >
+                          <Trash2 className='h-4 w-4' />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
 
       {/* Componentes modales */}
