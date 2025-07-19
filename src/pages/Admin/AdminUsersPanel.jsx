@@ -53,7 +53,7 @@ const AdminUsersPanel = () => {
           )
         `
         )
-        .order('fecha_creacion', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (usuariosError) throw usuariosError;
 
@@ -346,7 +346,7 @@ const AdminUsersPanel = () => {
 
                   {/* Información adicional */}
                   <div className='text-right text-sm text-gray-500'>
-                    <p>Creado: {formatearFecha(usuario.fecha_creacion)}</p>
+                    <p>Creado: {formatearFecha(usuario.created_at)}</p>
                     <p>
                       Último acceso:{' '}
                       {formatearFecha(usuario.fecha_ultimo_acceso)}

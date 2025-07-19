@@ -105,8 +105,12 @@ const AnalyticsPage = () => {
       clientesActivos: clientesActivos.length,
       clientesVIP: clientesVIP.length,
       clientesPremium: clientesPremium.length,
-      promedioFacturacion: facturacionTotal / clientes.length,
-      tasaActividad: (clientesActivos.length / clientes.length) * 100,
+      promedioFacturacion:
+        clientes.length > 0 ? facturacionTotal / clientes.length : 0,
+      tasaActividad:
+        clientes.length > 0
+          ? (clientesActivos.length / clientes.length) * 100
+          : 0,
     };
   };
 
@@ -186,15 +190,27 @@ const AnalyticsPage = () => {
   // Calcular cambios porcentuales
   const calcularCambios = () => {
     const tendencias = datosGraficos.tendencias;
+    if (tendencias.length < 2) {
+      return {
+        facturacion: 0,
+        clientes: 0,
+      };
+    }
+
     const ultimo = tendencias[tendencias.length - 1];
     const penultimo = tendencias[tendencias.length - 2];
 
     return {
       facturacion:
-        ((ultimo.facturacion - penultimo.facturacion) / penultimo.facturacion) *
-        100,
+        penultimo.facturacion > 0
+          ? ((ultimo.facturacion - penultimo.facturacion) /
+              penultimo.facturacion) *
+            100
+          : 0,
       clientes:
-        ((ultimo.clientes - penultimo.clientes) / penultimo.clientes) * 100,
+        penultimo.clientes > 0
+          ? ((ultimo.clientes - penultimo.clientes) / penultimo.clientes) * 100
+          : 0,
     };
   };
 
