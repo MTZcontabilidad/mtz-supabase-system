@@ -119,6 +119,12 @@ const ClientsList = () => {
           '🔍 DEBUG: filteredClientes después de set:',
           clientesProcesados.length
         );
+        console.log(
+          '🔍 DEBUG: Estado actual - clientes:',
+          clientesProcesados.length,
+          'filteredClientes:',
+          clientesProcesados.length
+        );
 
         // Calcular estadísticas
         const facturacionTotal = clientesProcesados.reduce(
@@ -250,6 +256,11 @@ const ClientsList = () => {
       return;
     }
 
+    // Solo aplicar filtros cuando hay clientes cargados
+    if (clientes.length === 0) {
+      return;
+    }
+
     // Solo aplicar filtros cuando no hay búsqueda
     let filtered = [...clientes];
 
@@ -274,6 +285,10 @@ const ClientsList = () => {
       }
     });
 
+    console.log('🔍 Aplicando filtros:', {
+      clientes: clientes.length,
+      filtrados: filtered.length,
+    });
     setFilteredClientes(filtered);
   }, [filters, clientes, searchTerm, searchResults]);
 
