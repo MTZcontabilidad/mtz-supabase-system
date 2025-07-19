@@ -35,6 +35,7 @@ import useSupabaseAvanzado from '@/hooks/useSupabaseAvanzado.js';
 import { formatCurrency, formatRUT } from '@/utils/helpers.js';
 import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '@/utils/constants.js';
 import { getClientes } from '@/lib/supabase.js';
+import { supabase } from '@/lib/supabase.js';
 
 /**
  * ClientsList Component - Versión Optimizada
