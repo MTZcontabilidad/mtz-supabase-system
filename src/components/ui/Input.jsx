@@ -1,4 +1,4 @@
-import { cn } from '../../utils/helpers';
+import { cn } from '../../utils/helpers.js';
 
 const Input = ({ label, error, className, ...props }) => {
   return (
