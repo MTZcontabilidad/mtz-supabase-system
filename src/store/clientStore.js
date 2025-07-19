@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CLIENTES_MTZ } from '@/utils/constants';
+import { CLIENTES_MTZ } from '../utils/constants';
 
 export const useClientStore = create((set, get) => ({
   // Estado

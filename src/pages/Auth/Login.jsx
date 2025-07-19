@@ -1,9 +1,9 @@
 ﻿import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import useAuth from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth.js';
 import { LineChart, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button.jsx';
+import Input from '@/components/ui/Input.jsx';
 
 const Login = () => {
   const [email, setEmail] = useState('');

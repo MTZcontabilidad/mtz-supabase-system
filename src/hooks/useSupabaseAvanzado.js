@@ -1,6 +1,6 @@
 // 🚀 Hook Supabase MTZ - VERSIÓN SIMPLIFICADA SIN ERRORES
 import { useState, useEffect } from 'react';
-import { supabaseUtils } from '../lib/supabase';
+import { supabaseUtils } from '../lib/supabase.js';
 
 // =====================================================================
 // 🚀 HOOK PRINCIPAL: Dashboard Simplificado y Funcional (usando supabaseUtils)

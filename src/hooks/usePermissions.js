@@ -1,4 +1,4 @@
-import useAuth from '@/hooks/useAuth';
+import useAuth from './useAuth';
 
 /**
  * Hook para verificación de permisos específicos

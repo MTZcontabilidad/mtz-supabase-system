@@ -2,14 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, Button, Input, Badge } from '@/components/ui';
+import Card from '@/components/ui/Card.jsx';
+import Button from '@/components/ui/Button.jsx';
+import Input from '@/components/ui/Input.jsx';
+import Badge from '@/components/ui/Badge.jsx';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/Dialog';
+} from '@/components/ui/Dialog.jsx';
 import {
   Building2,
   User,
@@ -21,12 +24,12 @@ import {
   X,
   AlertCircle,
 } from 'lucide-react';
-import { cn, validateRUT, formatRUT } from '@/utils/helpers';
+import { cn, validateRUT, formatRUT } from '@/utils/helpers.js';
 import {
   ESTADOS_CLIENTE,
   TIPOS_EMPRESA,
   REGIONES_CHILE,
-} from '@/utils/constants';
+} from '@/utils/constants.js';
 
 // Schema de validación con Zod
 const clienteSchema = z.object({

@@ -1,4 +1,4 @@
-import { cn } from '@/utils/helpers';
+import { cn } from '@/utils/helpers.js';
 import { Loader2 } from 'lucide-react';
 
 const Button = ({

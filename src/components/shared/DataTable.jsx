@@ -8,8 +8,11 @@ import {
   Filter,
   Download,
 } from 'lucide-react';
-import { Table, Button, Input, Badge } from '@/components/ui';
-import { cn, formatCurrency, formatDate } from '@/utils/helpers';
+import Table from '@/components/ui/Table.jsx';
+import Button from '@/components/ui/Button.jsx';
+import Input from '@/components/ui/Input.jsx';
+import Badge from '@/components/ui/Badge.jsx';
+import { cn, formatCurrency, formatDate } from '@/utils/helpers.js';
 
 /**
  * DataTable Component

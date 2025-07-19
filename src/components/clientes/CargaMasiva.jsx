@@ -11,16 +11,19 @@ import {
   Loader2,
   BarChart3,
 } from 'lucide-react';
-import { Button, Card, Progress, Badge } from '@/components/ui';
+import Button from '@/components/ui/Button.jsx';
+import Card from '@/components/ui/Card.jsx';
+import Progress from '@/components/ui/Progress.jsx';
+import Badge from '@/components/ui/Badge.jsx';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/Dialog';
-import { cn, validateRUT, formatRUT } from '@/utils/helpers';
-import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '@/utils/constants';
+} from '@/components/ui/Dialog.jsx';
+import { cn, validateRUT, formatRUT } from '@/utils/helpers.js';
+import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '@/utils/constants.js';
 
 /**
  * CargaMasiva Component

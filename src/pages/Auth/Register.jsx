@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import useAuth from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth.js';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   LineChart,
@@ -11,8 +11,8 @@ import {
   AlertCircle,
   CheckCircle,
 } from 'lucide-react';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
+import Button from '@/components/ui/Button.jsx';
+import Input from '@/components/ui/Input.jsx';
 
 const Register = () => {
   const [formData, setFormData] = useState({

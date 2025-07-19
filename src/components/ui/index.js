@@ -2,16 +2,16 @@
 // Exportaciones profesionales para facilitar imports
 
 // Componentes base
-export { default as Button } from './Button';
-export { default as Input } from './Input';
-export { default as Card } from './Card';
-export { default as Badge } from './Badge';
-export { default as Modal } from './Modal';
-export { default as LoadingSpinner } from './LoadingSpinner';
+export { default as Button } from './Button.jsx';
+export { default as Input } from './Input.jsx';
+export { default as Card } from './Card.jsx';
+export { default as Badge } from './Badge.jsx';
+export { default as Modal } from './Modal.jsx';
+export { default as LoadingSpinner } from './LoadingSpinner.jsx';
 
 // Componentes avanzados
-export { default as Table } from './Table';
-export { default as Progress } from './Progress';
+export { default as Table } from './Table.jsx';
+export { default as Progress } from './Progress.jsx';
 
 // Componentes Radix UI
 export {
@@ -23,7 +23,7 @@ export {
   DialogTitle,
   DialogDescription,
   DialogClose,
-} from './Dialog';
+} from './Dialog.jsx';
 
 export {
   ToastProvider,
@@ -33,11 +33,7 @@ export {
   ToastDescription,
   ToastClose,
   ToastAction,
-} from './Toast';
+} from './Toast.jsx';
 
-// Componentes compartidos
-export { default as DataTable } from '../shared/DataTable';
-
-// Componentes de clientes
-export { default as SearchFilters } from '../clientes/SearchFilters';
-export { default as ClienteForm } from '../clientes/ClienteForm';
+// Componentes compartidos y específicos se importan directamente
+// para evitar dependencias circulares

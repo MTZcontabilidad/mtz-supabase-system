@@ -8,16 +8,18 @@ import {
   Calendar,
   Settings,
 } from 'lucide-react';
-import { Button, Card, Badge } from '@/components/ui';
+import Button from '@/components/ui/Button.jsx';
+import Card from '@/components/ui/Card.jsx';
+import Badge from '@/components/ui/Badge.jsx';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/Dialog';
-import Input from '@/components/ui/Input';
-import { formatCurrency } from '@/utils/helpers';
+} from '@/components/ui/Dialog.jsx';
+import Input from '@/components/ui/Input.jsx';
+import { formatCurrency } from '@/utils/helpers.js';
 
 /**
  * ExportData Component
@@ -145,7 +147,7 @@ const ExportData = ({
       REPORTE DE CLIENTES
       Fecha: ${new Date().toLocaleDateString()}
       Total registros: ${filteredData.length}
-      
+
       ${selectedColumns.map(col => col.label).join(' | ')}
       ${filteredData
         .map(item =>

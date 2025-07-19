@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { Button, Input, Card, Badge } from '@/components/ui';
-import { cn } from '@/utils/helpers';
+import Button from '@/components/ui/Button.jsx';
+import Input from '@/components/ui/Input.jsx';
+import Card from '@/components/ui/Card.jsx';
+import Badge from '@/components/ui/Badge.jsx';
+import { cn } from '@/utils/helpers.js';
 import {
   ESTADOS_CLIENTE,
   TIPOS_EMPRESA,
   REGIONES_CHILE,
-} from '@/utils/constants';
+} from '@/utils/constants.js';
 
 /**
  * SearchFilters Component

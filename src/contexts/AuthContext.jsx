@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/supabase.js';
 
 // Crear contexto de autenticación MINIMALISTA
 const AuthContext = createContext({

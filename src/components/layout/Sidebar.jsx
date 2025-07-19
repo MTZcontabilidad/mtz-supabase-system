@@ -11,8 +11,8 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import { cn } from '@/utils/helpers';
-import useAuth from '@/hooks/useAuth';
+import { cn } from '@/utils/helpers.js';
+import useAuth from '@/hooks/useAuth.js';
 
 const navigation = [
   { name: 'Dashboard', href: '/app/dashboard', icon: LayoutDashboard },

@@ -14,28 +14,32 @@ import {
   TrendingUp,
   AlertCircle,
 } from 'lucide-react';
-import { Button, Card, Badge, Input } from '@/components/ui';
+import Button from '@/components/ui/Button.jsx';
+import Card from '@/components/ui/Card.jsx';
+import Badge from '@/components/ui/Badge.jsx';
+import Input from '@/components/ui/Input.jsx';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/Dialog';
-import DataTable from '@/components/shared/DataTable';
-import SearchFilters from '@/components/clientes/SearchFilters';
-import ClienteForm from '@/components/clientes/ClienteForm';
-import CargaMasiva from '@/components/clientes/CargaMasiva';
-import ExportData from '@/components/shared/ExportData';
-import useAuth from '@/hooks/useAuth';
-import useSupabaseAvanzado from '@/hooks/useSupabaseAvanzado';
-import { formatCurrency, formatRUT } from '@/utils/helpers';
-import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '@/utils/constants';
+} from '@/components/ui/Dialog.jsx';
+import DataTable from '@/components/shared/DataTable.jsx';
+import SearchFilters from '@/components/clientes/SearchFilters.jsx';
+import ClienteForm from '@/components/clientes/ClienteForm.jsx';
+import CargaMasiva from '@/components/clientes/CargaMasiva.jsx';
+import ExportData from '@/components/shared/ExportData.jsx';
+import useAuth from '@/hooks/useAuth.js';
+import useSupabaseAvanzado from '@/hooks/useSupabaseAvanzado.js';
+import { formatCurrency, formatRUT } from '@/utils/helpers.js';
+import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '@/utils/constants.js';
 
 // 🔧 Debug tools (solo en desarrollo)
-if (process.env.NODE_ENV === 'development') {
-  import('@/utils/supabaseDebug');
-}
+// Removido import dinámico para evitar errores en build de producción
+// if (process.env.NODE_ENV === 'development') {
+//   import('../../utils/supabaseDebug.js');
+// }
 
 /**
  * ClientsList Component - Versión Optimizada
@@ -65,16 +69,16 @@ const ClientsList = () => {
     try {
       setLoadingClientes(true);
       console.log('🔄 Cargando todos los clientes...');
-      
+
       // Importar utilidades de Supabase
-      const { supabaseUtils } = await import('@/lib/supabase');
-      
+      const { supabaseUtils } = await import('../../lib/supabase.js');
+
       // Obtener todos los clientes
       const todosLosClientes = await supabaseUtils.getClientes();
-      
+
       if (todosLosClientes && todosLosClientes.length > 0) {
         console.log(`✅ ${todosLosClientes.length} clientes encontrados en BD`);
-        
+
         // Agregar datos adicionales para la tabla
         const clientesConDatos = todosLosClientes.map((cliente, index) => ({
           ...cliente,
@@ -100,37 +104,48 @@ const ClientsList = () => {
                     ? 'Construcción'
                     : 'Servicios Generales',
           // Usar datos reales o generar si no existen
-          telefono: cliente.telefono || '+56 9 ' + Math.floor(Math.random() * 90000000 + 10000000),
-          email: cliente.email || 
+          telefono:
+            cliente.telefono ||
+            '+56 9 ' + Math.floor(Math.random() * 90000000 + 10000000),
+          email:
+            cliente.email ||
             cliente.razon_social
               .toLowerCase()
               .replace(/[^a-z0-9]/g, '')
               .substring(0, 15) + '@empresa.cl',
           direccion_completa: cliente.direccion || 'Dirección registrada',
-          fecha_registro: cliente.created_at || new Date().toISOString().split('T')[0],
+          fecha_registro:
+            cliente.created_at || new Date().toISOString().split('T')[0],
         }));
-        
+
         setClientes(clientesConDatos);
         setFilteredClientes(clientesConDatos);
-        
+
         // Calcular estadísticas desde los datos reales
         const facturacionTotal = clientesConDatos.reduce(
           (sum, c) => sum + parseFloat(c.total_facturado || 0),
           0
         );
-        
+
         setEstadisticas({
           total_clientes: clientesConDatos.length,
           facturacion_total: facturacionTotal,
-          promedio: clientesConDatos.length > 0 ? facturacionTotal / clientesConDatos.length : 0,
+          promedio:
+            clientesConDatos.length > 0
+              ? facturacionTotal / clientesConDatos.length
+              : 0,
         });
-        
+
         console.log('✅ Clientes procesados y cargados en tabla');
       } else {
         console.log('⚠️ No se encontraron clientes en la base de datos');
         setClientes([]);
         setFilteredClientes([]);
-        setEstadisticas({ total_clientes: 0, facturacion_total: 0, promedio: 0 });
+        setEstadisticas({
+          total_clientes: 0,
+          facturacion_total: 0,
+          promedio: 0,
+        });
       }
     } catch (error) {
       console.error('❌ Error cargando clientes:', error);
@@ -145,7 +160,7 @@ const ClientsList = () => {
   // Cargar datos cuando el componente se monte
   useEffect(() => {
     cargarDatosClientes();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Manejar búsqueda inteligente
   const handleBusquedaInteligente = async termino => {
@@ -189,7 +204,7 @@ const ClientsList = () => {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
 
   // Aplicar filtros adicionales
   useEffect(() => {
@@ -524,7 +539,10 @@ const ClientsList = () => {
         </div>
 
         <div className='flex flex-wrap gap-2'>
-          <Button onClick={cargarDatosClientes} disabled={loading || loadingClientes}>
+          <Button
+            onClick={cargarDatosClientes}
+            disabled={loading || loadingClientes}
+          >
             <RefreshCw
               className={`h-4 w-4 mr-2 ${loading || loadingClientes ? 'animate-spin' : ''}`}
             />

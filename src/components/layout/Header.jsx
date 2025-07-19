@@ -1,6 +1,6 @@
-import useAuth from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth.js';
 import { LogOut, User, Settings } from 'lucide-react';
-import Button from '../ui/Button';
+import Button from '../ui/Button.jsx';
 
 const Header = () => {
   const { user, signOut } = useAuth();

@@ -1,19 +1,23 @@
 {
-  "name": "mtz-sistema-gestion",
+  "name": "mtz-ouroborus-ai",
   "private": true,
-  "version": "1.0.0",
+  "version": "3.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "dev": "vite --config vite.config.development.js",
+    "dev:local": "vite --config vite.config.development.js --mode development",
+    "build": "vite build --config vite.config.production.js",
+    "build:dev": "vite build --config vite.config.development.js",
+    "build:prod": "vite build --config vite.config.production.js --mode production",
     "preview": "vite preview",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "vercel-build": "vite build --config vite.config.production.js --mode production"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
