@@ -10,22 +10,15 @@ import LandingPage from './pages/Landing/LandingPage';
 import Dashboard from './pages/Dashboard/Dashboard';
 import ClientsList from './pages/Clients/ClientsList';
 import AdminUsersPanel from './pages/Admin/AdminUsersPanel';
-import Layout from './components/layout/Layout';
+import Layout from './components/layout/Layout.jsx';
 
 function App() {
   return (
     <AuthProvider>
       <div className='min-h-screen bg-gray-50'>
         <Routes>
-          {/* Ruta raíz - Landing Page */}
-          <Route
-            path='/'
-            element={
-              <PublicRoute>
-                <LandingPage />
-              </PublicRoute>
-            }
-          />
+          {/* Ruta raíz - redirigir al login */}
+          <Route path='/' element={<Navigate to='/login' replace />} />
 
           {/* Rutas públicas */}
           <Route
@@ -36,7 +29,6 @@ function App() {
               </PublicRoute>
             }
           />
-          
           <Route
             path='/register'
             element={
@@ -46,55 +38,26 @@ function App() {
             }
           />
 
-          {/* Rutas protegidas del sistema */}
+          {/* Rutas protegidas con Layout */}
           <Route
-            path='/app/*'
+            path='/app'
             element={
               <ProtectedRoute>
-                <Layout>
-                  <Routes>
-                    {/* Dashboard principal */}
-                    <Route path='/' element={<Navigate to='/app/dashboard' replace />} />
-                    <Route path='/dashboard' element={<Dashboard />} />
-                    
-                    {/* Gestión de clientes */}
-                    <Route path='/clients' element={<ClientsList />} />
-                    
-                    {/* Panel de administración */}
-                    <Route path='/admin/users' element={<AdminUsersPanel />} />
-                    
-                    {/* Rutas placeholder para desarrollo futuro */}
-                    <Route path='/reports' element={
-                      <div className='p-8 text-center'>
-                        <h2 className='text-2xl font-bold text-gray-900 mb-4'>Módulo de Reportes</h2>
-                        <p className='text-gray-600'>En desarrollo - Próximamente disponible</p>
-                      </div>
-                    } />
-                    
-                    <Route path='/analytics' element={
-                      <div className='p-8 text-center'>
-                        <h2 className='text-2xl font-bold text-gray-900 mb-4'>Módulo de Analytics</h2>
-                        <p className='text-gray-600'>En desarrollo - Próximamente disponible</p>
-                      </div>
-                    } />
-                    
-                    <Route path='/settings' element={
-                      <div className='p-8 text-center'>
-                        <h2 className='text-2xl font-bold text-gray-900 mb-4'>Configuración</h2>
-                        <p className='text-gray-600'>En desarrollo - Próximamente disponible</p>
-                      </div>
-                    } />
-
-                    {/* Ruta 404 dentro del sistema */}
-                    <Route path='*' element={<Navigate to='/app/dashboard' replace />} />
-                  </Routes>
-                </Layout>
+                <Layout />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<Navigate to='/app/dashboard' replace />} />
+            <Route path='dashboard' element={<Dashboard />} />
+            <Route path='clients' element={<ClientsList />} />
+            <Route path='admin' element={<AdminUsersPanel />} />
+          </Route>
 
-          {/* Ruta 404 global */}
-          <Route path='*' element={<Navigate to='/' replace />} />
+          {/* Landing page */}
+          <Route path='/landing' element={<LandingPage />} />
+
+          {/* Catch-all route */}
+          <Route path='*' element={<Navigate to='/login' replace />} />
         </Routes>
       </div>
     </AuthProvider>
