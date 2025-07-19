@@ -167,10 +167,23 @@ const ClientsList = () => {
     }
   };
 
-  // Cargar datos cuando el componente se monte
+  // Efecto para cargar datos al montar el componente
   useEffect(() => {
     console.log('🚀 ClientsList montado - Iniciando carga automática');
     cargarDatosClientes();
+
+    // Log adicional para monitorear cambios de estado
+    const interval = setInterval(() => {
+      console.log('📊 ESTADO ACTUAL:', {
+        clientes: clientes.length,
+        filteredClientes: filteredClientes.length,
+        loadingClientes,
+        searchTerm,
+        searchResults: !!searchResults,
+      });
+    }, 2000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Debug: Monitorear cambios en filteredClientes
@@ -756,130 +769,167 @@ const ClientsList = () => {
         </div>
 
         {/* Tabla simple y funcional */}
-        {loadingClientes ? (
-          <div className='text-center py-8'>
-            <RefreshCw className='h-8 w-8 mx-auto animate-spin text-blue-500' />
-            <p className='mt-2 text-gray-600'>Cargando clientes...</p>
-          </div>
-        ) : filteredClientes.length === 0 ? (
-          <div className='text-center py-8'>
-            <Users className='h-12 w-12 mx-auto text-gray-400' />
-            <p className='mt-2 text-gray-600'>No hay clientes para mostrar</p>
-          </div>
-        ) : (
-          <div className='overflow-x-auto'>
-            <table className='w-full border-collapse'>
-              <thead>
-                <tr className='border-b border-gray-200 bg-gray-50'>
-                  <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
-                    #
-                  </th>
-                  <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
-                    Código
-                  </th>
-                  <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
-                    Razón Social
-                  </th>
-                  <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
-                    RUT
-                  </th>
-                  <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
-                    Tipo
-                  </th>
-                  <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
-                    Rubro
-                  </th>
-                  <th className='px-4 py-3 text-right text-sm font-medium text-gray-700'>
-                    Total Facturado
-                  </th>
-                  <th className='px-4 py-3 text-center text-sm font-medium text-gray-700'>
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredClientes.map((cliente, index) => (
-                  <tr
-                    key={cliente.id_cliente}
-                    className='border-b border-gray-100 hover:bg-gray-50 transition-colors'
-                  >
-                    <td className='px-4 py-3 text-sm text-gray-900'>
-                      <div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
-                        <span className='text-sm font-bold text-blue-600'>
-                          #{index + 1}
-                        </span>
-                      </div>
-                    </td>
-                    <td className='px-4 py-3 text-sm text-gray-900'>
-                      <span className='font-mono text-sm bg-gray-100 px-2 py-1 rounded'>
-                        {cliente.id_cliente}
-                      </span>
-                    </td>
-                    <td className='px-4 py-3 text-sm text-gray-900'>
-                      <div>
-                        <div className='font-medium text-gray-900'>
-                          {cliente.razon_social}
-                        </div>
-                        <div className='text-sm text-gray-500'>
-                          {cliente.categoria && (
-                            <Badge variant='outline' size='sm' className='mr-2'>
-                              {cliente.categoria}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className='px-4 py-3 text-sm text-gray-900'>
-                      {cliente.rut && formatRUT(cliente.rut)}
-                    </td>
-                    <td className='px-4 py-3 text-sm text-gray-900'>
-                      <Badge variant='outline' size='sm'>
-                        {cliente.tipo_empresa}
-                      </Badge>
-                    </td>
-                    <td className='px-4 py-3 text-sm text-gray-600'>
-                      {cliente.rubro}
-                    </td>
-                    <td className='px-4 py-3 text-sm text-gray-900 text-right'>
-                      <div className='font-semibold text-gray-900'>
-                        {formatCurrency(cliente.total_facturado)}
-                      </div>
-                    </td>
-                    <td className='px-4 py-3 text-sm text-gray-900'>
-                      <div className='flex items-center gap-1'>
-                        <Button
-                          size='sm'
-                          variant='ghost'
-                          onClick={() => handleAction('view', cliente)}
-                          title='Ver detalles'
-                        >
-                          <Eye className='h-4 w-4' />
-                        </Button>
-                        <Button
-                          size='sm'
-                          variant='ghost'
-                          onClick={() => handleAction('edit', cliente)}
-                          title='Editar'
-                        >
-                          <Edit className='h-4 w-4' />
-                        </Button>
-                        <Button
-                          size='sm'
-                          variant='ghost'
-                          onClick={() => handleAction('delete', cliente)}
-                          title='Eliminar'
-                          className='text-red-600 hover:text-red-700'
-                        >
-                          <Trash2 className='h-4 w-4' />
-                        </Button>
-                      </div>
-                    </td>
+        {(() => {
+          console.log('🔍 RENDERIZANDO TABLA:', {
+            loadingClientes,
+            filteredClientesLength: filteredClientes.length,
+            clientesLength: clientes.length,
+            searchTerm,
+            searchResults: !!searchResults,
+          });
+
+          if (loadingClientes) {
+            console.log('🔄 Mostrando loading...');
+            return (
+              <div className='text-center py-8'>
+                <RefreshCw className='h-8 w-8 mx-auto animate-spin text-blue-500' />
+                <p className='mt-2 text-gray-600'>Cargando clientes...</p>
+              </div>
+            );
+          }
+
+          if (filteredClientes.length === 0) {
+            console.log(
+              '❌ Mostrando "No hay clientes" - filteredClientes.length === 0'
+            );
+            return (
+              <div className='text-center py-8'>
+                <Users className='h-12 w-12 mx-auto text-gray-400' />
+                <p className='mt-2 text-gray-600'>
+                  No hay clientes para mostrar
+                </p>
+                <p className='text-xs text-red-500 mt-2'>
+                  DEBUG: clientes={clientes.length}, filtered=
+                  {filteredClientes.length}
+                </p>
+              </div>
+            );
+          }
+
+          console.log(
+            '✅ Mostrando tabla con',
+            filteredClientes.length,
+            'clientes'
+          );
+          return (
+            <div className='overflow-x-auto'>
+              <table className='w-full border-collapse'>
+                <thead>
+                  <tr className='border-b border-gray-200 bg-gray-50'>
+                    <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
+                      #
+                    </th>
+                    <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
+                      Código
+                    </th>
+                    <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
+                      Razón Social
+                    </th>
+                    <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
+                      RUT
+                    </th>
+                    <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
+                      Tipo
+                    </th>
+                    <th className='px-4 py-3 text-left text-sm font-medium text-gray-700'>
+                      Rubro
+                    </th>
+                    <th className='px-4 py-3 text-right text-sm font-medium text-gray-700'>
+                      Total Facturado
+                    </th>
+                    <th className='px-4 py-3 text-center text-sm font-medium text-gray-700'>
+                      Acciones
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {filteredClientes.map((cliente, index) => (
+                    <tr
+                      key={cliente.id_cliente}
+                      className='border-b border-gray-100 hover:bg-gray-50 transition-colors'
+                    >
+                      <td className='px-4 py-3 text-sm text-gray-900'>
+                        <div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
+                          <span className='text-sm font-bold text-blue-600'>
+                            #{index + 1}
+                          </span>
+                        </div>
+                      </td>
+                      <td className='px-4 py-3 text-sm text-gray-900'>
+                        <span className='font-mono text-sm bg-gray-100 px-2 py-1 rounded'>
+                          {cliente.id_cliente}
+                        </span>
+                      </td>
+                      <td className='px-4 py-3 text-sm text-gray-900'>
+                        <div>
+                          <div className='font-medium text-gray-900'>
+                            {cliente.razon_social}
+                          </div>
+                          <div className='text-sm text-gray-500'>
+                            {cliente.categoria && (
+                              <Badge
+                                variant='outline'
+                                size='sm'
+                                className='mr-2'
+                              >
+                                {cliente.categoria}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className='px-4 py-3 text-sm text-gray-900'>
+                        {cliente.rut && formatRUT(cliente.rut)}
+                      </td>
+                      <td className='px-4 py-3 text-sm text-gray-900'>
+                        <Badge variant='outline' size='sm'>
+                          {cliente.tipo_empresa}
+                        </Badge>
+                      </td>
+                      <td className='px-4 py-3 text-sm text-gray-600'>
+                        {cliente.rubro}
+                      </td>
+                      <td className='px-4 py-3 text-sm text-gray-900 text-right'>
+                        <div className='font-semibold text-gray-900'>
+                          {formatCurrency(cliente.total_facturado)}
+                        </div>
+                      </td>
+                      <td className='px-4 py-3 text-sm text-gray-900'>
+                        <div className='flex items-center gap-1'>
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            onClick={() => handleAction('view', cliente)}
+                            title='Ver detalles'
+                          >
+                            <Eye className='h-4 w-4' />
+                          </Button>
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            onClick={() => handleAction('edit', cliente)}
+                            title='Editar'
+                          >
+                            <Edit className='h-4 w-4' />
+                          </Button>
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            onClick={() => handleAction('delete', cliente)}
+                            title='Eliminar'
+                            className='text-red-600 hover:text-red-700'
+                          >
+                            <Trash2 className='h-4 w-4' />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
       </Card>
 
       {/* Componentes modales */}
