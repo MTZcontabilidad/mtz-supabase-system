@@ -15,12 +15,12 @@ import {
   Zap,
   RefreshCw,
 } from 'lucide-react';
-import { Card, Button, Badge } from '../../components/ui';
-import ClientesChart from '../../components/charts/ClientesChart';
-import CargaMasiva from '../../components/clientes/CargaMasiva';
-import ExportData from '../../components/shared/ExportData';
-import useAuth from '../../hooks/useAuth';
-import useSupabaseAvanzado from '../../hooks/useSupabaseAvanzado';
+import { Card, Button, Badge } from '../../components/ui/index.js';
+import ClientesChart from '../../components/charts/ClientesChart.jsx';
+import CargaMasiva from '../../components/clientes/CargaMasiva.jsx';
+import ExportData from '../../components/shared/ExportData.jsx';
+import useAuth from '../../hooks/useAuth.js';
+import useSupabaseAvanzado from '../../hooks/useSupabaseAvanzado.js';
 
 /**
  * Dashboard Optimizado MTZ

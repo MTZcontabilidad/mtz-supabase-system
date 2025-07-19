@@ -14,27 +14,27 @@ import {
   TrendingUp,
   AlertCircle,
 } from 'lucide-react';
-import { Button, Card, Badge, Input } from '../../components/ui';
+import { Button, Card, Badge, Input } from '../../components/ui/index.js';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../components/ui/Dialog';
-import DataTable from '../../components/shared/DataTable';
-import SearchFilters from '../../components/clientes/SearchFilters';
-import ClienteForm from '../../components/clientes/ClienteForm';
-import CargaMasiva from '../../components/clientes/CargaMasiva';
-import ExportData from '../../components/shared/ExportData';
-import useAuth from '../../hooks/useAuth';
-import useSupabaseAvanzado from '../../hooks/useSupabaseAvanzado';
-import { formatCurrency, formatRUT } from '../../utils/helpers';
-import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '../../utils/constants';
+} from '../../components/ui/Dialog.jsx';
+import DataTable from '../../components/shared/DataTable.jsx';
+import SearchFilters from '../../components/clientes/SearchFilters.jsx';
+import ClienteForm from '../../components/clientes/ClienteForm.jsx';
+import CargaMasiva from '../../components/clientes/CargaMasiva.jsx';
+import ExportData from '../../components/shared/ExportData.jsx';
+import useAuth from '../../hooks/useAuth.js';
+import useSupabaseAvanzado from '../../hooks/useSupabaseAvanzado.js';
+import { formatCurrency, formatRUT } from '../../utils/helpers.js';
+import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '../../utils/constants.js';
 
 // 🔧 Debug tools (solo en desarrollo)
 if (process.env.NODE_ENV === 'development') {
-  import('../../utils/supabaseDebug');
+  import('../../utils/supabaseDebug.js');
 }
 
 /**

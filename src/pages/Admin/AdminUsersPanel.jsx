@@ -10,9 +10,9 @@ import {
   Eye,
   Lock,
 } from 'lucide-react';
-import { Card, Button, Input, Badge } from '../../components/ui';
-import { supabase } from '../../lib/supabase';
-import useAuth from '../../hooks/useAuth';
+import { Card, Button, Input, Badge } from '../../components/ui/index.js';
+import { supabase } from '../../lib/supabase.js';
+import useAuth from '../../hooks/useAuth.js';
 
 /**
  * AdminUsersPanel Component - Versión Simplificada
