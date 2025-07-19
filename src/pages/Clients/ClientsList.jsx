@@ -34,6 +34,7 @@ import useAuth from '@/hooks/useAuth.js';
 import useSupabaseAvanzado from '@/hooks/useSupabaseAvanzado.js';
 import { formatCurrency, formatRUT } from '@/utils/helpers.js';
 import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '@/utils/constants.js';
+import { supabaseUtils } from '@/lib/supabase.js';
 
 // 🔧 Debug tools (solo en desarrollo)
 // Removido import dinámico para evitar errores en build de producción
@@ -69,9 +70,6 @@ const ClientsList = () => {
     try {
       setLoadingClientes(true);
       console.log('🔄 Cargando todos los clientes...');
-
-      // Importar utilidades de Supabase
-      const { supabaseUtils } = await import('../../lib/supabase.js');
 
       // Obtener todos los clientes
       const todosLosClientes = await supabaseUtils.getClientes();

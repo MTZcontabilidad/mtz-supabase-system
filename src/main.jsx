@@ -3,6 +3,10 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import './index.css';
+import { verifyEnvironment } from './utils/verifyEnv.js';
+
+// Verificar variables de entorno al iniciar
+verifyEnvironment();
 
 // Configurar el router con future flags para eliminar warnings
 const router = (
@@ -17,7 +21,5 @@ const router = (
 );
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    {router}
-  </React.StrictMode>
+  <React.StrictMode>{router}</React.StrictMode>
 );

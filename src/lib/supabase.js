@@ -1,28 +1,27 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Configuración Supabase optimizada para producción
-const SUPABASE_URL = 'https://bwgnmastihgndmtbqvkj.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3Z25tYXN0aWhnbmRtdGJxdmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjEyNDgyNzksImV4cCI6MjAzNjgyNDI3OX0.g1yKFklbTKzOHuiYV5gHU3ZzjczZJu8FOvQc1CEA2rA';
+// Configuración Supabase desde variables de entorno
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Crear cliente Supabase
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
   },
   global: {
     headers: {
-      'X-Client-Info': 'mtz-system@1.0.0'
-    }
-  }
+      'X-Client-Info': 'mtz-system@1.0.0',
+    },
+  },
 });
 
 /**
  * Utilidades MTZ
  */
 export const supabaseUtils = {
-  
   async getClientes() {
     const { data, error } = await supabase
       .from('clientes_contables')
@@ -70,13 +69,35 @@ export const supabaseUtils = {
       promedioFacturacion,
     };
   },
+
+  async buscarClientes(termino) {
+    if (!termino.trim()) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('clientes_contables')
+      .select('*')
+      .or(
+        `razon_social.ilike.%${termino}%,rut.ilike.%${termino}%,id_cliente.ilike.%${termino}%`
+      )
+      .order('total_facturado', { ascending: false })
+      .limit(20);
+
+    if (error) {
+      console.error('Error buscando clientes:', error);
+      return [];
+    }
+
+    return data || [];
+  },
 };
 
 // Exportar configuración para debug
 export const MTZ_CONFIG = {
   url: SUPABASE_URL,
   keyConfigured: !!SUPABASE_ANON_KEY,
-  version: '1.0.0'
+  version: '1.0.0',
 };
 
 export default supabase;
