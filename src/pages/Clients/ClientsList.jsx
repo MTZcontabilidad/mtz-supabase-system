@@ -41,9 +41,7 @@ import { getClientes } from '@/lib/supabase.js';
  * Lista de clientes integrada con Supabase y búsqueda inteligente
  */
 const ClientsList = () => {
-  const { user } = useAuth();
-  const { loading, error, dashboardData, buscarClientesInteligente, refetch } =
-    useSupabaseAvanzado();
+  const { buscarClientesInteligente } = useSupabaseAvanzado();
 
   const [clientes, setClientes] = useState([]);
   const [filteredClientes, setFilteredClientes] = useState([]);
