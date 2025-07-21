@@ -1,7 +1,10 @@
 import { useState, useEffect, createContext } from 'react';
-import { supabase } from '@/lib/supabase.js';
+import { supabase } from '../lib/supabase.js';
 
-// Crear contexto de autenticación MINIMALISTA
+// =====================================================================
+// 🔧 CONTEXTO DE AUTENTICACION COMPLETO - SISTEMA MTZ v3.0
+// =====================================================================
+
 const AuthContext = createContext({
   user: null,
   userProfile: null,
@@ -12,151 +15,292 @@ const AuthContext = createContext({
   signUp: () => {},
   signOut: () => {},
   hasPermission: () => false,
+  isAuthenticated: false,
 });
 
-// Exportar el contexto
 export { AuthContext };
 
-// Proveedor de autenticación MEJORADO
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [role, setRole] = useState(null);
+  const [permissions, setPermissions] = useState({});
   const [loading, setLoading] = useState(true);
-  const [loginAttempts, setLoginAttempts] = useState(0);
-  const [lastLoginAttempt, setLastLoginAttempt] = useState(0);
+  const [error, setError] = useState(null);
 
-  // Función de login MEJORADA con rate limiting básico
+  // =====================================================================
+  // 🔐 FUNCIONES DE AUTENTICACION
+  // =====================================================================
+
   const signIn = async (email, password) => {
     try {
-      const now = Date.now();
-      const timeWindow = 5 * 60 * 1000; // 5 minutos
-
-      // Rate limiting básico: máximo 5 intentos en 5 minutos
-      if (loginAttempts >= 5 && now - lastLoginAttempt < timeWindow) {
-        const remainingTime = Math.ceil(
-          (timeWindow - (now - lastLoginAttempt)) / 1000 / 60
-        );
-        console.warn(
-          `🚫 Demasiados intentos de login. Espera ${remainingTime} minutos.`
-        );
-        return {
-          data: null,
-          error: `Demasiados intentos de login. Intenta de nuevo en ${remainingTime} minutos.`,
-        };
-      }
-
-      // Resetear contador si pasó el tiempo
-      if (now - lastLoginAttempt >= timeWindow) {
-        setLoginAttempts(0);
-      }
-
-      // console.log('🔄 Intentando login con:', email);
-      setLastLoginAttempt(now);
-      setLoginAttempts(prev => prev + 1);
+      setError(null);
+      console.log('🔄 Intentando login con email:', email);
 
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: email.trim(),
+        password: password,
       });
 
       if (error) {
-        console.error('❌ Error en login:', error);
-        return { data: null, error: error.message };
+        console.error('❌ Error en signIn:', error.message);
+        setError(error.message);
+        return { success: false, error: error.message };
       }
 
-      // Resetear contador en login exitoso
-      setLoginAttempts(0);
-      // console.log('✅ Login exitoso');
-      return { data, error: null };
-    } catch (error) {
-      console.error('❌ Error en signIn:', error);
-      return { data: null, error: error.message };
+      console.log('✅ Login exitoso para:', data.user.email);
+
+      // Cargar perfil del usuario desde usuarios_sistema
+      await loadUserProfile(data.user);
+
+      return { success: true, data };
+    } catch (err) {
+      console.error('❌ Error inesperado en signIn:', err);
+      const errorMsg = err.message || 'Error de conexión';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     }
   };
 
-  // Función de registro ULTRA-SIMPLE
   const signUp = async (email, password, userData = {}) => {
     try {
+      setError(null);
+      console.log('🔄 Intentando registro con email:', email);
+
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: email.trim(),
+        password: password,
+        options: {
+          data: {
+            nombre: userData.nombre || 'Usuario',
+            apellido: userData.apellido || 'MTZ',
+          },
+        },
       });
 
-      if (error) return { data: null, error: error.message };
-      return { data, error: null };
-    } catch (error) {
-      return { data: null, error: error.message };
+      if (error) {
+        console.error('❌ Error en signUp:', error.message);
+        setError(error.message);
+        return { success: false, error: error.message };
+      }
+
+      console.log('✅ Registro exitoso para:', data.user?.email);
+      return { success: true, data };
+    } catch (err) {
+      console.error('❌ Error inesperado en signUp:', err);
+      const errorMsg = err.message || 'Error de conexión';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     }
   };
 
-  // Función de logout ULTRA-SIMPLE
   const signOut = async () => {
     try {
-      // console.log('🔄 Cerrando sesión...');
+      setError(null);
+      console.log('🔄 Cerrando sesión...');
+
       await supabase.auth.signOut();
       setUser(null);
-      // console.log('✅ Sesión cerrada');
-    } catch (error) {
-      console.error('❌ Error en logout:', error);
+      setUserProfile(null);
+      setRole(null);
+      setPermissions({});
+
+      console.log('✅ Sesión cerrada exitosamente');
+    } catch (err) {
+      console.error('❌ Error en signOut:', err);
+      setError(err.message);
     }
   };
 
-  // Verificar permisos MEJORADO
-  const hasPermission = permission => {
-    // Por ahora, mantener simplicidad pero con estructura para futuro
-    if (!user) return false;
+  // =====================================================================
+  // 👤 FUNCIONES DE PERFIL Y PERMISOS
+  // =====================================================================
 
-    // TODO: Implementar verificación real de permisos cuando se configure RLS
-    // Por ahora, permitir acceso básico a usuarios autenticados
-    return true;
+  const loadUserProfile = async authUser => {
+    try {
+      console.log('🔄 Cargando perfil de usuario...');
+
+      // Primero obtener el perfil del usuario
+      const { data: profile, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (error) {
+        console.error('❌ Error cargando perfil:', error);
+        // Si no existe en usuarios, crear perfil básico
+        setUserProfile({
+          id: authUser.id,
+          email: authUser.email,
+          nombre:
+            authUser.user_metadata?.nombre || authUser.email.split('@')[0],
+          apellido: authUser.user_metadata?.apellido || 'MTZ',
+          rol_id: 1, // Rol admin por defecto
+          activo: true,
+        });
+        setRole('admin');
+        setPermissions({});
+        return;
+      }
+
+      if (profile) {
+        console.log('✅ Perfil cargado:', profile);
+        setUserProfile(profile);
+
+        // Si tiene rol_id, obtener los detalles del rol
+        if (profile.rol_id) {
+          const { data: roleData, error: roleError } = await supabase
+            .from('roles')
+            .select('*')
+            .eq('id', profile.rol_id)
+            .single();
+
+          if (!roleError && roleData) {
+            console.log('✅ Rol cargado:', roleData);
+            setRole(roleData.nombre);
+            setPermissions(roleData.permisos || {});
+          } else {
+            console.log(
+              '⚠️ No se pudo cargar el rol, usando admin por defecto'
+            );
+            setRole('admin');
+            setPermissions({});
+          }
+        } else {
+          setRole('admin');
+          setPermissions({});
+        }
+
+        // Si tiene empresa_id, obtener los detalles de la empresa
+        if (profile.empresa_id) {
+          const { data: empresaData, error: empresaError } = await supabase
+            .from('empresas')
+            .select('*')
+            .eq('id', profile.empresa_id)
+            .single();
+
+          if (!empresaError && empresaData) {
+            console.log('✅ Empresa cargada:', empresaData);
+            setUserProfile(prev => ({
+              ...prev,
+              empresa: empresaData,
+            }));
+          }
+        }
+      }
+    } catch (err) {
+      console.error('❌ Error cargando perfil:', err);
+      setUserProfile(null);
+      setRole('admin');
+      setPermissions({});
+    }
   };
 
-  // Inicialización ULTRA-SIMPLE
+  const hasPermission = (resource, action) => {
+    if (!user || !userProfile || !permissions) {
+      return false;
+    }
+
+    // Administradores tienen todos los permisos
+    if (role === 'administrador') {
+      return true;
+    }
+
+    // Verificar permiso específico
+    const resourcePerms = permissions[resource];
+    if (!resourcePerms) {
+      return false;
+    }
+
+    return resourcePerms[action] === true;
+  };
+
+  // =====================================================================
+  // 🔄 INICIALIZACION Y ESTADO
+  // =====================================================================
+
   useEffect(() => {
     let mounted = true;
 
-    const initAuth = async () => {
+    const initializeAuth = async () => {
       try {
-        console.log('🔄 Inicializando autenticación minimalista...');
+        console.log('🔄 Inicializando autenticación...');
 
         // Obtener sesión actual
         const {
           data: { session },
+          error,
         } = await supabase.auth.getSession();
+
+        if (error) {
+          console.warn('⚠️ Error obteniendo sesión:', error.message);
+          // No establecer error para errores de token, solo limpiar sesión
+          if (error.message.includes('Invalid Refresh Token')) {
+            console.log('🔄 Limpiando sesión inválida...');
+            await supabase.auth.signOut();
+          }
+        }
 
         if (mounted) {
           if (session?.user) {
-            console.log('✅ Usuario encontrado:', session.user.email);
+            console.log('✅ Sesión activa encontrada:', session.user.email);
             setUser(session.user);
+            await loadUserProfile(session.user);
           } else {
-            console.log('ℹ️ No hay usuario autenticado');
+            console.log('ℹ️ No hay sesión activa');
             setUser(null);
+            setUserProfile(null);
+            setRole(null);
+            setPermissions({});
           }
           setLoading(false);
         }
-      } catch (error) {
-        console.error('❌ Error en inicialización:', error);
+      } catch (err) {
+        console.error('❌ Error en inicialización:', err);
         if (mounted) {
+          setError(err.message);
           setUser(null);
+          setUserProfile(null);
+          setRole(null);
+          setPermissions({});
           setLoading(false);
         }
       }
     };
 
-    initAuth();
+    initializeAuth();
 
-    // Escuchar cambios de auth ULTRA-SIMPLE
+    // Escuchar cambios de autenticación
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
-      console.log('🔄 Auth cambió:', event);
+      console.log('🔄 Cambio de auth detectado:', event);
 
-      if (session?.user) {
-        setUser(session.user);
-      } else {
-        setUser(null);
+      switch (event) {
+        case 'SIGNED_IN':
+          console.log('✅ Usuario autenticado:', session.user.email);
+          setUser(session.user);
+          await loadUserProfile(session.user);
+          setError(null);
+          break;
+        case 'SIGNED_OUT':
+          console.log('ℹ️ Usuario desautenticado');
+          setUser(null);
+          setUserProfile(null);
+          setRole(null);
+          setPermissions({});
+          setError(null);
+          break;
+        case 'TOKEN_REFRESHED':
+          console.log('🔄 Token actualizado');
+          break;
+        default:
+          console.log('ℹ️ Evento de auth:', event);
       }
+
       setLoading(false);
     });
 
@@ -166,24 +310,51 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  // =====================================================================
+  // 🎯 VALOR DEL CONTEXTO
+  // =====================================================================
+
   const value = {
     user,
-    userProfile: user
-      ? {
-          id: user.id,
-          email: user.email,
-          nombre_completo: user.email.split('@')[0],
-        }
-      : null,
-    role: 'admin', // Simplificado: todos son admin
-    permissions: {},
+    userProfile,
+    role,
+    permissions,
     loading,
+    error,
     signIn,
     signUp,
     signOut,
     hasPermission,
     isAuthenticated: !!user,
+    // Funciones adicionales para compatibilidad
+    updateProfile: async () => ({ success: false, error: 'No implementado' }),
+    updatePassword: async () => ({ success: false, error: 'No implementado' }),
+    refreshUser: async () => ({ success: false, error: 'No implementado' }),
   };
+
+  // Modo demo - simular usuario autenticado
+  const [demoMode, setDemoMode] = useState(false);
+
+  // Verificar si estamos en modo demo
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('demo') === 'true') {
+      setDemoMode(true);
+      setUser({
+        id: 'demo-user',
+        email: 'mtzcontabilidad@gmail.com',
+        user_metadata: { role: 'admin' },
+      });
+      setUserProfile({
+        nombre_completo: 'MTZ Consultores Tributarios',
+        cargo: 'Administrador',
+        empresa_asignada: 'MTZ Consultores Tributarios',
+      });
+      setRole('admin');
+      setPermissions({ '*': true });
+      setLoading(false);
+    }
+  }, []);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -7,12 +7,16 @@ import {
   Search,
   Filter,
   Download,
+  Eye,
+  Edit,
+  Trash2,
+  MoreHorizontal,
 } from 'lucide-react';
-import Table from '@/components/ui/Table.jsx';
-import Button from '@/components/ui/Button.jsx';
-import Input from '@/components/ui/Input.jsx';
-import Badge from '@/components/ui/Badge.jsx';
-import { cn, formatCurrency, formatDate } from '@/utils/helpers.js';
+import Table from '../ui/Table.jsx';
+import Button from '../ui/Button.jsx';
+import Input from '../ui/Input.jsx';
+import Badge from '../ui/Badge.jsx';
+import { cn, formatCurrency, formatDate } from '../../utils/helpers.js';
 
 /**
  * DataTable Component

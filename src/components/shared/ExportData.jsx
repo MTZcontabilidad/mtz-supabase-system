@@ -3,415 +3,374 @@ import {
   Download,
   FileText,
   FileSpreadsheet,
-  File,
-  Filter,
-  Calendar,
-  Settings,
+  Loader2,
+  Check,
+  X,
+  AlertCircle,
 } from 'lucide-react';
-import Button from '@/components/ui/Button.jsx';
-import Card from '@/components/ui/Card.jsx';
-import Badge from '@/components/ui/Badge.jsx';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import Button from '../ui/Button.jsx';
+import Badge from '../ui/Badge.jsx';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/Dialog.jsx';
-import Input from '@/components/ui/Input.jsx';
-import { formatCurrency } from '@/utils/helpers.js';
+} from '../ui/Dialog.jsx';
 
 /**
- * ExportData Component
- * Componente profesional para exportar datos en múltiples formatos.
- * Soporta CSV, Excel y PDF con filtros y opciones avanzadas.
- *
- * @param {Object} props - Propiedades del componente
- * @param {Array} props.data - Datos a exportar
- * @param {Array} props.columns - Columnas a incluir
- * @param {string} props.filename - Nombre del archivo
- * @param {boolean} props.open - Si el modal está abierto
- * @param {Function} props.onOpenChange - Callback para cambio de estado
+ * ExportData Component - EXPORTACIÓN FUNCIONAL
+ * Permite exportar datos a Excel y PDF
  */
 const ExportData = ({
+  open,
+  onOpenChange,
   data = [],
   columns = [],
   filename = 'export',
-  open = false,
-  onOpenChange,
+  title = 'Exportar Datos',
 }) => {
-  const [selectedColumns, setSelectedColumns] = useState(columns);
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const [filters, setFilters] = useState({});
   const [exporting, setExporting] = useState(false);
+  const [exportType, setExportType] = useState('excel');
+  const [error, setError] = useState('');
 
-  // Formatos de exportación disponibles
-  const exportFormats = [
-    {
-      id: 'csv',
-      name: 'CSV',
-      icon: FileText,
-      description: 'Archivo de texto separado por comas',
-      extension: '.csv',
-    },
-    {
-      id: 'excel',
-      name: 'Excel',
-      icon: FileSpreadsheet,
-      description: 'Archivo de Microsoft Excel',
-      extension: '.xlsx',
-    },
-    {
-      id: 'pdf',
-      name: 'PDF',
-      icon: File,
-      description: 'Documento PDF',
-      extension: '.pdf',
-    },
-  ];
-
-  // Filtrar datos según criterios
-  const getFilteredData = () => {
-    let filtered = [...data];
-
-    // Filtrar por rango de fechas
-    if (dateRange.start || dateRange.end) {
-      filtered = filtered.filter(item => {
-        const itemDate = new Date(item.fecha_registro || item.created_at);
-        const startDate = dateRange.start ? new Date(dateRange.start) : null;
-        const endDate = dateRange.end ? new Date(dateRange.end) : null;
-
-        if (startDate && itemDate < startDate) return false;
-        if (endDate && itemDate > endDate) return false;
-        return true;
-      });
-    }
-
-    // Aplicar filtros adicionales
-    Object.keys(filters).forEach(key => {
-      if (filters[key]) {
-        filtered = filtered.filter(item =>
-          String(item[key]).toLowerCase().includes(filters[key].toLowerCase())
-        );
-      }
-    });
-
-    return filtered;
-  };
-
-  // Exportar a CSV
-  const exportToCSV = filteredData => {
-    if (!filteredData.length) return;
-
-    const headers = selectedColumns.map(col => col.label).join(',');
-    const rows = filteredData
-      .map(item =>
-        selectedColumns
-          .map(col => {
-            const value = item[col.key];
-            if (typeof value === 'number') {
-              return col.format === 'currency' ? formatCurrency(value) : value;
-            }
-            return `"${value || ''}"`;
-          })
-          .join(',')
-      )
-      .join('\n');
-
-    const csvContent = `${headers}\n${rows}`;
-    downloadFile(csvContent, `${filename}.csv`, 'text/csv');
-  };
-
-  // Exportar a Excel (simulado)
-  const exportToExcel = filteredData => {
-    // En una implementación real, usarías una librería como xlsx
-    const excelData = filteredData.map(item => {
-      const row = {};
-      selectedColumns.forEach(col => {
-        const value = item[col.key];
-        row[col.label] =
-          col.format === 'currency' ? formatCurrency(value) : value;
-      });
-      return row;
-    });
-
-    // Simular exportación a Excel
-    const jsonContent = JSON.stringify(excelData, null, 2);
-    downloadFile(jsonContent, `${filename}.json`, 'application/json');
-  };
-
-  // Exportar a PDF (simulado)
-  const exportToPDF = filteredData => {
-    // En una implementación real, usarías una librería como jsPDF
-    const pdfContent = `
-      REPORTE DE CLIENTES
-      Fecha: ${new Date().toLocaleDateString()}
-      Total registros: ${filteredData.length}
-
-      ${selectedColumns.map(col => col.label).join(' | ')}
-      ${filteredData
-        .map(item =>
-          selectedColumns.map(col => item[col.key] || '').join(' | ')
-        )
-        .join('\n')}
-    `;
-
-    downloadFile(pdfContent, `${filename}.txt`, 'text/plain');
-  };
-
-  // Descargar archivo
-  const downloadFile = (content, filename, mimeType) => {
-    const blob = new Blob([content], { type: mimeType });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  // Manejar exportación
-  const handleExport = async format => {
-    setExporting(true);
-
+  // Función para exportar a Excel
+  const exportToExcel = async () => {
     try {
-      const filteredData = getFilteredData();
+      setExporting(true);
+      setError('');
 
-      switch (format) {
-        case 'csv':
-          exportToCSV(filteredData);
-          break;
-        case 'excel':
-          exportToExcel(filteredData);
-          break;
-        case 'pdf':
-          exportToPDF(filteredData);
-          break;
-        default:
-          console.error('Formato no soportado');
-      }
+      // Preparar datos para Excel
+      const excelData = data.map(row => {
+        const excelRow = {};
+        columns.forEach(col => {
+          let value = row[col.key];
+
+          // Formatear según el tipo
+          if (col.format === 'currency' && value) {
+            value = new Intl.NumberFormat('es-CL', {
+              style: 'currency',
+              currency: 'CLP',
+              minimumFractionDigits: 0,
+            }).format(value);
+          } else if (col.format === 'number' && value) {
+            value = new Intl.NumberFormat('es-CL').format(value);
+          } else if (col.format === 'date' && value) {
+            value = new Date(value).toLocaleDateString('es-CL');
+          }
+
+          excelRow[col.label] = value || '';
+        });
+        return excelRow;
+      });
+
+      // Crear workbook
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Datos');
+
+      // Ajustar ancho de columnas
+      const colWidths = columns.map(col => ({
+        wch: Math.max(col.label.length, 15),
+      }));
+      ws['!cols'] = colWidths;
+
+      // Generar archivo
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      // Descargar archivo
+      saveAs(
+        blob,
+        `${filename}-${new Date().toISOString().split('T')[0]}.xlsx`
+      );
+
+      console.log('✅ Excel exportado exitosamente');
     } catch (error) {
-      console.error('Error al exportar:', error);
+      console.error('❌ Error exportando Excel:', error);
+      setError(
+        'Error exportando a Excel. Asegúrate de tener conexión a internet.'
+      );
     } finally {
       setExporting(false);
     }
   };
 
-  // Toggle columna
-  const toggleColumn = columnKey => {
-    setSelectedColumns(prev =>
-      prev.find(col => col.key === columnKey)
-        ? prev.filter(col => col.key !== columnKey)
-        : [...prev, columns.find(col => col.key === columnKey)]
-    );
+  // Función para exportar a PDF
+  const exportToPDF = async () => {
+    try {
+      setExporting(true);
+      setError('');
+
+      // Importar dinámicamente jsPDF y html2canvas
+      const [jsPDF, html2canvas] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas'),
+      ]);
+
+      const { default: jsPDFDefault } = jsPDF;
+      const { default: html2canvasDefault } = html2canvas;
+
+      // Crear elemento temporal para renderizar la tabla
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '-9999px';
+      tempDiv.style.width = '800px';
+      tempDiv.style.backgroundColor = 'white';
+      tempDiv.style.padding = '20px';
+      tempDiv.style.fontFamily = 'Arial, sans-serif';
+
+      // Crear tabla HTML
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.fontSize = '12px';
+
+      // Crear header
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      columns.forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col.label;
+        th.style.border = '1px solid #ddd';
+        th.style.padding = '8px';
+        th.style.backgroundColor = '#f8f9fa';
+        th.style.fontWeight = 'bold';
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      // Crear body
+      const tbody = document.createElement('tbody');
+      data.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        columns.forEach(col => {
+          const td = document.createElement('td');
+          let value = row[col.key];
+
+          // Formatear según el tipo
+          if (col.format === 'currency' && value) {
+            value = new Intl.NumberFormat('es-CL', {
+              style: 'currency',
+              currency: 'CLP',
+              minimumFractionDigits: 0,
+            }).format(value);
+          } else if (col.format === 'number' && value) {
+            value = new Intl.NumberFormat('es-CL').format(value);
+          } else if (col.format === 'date' && value) {
+            value = new Date(value).toLocaleDateString('es-CL');
+          }
+
+          td.textContent = value || '';
+          td.style.border = '1px solid #ddd';
+          td.style.padding = '6px';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+
+      // Agregar título
+      const titleDiv = document.createElement('div');
+      titleDiv.textContent = title;
+      titleDiv.style.fontSize = '18px';
+      titleDiv.style.fontWeight = 'bold';
+      titleDiv.style.marginBottom = '20px';
+      titleDiv.style.textAlign = 'center';
+
+      // Agregar fecha
+      const dateDiv = document.createElement('div');
+      dateDiv.textContent = `Generado el: ${new Date().toLocaleString('es-CL')}`;
+      dateDiv.style.fontSize = '10px';
+      dateDiv.style.color = '#666';
+      dateDiv.style.marginBottom = '10px';
+      dateDiv.style.textAlign = 'right';
+
+      tempDiv.appendChild(titleDiv);
+      tempDiv.appendChild(dateDiv);
+      tempDiv.appendChild(table);
+      document.body.appendChild(tempDiv);
+
+      // Convertir a canvas
+      const canvas = await html2canvasDefault(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+      });
+
+      // Crear PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDFDefault('l', 'mm', 'a4');
+      const imgWidth = 297; // A4 width in mm
+      const pageHeight = 210; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Descargar PDF
+      pdf.save(`${filename}-${new Date().toISOString().split('T')[0]}.pdf`);
+
+      // Limpiar
+      document.body.removeChild(tempDiv);
+
+      console.log('✅ PDF exportado exitosamente');
+    } catch (error) {
+      console.error('❌ Error exportando PDF:', error);
+      setError(
+        'Error exportando a PDF. Asegúrate de tener conexión a internet.'
+      );
+    } finally {
+      setExporting(false);
+    }
   };
 
-  // Actualizar filtros
-  const updateFilter = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
+  // Función para exportar
+  const handleExport = async () => {
+    if (data.length === 0) {
+      setError('No hay datos para exportar');
+      return;
+    }
 
-  const filteredData = getFilteredData();
+    if (exportType === 'excel') {
+      await exportToExcel();
+    } else {
+      await exportToPDF();
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
+      <DialogContent className='max-w-md'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
-            <Download className='h-5 w-5' />
-            Exportar Datos
+            <Download className='h-5 w-5 text-blue-600' />
+            {title}
           </DialogTitle>
         </DialogHeader>
 
-        <div className='space-y-6'>
-          {/* Resumen */}
-          <Card className='p-4'>
+        <div className='space-y-4'>
+          {/* Información de datos */}
+          <div className='p-4 bg-gray-50 rounded-lg'>
+            <div className='flex items-center justify-between mb-2'>
+              <span className='text-sm font-medium text-gray-700'>
+                Registros a exportar:
+              </span>
+              <span className='text-sm font-bold text-gray-900'>
+                {data.length}
+              </span>
+            </div>
             <div className='flex items-center justify-between'>
-              <div>
-                <p className='text-sm text-gray-600'>Total de registros</p>
-                <p className='text-2xl font-bold text-gray-900'>
-                  {data.length}
-                </p>
-              </div>
-              <div>
-                <p className='text-sm text-gray-600'>Registros filtrados</p>
-                <p className='text-2xl font-bold text-blue-600'>
-                  {filteredData.length}
-                </p>
-              </div>
-              <div>
-                <p className='text-sm text-gray-600'>Columnas seleccionadas</p>
-                <p className='text-2xl font-bold text-green-600'>
-                  {selectedColumns.length}
-                </p>
-              </div>
+              <span className='text-sm font-medium text-gray-700'>
+                Columnas:
+              </span>
+              <span className='text-sm font-bold text-gray-900'>
+                {columns.length}
+              </span>
             </div>
-          </Card>
+          </div>
 
-          {/* Filtros */}
-          <Card className='p-6'>
-            <h3 className='text-lg font-semibold mb-4 flex items-center gap-2'>
-              <Filter className='h-5 w-5' />
-              Filtros
-            </h3>
+          {/* Selección de formato */}
+          <div>
+            <label className='block text-sm font-medium text-gray-700 mb-2'>
+              Formato de exportación
+            </label>
+            <div className='grid grid-cols-2 gap-3'>
+              <button
+                type='button'
+                onClick={() => setExportType('excel')}
+                className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
+                  exportType === 'excel'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                <FileSpreadsheet className='h-6 w-6' />
+                <span className='text-sm font-medium'>Excel</span>
+              </button>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              {/* Rango de fechas */}
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Rango de fechas
-                </label>
-                <div className='flex gap-2'>
-                  <Input
-                    type='date'
-                    value={dateRange.start}
-                    onChange={e =>
-                      setDateRange(prev => ({ ...prev, start: e.target.value }))
-                    }
-                    placeholder='Desde'
-                  />
-                  <Input
-                    type='date'
-                    value={dateRange.end}
-                    onChange={e =>
-                      setDateRange(prev => ({ ...prev, end: e.target.value }))
-                    }
-                    placeholder='Hasta'
-                  />
+              <button
+                type='button'
+                onClick={() => setExportType('pdf')}
+                className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
+                  exportType === 'pdf'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                <FileText className='h-6 w-6' />
+                <span className='text-sm font-medium'>PDF</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Vista previa de columnas */}
+          <div>
+            <label className='block text-sm font-medium text-gray-700 mb-2'>
+              Columnas incluidas
+            </label>
+            <div className='max-h-32 overflow-y-auto border rounded-md p-2'>
+              {columns.map((col, index) => (
+                <div key={index} className='flex items-center gap-2 py-1'>
+                  <Check className='h-3 w-3 text-green-600' />
+                  <span className='text-sm text-gray-700'>{col.label}</span>
+                  {col.format && (
+                    <Badge variant='outline' className='text-xs'>
+                      {col.format}
+                    </Badge>
+                  )}
                 </div>
-              </div>
-
-              {/* Filtros de texto */}
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Buscar en texto
-                </label>
-                <Input
-                  placeholder='Buscar en todos los campos...'
-                  value={filters.search || ''}
-                  onChange={e => updateFilter('search', e.target.value)}
-                />
-              </div>
-            </div>
-          </Card>
-
-          {/* Selección de columnas */}
-          <Card className='p-6'>
-            <h3 className='text-lg font-semibold mb-4 flex items-center gap-2'>
-              <Settings className='h-5 w-5' />
-              Columnas a exportar
-            </h3>
-
-            <div className='grid grid-cols-2 md:grid-cols-3 gap-2'>
-              {columns.map(column => (
-                <label
-                  key={column.key}
-                  className='flex items-center space-x-2 cursor-pointer'
-                >
-                  <input
-                    type='checkbox'
-                    checked={selectedColumns.some(
-                      col => col.key === column.key
-                    )}
-                    onChange={() => toggleColumn(column.key)}
-                    className='rounded border-gray-300 text-blue-600 focus:ring-blue-500'
-                  />
-                  <span className='text-sm text-gray-700'>{column.label}</span>
-                </label>
               ))}
             </div>
-          </Card>
+          </div>
 
-          {/* Formatos de exportación */}
-          <Card className='p-6'>
-            <h3 className='text-lg font-semibold mb-4'>
-              Formato de exportación
-            </h3>
-
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-              {exportFormats.map(format => {
-                const Icon = format.icon;
-                return (
-                  <div
-                    key={format.id}
-                    className='border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors'
-                    onClick={() => handleExport(format.id)}
-                  >
-                    <div className='flex items-center gap-3 mb-2'>
-                      <Icon className='h-6 w-6 text-blue-600' />
-                      <div>
-                        <h4 className='font-medium text-gray-900'>
-                          {format.name}
-                        </h4>
-                        <p className='text-sm text-gray-500'>
-                          {format.description}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      size='sm'
-                      className='w-full'
-                      disabled={exporting || !selectedColumns.length}
-                    >
-                      {exporting ? 'Exportando...' : `Exportar ${format.name}`}
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-
-          {/* Vista previa */}
-          {filteredData.length > 0 && (
-            <Card className='p-6'>
-              <h3 className='text-lg font-semibold mb-4'>Vista previa</h3>
-              <div className='overflow-x-auto'>
-                <table className='w-full border-collapse border border-gray-200'>
-                  <thead>
-                    <tr className='bg-gray-50'>
-                      {selectedColumns.map(column => (
-                        <th
-                          key={column.key}
-                          className='border border-gray-200 px-3 py-2 text-left text-sm font-medium'
-                        >
-                          {column.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredData.slice(0, 5).map((item, index) => (
-                      <tr key={index}>
-                        {selectedColumns.map(column => (
-                          <td
-                            key={column.key}
-                            className='border border-gray-200 px-3 py-2 text-sm'
-                          >
-                            {column.format === 'currency'
-                              ? formatCurrency(item[column.key] || 0)
-                              : String(item[column.key] || '')}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {filteredData.length > 5 && (
-                  <p className='text-sm text-gray-500 mt-2'>
-                    Mostrando 5 de {filteredData.length} registros
-                  </p>
-                )}
+          {/* Mensaje de error */}
+          {error && (
+            <div className='p-3 bg-red-50 border border-red-200 rounded-lg'>
+              <div className='flex items-center gap-2 text-red-700'>
+                <AlertCircle className='h-4 w-4' />
+                <span className='text-sm'>{error}</span>
               </div>
-            </Card>
+            </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button variant='outline' onClick={() => onOpenChange?.(false)}>
-            Cerrar
+          <Button variant='outline' onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleExport}
+            disabled={exporting || data.length === 0}
+            className='min-w-[120px]'
+          >
+            {exporting ? (
+              <>
+                <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                Exportando...
+              </>
+            ) : (
+              <>
+                <Download className='h-4 w-4 mr-2' />
+                Exportar {exportType.toUpperCase()}
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

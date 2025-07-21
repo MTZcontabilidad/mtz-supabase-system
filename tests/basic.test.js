@@ -158,7 +158,7 @@ describe('File Structure', () => {
       'tailwind.config.js',
       'jsconfig.json',
       '.gitignore',
-      'env.local',
+      '.env.local',
     ];
 
     requiredFiles.forEach(file => {

@@ -1,20 +1,20 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { fileURLToPath, URL } from 'node:url';
+import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@': path.resolve(__dirname, './src'),
     },
   },
   server: {
-    port: 3002,
+    port: 5173,
     host: true,
     open: true,
-    strictPort: true,
+    strictPort: false,
   },
   build: {
     outDir: 'dist',
@@ -25,8 +25,15 @@ export default defineConfig({
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
           'supabase-vendor': ['@supabase/supabase-js'],
-          'ui-vendor': ['lucide-react', 'recharts'],
+          'ui-vendor': ['lucide-react'],
+          'charts-vendor': ['recharts'],
+          'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'router-vendor': ['react-router-dom'],
+          'utils-vendor': ['date-fns', 'clsx', 'tailwind-merge'],
         },
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
       },
     },
     terserOptions: {
@@ -34,8 +41,14 @@ export default defineConfig({
         drop_console: false,
         drop_debugger: true,
         keep_fnames: true,
+        pure_funcs: ['console.log', 'console.info'],
+        passes: 2,
+      },
+      mangle: {
+        toplevel: true,
       },
     },
+    chunkSizeWarningLimit: 1000,
   },
   optimizeDeps: {
     include: [
@@ -45,6 +58,9 @@ export default defineConfig({
       '@supabase/supabase-js',
       'recharts',
       'react-router-dom',
+      'react-hook-form',
+      '@hookform/resolvers',
+      'zod',
     ],
   },
 });

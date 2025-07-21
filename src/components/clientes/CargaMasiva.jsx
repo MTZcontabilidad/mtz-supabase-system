@@ -12,20 +12,20 @@ import {
   BarChart3,
   Database,
 } from 'lucide-react';
-import Button from '@/components/ui/Button.jsx';
-import Card from '@/components/ui/Card.jsx';
-import Progress from '@/components/ui/Progress.jsx';
-import Badge from '@/components/ui/Badge.jsx';
+import Button from '../ui/Button.jsx';
+import Card from '../ui/Card.jsx';
+import Progress from '../ui/Progress.jsx';
+import Badge from '../ui/Badge.jsx';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/Dialog.jsx';
-import { cn, validateRUT, formatRUT } from '@/utils/helpers.js';
+} from '../ui/Dialog.jsx';
+import { cn, validateRut, formatRUT } from '../../utils/helpers.js';
 import { ESTADOS_CLIENTE, TIPOS_EMPRESA } from '@/utils/constants.js';
-import { supabase } from '@/lib/supabase.js';
+import { supabase } from '../../lib/supabase.js';
 
 /**
  * CargaMasiva Component
@@ -113,7 +113,7 @@ const CargaMasiva = ({
     }
     if (!row.rut) {
       errors.push('RUT es requerido');
-    } else if (!validateRUT(row.rut)) {
+    } else if (!validateRut(row.rut)) {
       errors.push('RUT inválido');
     }
     if (!row.id_cliente) {

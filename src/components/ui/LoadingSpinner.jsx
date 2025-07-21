@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react';
-import { cn } from '@/utils/helpers.js';
+import { cn } from '../../utils/helpers.js';
 
 const LoadingSpinner = ({ size = 'md', className }) => {
   const sizes = {

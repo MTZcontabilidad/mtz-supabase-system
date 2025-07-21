@@ -1,4 +1,4 @@
-import { cn } from '@/utils/helpers.js';
+import { cn } from '../../utils/helpers.js';
 
 const Card = ({ children, className, padding = 'p-6', ...props }) => {
   return (

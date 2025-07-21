@@ -1,484 +1,376 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Card from '@/components/ui/Card.jsx';
-import Button from '@/components/ui/Button.jsx';
-import Input from '@/components/ui/Input.jsx';
-import Badge from '@/components/ui/Badge.jsx';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/Dialog.jsx';
-import {
-  Building2,
   User,
+  Building,
   MapPin,
   Phone,
   Mail,
-  FileText,
-  Save,
-  X,
+  Globe,
+  DollarSign,
   AlertCircle,
+  CheckCircle,
 } from 'lucide-react';
-import { cn, validateRUT, formatRUT } from '@/utils/helpers.js';
-import {
-  ESTADOS_CLIENTE,
-  TIPOS_EMPRESA,
-  REGIONES_CHILE,
-} from '@/utils/constants.js';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
+import Textarea from '@/components/ui/Textarea';
+import Card from '@/components/ui/Card';
 
-// Schema de validación con Zod
+// Esquema de validación con Zod
 const clienteSchema = z.object({
-  id_cliente: z.string().min(1, 'Código de cliente es requerido'),
+  nombre: z
+    .string()
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .max(100, 'El nombre no puede exceder 100 caracteres'),
   razon_social: z
     .string()
-    .min(2, 'Razón social debe tener al menos 2 caracteres'),
-  rut: z.string().refine(validateRUT, 'RUT inválido'),
-  tipo_empresa: z.string().min(1, 'Tipo de empresa es requerido'),
-  rubro: z.string().optional(),
-  estado: z.string().min(1, 'Estado es requerido'),
-  telefono: z.string().optional(),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
-  direccion_completa: z.string().optional(),
-  categoria_cliente: z.string().optional(),
-
-  // Datos SII y legales
-  clave_sii: z.string().optional(),
-  rut_representante_legal: z.string().optional(),
-  clave_sii_representante: z.string().optional(),
-  clave_unica: z.string().optional(),
-  certificado_digital: z.string().optional(),
-
-  // Datos financieros
+    .min(2, 'La razón social debe tener al menos 2 caracteres')
+    .max(100, 'La razón social no puede exceder 100 caracteres'),
+  rut: z
+    .string()
+    .min(8, 'El RUT debe tener al menos 8 caracteres')
+    .max(12, 'El RUT no puede exceder 12 caracteres')
+    .regex(/^[0-9]{7,8}-[0-9kK]$/, 'Formato de RUT inválido'),
+  giro: z
+    .string()
+    .min(5, 'El giro debe tener al menos 5 caracteres')
+    .max(200, 'El giro no puede exceder 200 caracteres'),
+  direccion: z
+    .string()
+    .min(10, 'La dirección debe tener al menos 10 caracteres')
+    .max(200, 'La dirección no puede exceder 200 caracteres'),
+  comuna: z
+    .string()
+    .min(2, 'La comuna debe tener al menos 2 caracteres')
+    .max(50, 'La comuna no puede exceder 50 caracteres'),
+  region: z
+    .string()
+    .min(2, 'La región debe tener al menos 2 caracteres')
+    .max(50, 'La región no puede exceder 50 caracteres'),
+  telefono: z
+    .string()
+    .min(8, 'El teléfono debe tener al menos 8 caracteres')
+    .max(15, 'El teléfono no puede exceder 15 caracteres')
+    .regex(/^[+]?[0-9\s-()]+$/, 'Formato de teléfono inválido'),
+  email: z
+    .string()
+    .email('Formato de email inválido')
+    .max(100, 'El email no puede exceder 100 caracteres'),
+  sitio_web: z
+    .string()
+    .url('Formato de sitio web inválido')
+    .optional()
+    .or(z.literal('')),
+  categoria_cliente: z.enum(['Alto', 'Medio', 'Bajo'], {
+    required_error: 'Debe seleccionar una categoría',
+  }),
+  estado: z.enum(['Activo', 'Inactivo', 'Pendiente'], {
+    required_error: 'Debe seleccionar un estado',
+  }),
   total_facturado: z
-    .number()
-    .min(0, 'Total facturado no puede ser negativo')
-    .optional(),
-  numero_facturas: z
-    .number()
-    .min(0, 'Número de facturas no puede ser negativo')
-    .optional(),
-  promedio_factura: z
-    .number()
-    .min(0, 'Promedio de factura no puede ser negativo')
-    .optional(),
+    .string()
+    .regex(/^[0-9,]+$/, 'Solo números permitidos')
+    .transform(val => parseFloat(val.replace(/,/g, '')) || 0),
+  servicios_adicionales: z
+    .string()
+    .max(500, 'Los servicios adicionales no pueden exceder 500 caracteres')
+    .optional()
+    .or(z.literal('')),
+  observaciones: z
+    .string()
+    .max(1000, 'Las observaciones no pueden exceder 1000 caracteres')
+    .optional()
+    .or(z.literal('')),
 });
 
 /**
- * ClienteForm Component
- * Formulario profesional para crear y editar clientes.
- * Incluye validaciones completas y campos organizados por secciones.
- *
- * @param {Object} props - Propiedades del componente
- * @param {Object} props.cliente - Cliente a editar (opcional)
- * @param {Function} props.onSubmit - Callback al enviar formulario
- * @param {Function} props.onCancel - Callback al cancelar
- * @param {boolean} props.loading - Estado de carga
- * @param {boolean} props.open - Si el modal está abierto
- * @param {Function} props.onOpenChange - Callback para cambio de estado del modal
+ * Componente de formulario para clientes
+ * Maneja creación y edición de clientes con validación avanzada
  */
 const ClienteForm = ({
   cliente = null,
   onSubmit,
   onCancel,
   loading = false,
-  open = false,
-  onOpenChange,
 }) => {
-  const isEditing = !!cliente;
-
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors, isSubmitting },
     reset,
     watch,
-    setValue,
   } = useForm({
     resolver: zodResolver(clienteSchema),
-    mode: 'onChange',
-    defaultValues: {
-      id_cliente: '',
+    defaultValues: cliente || {
+      nombre: '',
       razon_social: '',
       rut: '',
-      tipo_empresa: '',
-      rubro: '',
-      estado: 'Activo',
+      giro: '',
+      direccion: '',
+      comuna: '',
+      region: '',
       telefono: '',
       email: '',
-      direccion_completa: '',
-      categoria_cliente: '',
-      clave_sii: '',
-      rut_representante_legal: '',
-      clave_sii_representante: '',
-      clave_unica: '',
-      certificado_digital: '',
-      total_facturado: 0,
-      numero_facturas: 0,
-      promedio_factura: 0,
+      sitio_web: '',
+      categoria_cliente: 'Medio',
+      estado: 'Activo',
+      total_facturado: '0',
+      servicios_adicionales: '',
+      observaciones: '',
     },
   });
 
-  // Cargar datos del cliente si se está editando
-  useEffect(() => {
-    if (cliente) {
-      reset({
-        ...cliente,
-        total_facturado: cliente.total_facturado || 0,
-        numero_facturas: cliente.numero_facturas || 0,
-        promedio_factura: cliente.promedio_factura || 0,
-      });
+  const watchedValues = watch();
+
+  // Calcular validación en tiempo real
+  const isFormValid = Object.keys(errors).length === 0;
+
+  const handleFormSubmit = async data => {
+    try {
+      await onSubmit(data);
+      if (!cliente) {
+        reset(); // Solo resetear si es creación
+      }
+    } catch (error) {
+      console.error('Error en formulario:', error);
+    }
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
     } else {
       reset();
     }
-  }, [cliente, reset]);
-
-  // Formatear RUT automáticamente
-  const handleRutChange = e => {
-    const formattedRut = formatRUT(e.target.value);
-    setValue('rut', formattedRut);
-  };
-
-  // Manejar envío del formulario
-  const handleFormSubmit = data => {
-    onSubmit(data);
-  };
-
-  // Manejar cancelación
-  const handleCancel = () => {
-    reset();
-    onCancel?.();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
-        <DialogHeader>
-          <DialogTitle className='flex items-center gap-2'>
-            <Building2 className='h-5 w-5' />
-            {isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}
-          </DialogTitle>
-        </DialogHeader>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-6'>
+      <Card className='p-6'>
+        <div className='flex items-center gap-2 mb-6'>
+          <User className='h-5 w-5 text-blue-600' />
+          <h3 className='text-lg font-semibold'>
+            {cliente ? 'Editar Cliente' : 'Nuevo Cliente'}
+          </h3>
+        </div>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-6'>
-          {/* Información Básica */}
-          <Card className='p-6'>
-            <h3 className='text-lg font-medium text-gray-900 mb-4 flex items-center gap-2'>
-              <Building2 className='h-5 w-5' />
-              Información Básica
-            </h3>
+        {/* Información Básica */}
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-6'>
+          <div>
+            <Input
+              label='Nombre *'
+              icon={<User className='h-4 w-4' />}
+              placeholder='Nombre del cliente'
+              {...register('nombre')}
+              error={errors.nombre?.message}
+            />
+          </div>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Código Cliente *
-                </label>
-                <Input
-                  {...register('id_cliente')}
-                  placeholder='Ej: 0217'
-                  className={cn(errors.id_cliente && 'border-red-500')}
-                />
-                {errors.id_cliente && (
-                  <p className='text-sm text-red-600 mt-1'>
-                    {errors.id_cliente.message}
-                  </p>
-                )}
-              </div>
+          <div>
+            <Input
+              label='Razón Social *'
+              icon={<Building className='h-4 w-4' />}
+              placeholder='Razón social'
+              {...register('razon_social')}
+              error={errors.razon_social?.message}
+            />
+          </div>
 
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  RUT *
-                </label>
-                <Input
-                  {...register('rut')}
-                  onChange={handleRutChange}
-                  placeholder='12.345.678-9'
-                  className={cn(errors.rut && 'border-red-500')}
-                />
-                {errors.rut && (
-                  <p className='text-sm text-red-600 mt-1'>
-                    {errors.rut.message}
-                  </p>
-                )}
-              </div>
+          <div>
+            <Input
+              label='RUT *'
+              icon={<User className='h-4 w-4' />}
+              placeholder='12.345.678-9'
+              {...register('rut')}
+              error={errors.rut?.message}
+            />
+          </div>
 
-              <div className='md:col-span-2'>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Razón Social *
-                </label>
-                <Input
-                  {...register('razon_social')}
-                  placeholder='Nombre de la empresa'
-                  className={cn(errors.razon_social && 'border-red-500')}
-                />
-                {errors.razon_social && (
-                  <p className='text-sm text-red-600 mt-1'>
-                    {errors.razon_social.message}
-                  </p>
-                )}
-              </div>
+          <div>
+            <Input
+              label='Giro Comercial *'
+              icon={<Building className='h-4 w-4' />}
+              placeholder='Actividad económica'
+              {...register('giro')}
+              error={errors.giro?.message}
+            />
+          </div>
+        </div>
 
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Tipo de Empresa *
-                </label>
-                <select
-                  {...register('tipo_empresa')}
-                  className={cn(
-                    'w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500',
-                    errors.tipo_empresa && 'border-red-500'
-                  )}
-                >
-                  <option value=''>Seleccionar tipo</option>
-                  {TIPOS_EMPRESA.map(tipo => (
-                    <option key={tipo} value={tipo}>
-                      {tipo}
-                    </option>
-                  ))}
-                </select>
-                {errors.tipo_empresa && (
-                  <p className='text-sm text-red-600 mt-1'>
-                    {errors.tipo_empresa.message}
-                  </p>
-                )}
-              </div>
+        {/* Información de Contacto */}
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-6'>
+          <div>
+            <Input
+              label='Teléfono *'
+              icon={<Phone className='h-4 w-4' />}
+              placeholder='+56 9 1234 5678'
+              {...register('telefono')}
+              error={errors.telefono?.message}
+            />
+          </div>
 
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Rubro
-                </label>
-                <Input
-                  {...register('rubro')}
-                  placeholder='Ej: Tecnología, Construcción'
-                />
-              </div>
+          <div>
+            <Input
+              label='Email *'
+              icon={<Mail className='h-4 w-4' />}
+              placeholder='cliente@empresa.com'
+              type='email'
+              {...register('email')}
+              error={errors.email?.message}
+            />
+          </div>
 
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Estado *
-                </label>
-                <select
-                  {...register('estado')}
-                  className={cn(
-                    'w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500',
-                    errors.estado && 'border-red-500'
-                  )}
-                >
-                  {ESTADOS_CLIENTE.map(estado => (
-                    <option key={estado} value={estado}>
-                      {estado}
-                    </option>
-                  ))}
-                </select>
-                {errors.estado && (
-                  <p className='text-sm text-red-600 mt-1'>
-                    {errors.estado.message}
-                  </p>
-                )}
-              </div>
+          <div>
+            <Input
+              label='Sitio Web'
+              icon={<Globe className='h-4 w-4' />}
+              placeholder='https://www.empresa.com'
+              {...register('sitio_web')}
+              error={errors.sitio_web?.message}
+            />
+          </div>
 
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Categoría
-                </label>
-                <select
-                  {...register('categoria_cliente')}
-                  className='w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-                >
-                  <option value=''>Sin categoría</option>
-                  <option value='VIP'>VIP</option>
-                  <option value='Premium'>Premium</option>
-                  <option value='Top'>Top</option>
-                  <option value='Regular'>Regular</option>
-                  <option value='Medio'>Medio</option>
-                  <option value='Bajo'>Bajo</option>
-                </select>
-              </div>
-            </div>
-          </Card>
+          <div>
+            <Input
+              label='Total Facturado'
+              icon={<DollarSign className='h-4 w-4' />}
+              placeholder='1,000,000'
+              {...register('total_facturado')}
+              error={errors.total_facturado?.message}
+            />
+          </div>
+        </div>
 
-          {/* Información de Contacto */}
-          <Card className='p-6'>
-            <h3 className='text-lg font-medium text-gray-900 mb-4 flex items-center gap-2'>
-              <User className='h-5 w-5' />
-              Información de Contacto
-            </h3>
+        {/* Dirección */}
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'>
+          <div className='md:col-span-2'>
+            <Input
+              label='Dirección *'
+              icon={<MapPin className='h-4 w-4' />}
+              placeholder='Calle 123, Oficina 456'
+              {...register('direccion')}
+              error={errors.direccion?.message}
+            />
+          </div>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Teléfono
-                </label>
-                <Input
-                  {...register('telefono')}
-                  placeholder='+56 9 1234 5678'
-                />
-              </div>
+          <div>
+            <Input
+              label='Comuna *'
+              icon={<MapPin className='h-4 w-4' />}
+              placeholder='Santiago'
+              {...register('comuna')}
+              error={errors.comuna?.message}
+            />
+          </div>
 
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Email
-                </label>
-                <Input
-                  {...register('email')}
-                  type='email'
-                  placeholder='contacto@empresa.cl'
-                  className={cn(errors.email && 'border-red-500')}
-                />
-                {errors.email && (
-                  <p className='text-sm text-red-600 mt-1'>
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
+          <div>
+            <Input
+              label='Región *'
+              icon={<MapPin className='h-4 w-4' />}
+              placeholder='Metropolitana'
+              {...register('region')}
+              error={errors.region?.message}
+            />
+          </div>
+        </div>
 
-              <div className='md:col-span-2'>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Dirección Completa
-                </label>
-                <Input
-                  {...register('direccion_completa')}
-                  placeholder='Av. Providencia 1234, Santiago'
-                />
-              </div>
-            </div>
-          </Card>
+        {/* Clasificación */}
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-6'>
+          <div>
+            <Select
+              label='Categoría *'
+              {...register('categoria_cliente')}
+              error={errors.categoria_cliente?.message}
+            >
+              <option value=''>Seleccionar categoría</option>
+              <option value='Alto'>Alto</option>
+              <option value='Medio'>Medio</option>
+              <option value='Bajo'>Bajo</option>
+            </Select>
+          </div>
 
-          {/* Datos SII y Legales */}
-          <Card className='p-6'>
-            <h3 className='text-lg font-medium text-gray-900 mb-4 flex items-center gap-2'>
-              <FileText className='h-5 w-5' />
-              Datos SII y Legales
-            </h3>
+          <div>
+            <Select
+              label='Estado *'
+              {...register('estado')}
+              error={errors.estado?.message}
+            >
+              <option value=''>Seleccionar estado</option>
+              <option value='Activo'>Activo</option>
+              <option value='Inactivo'>Inactivo</option>
+              <option value='Pendiente'>Pendiente</option>
+            </Select>
+          </div>
+        </div>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Clave SII
-                </label>
-                <Input
-                  {...register('clave_sii')}
-                  placeholder='Clave SII de la empresa'
-                />
-              </div>
+        {/* Información Adicional */}
+        <div className='space-y-4'>
+          <div>
+            <Textarea
+              label='Servicios Adicionales'
+              placeholder='Descripción de servicios adicionales contratados'
+              rows={3}
+              {...register('servicios_adicionales')}
+              error={errors.servicios_adicionales?.message}
+            />
+          </div>
 
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  RUT Representante Legal
-                </label>
-                <Input
-                  {...register('rut_representante_legal')}
-                  placeholder='12.345.678-9'
-                />
-              </div>
+          <div>
+            <Textarea
+              label='Observaciones'
+              placeholder='Observaciones adicionales sobre el cliente'
+              rows={4}
+              {...register('observaciones')}
+              error={errors.observaciones?.message}
+            />
+          </div>
+        </div>
 
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Clave SII Representante
-                </label>
-                <Input
-                  {...register('clave_sii_representante')}
-                  placeholder='Clave SII del representante'
-                />
-              </div>
+        {/* Indicador de Validación */}
+        <div className='mt-4 p-3 rounded-lg border'>
+          <div className='flex items-center gap-2'>
+            {isFormValid ? (
+              <>
+                <CheckCircle className='h-4 w-4 text-green-600' />
+                <span className='text-sm text-green-600 font-medium'>
+                  Formulario válido
+                </span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className='h-4 w-4 text-red-600' />
+                <span className='text-sm text-red-600 font-medium'>
+                  Hay errores en el formulario
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      </Card>
 
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Clave Única
-                </label>
-                <Input {...register('clave_unica')} placeholder='Clave única' />
-              </div>
+      {/* Botones de Acción */}
+      <div className='flex justify-end gap-4'>
+        <Button
+          type='button'
+          variant='outline'
+          onClick={handleCancel}
+          disabled={loading || isSubmitting}
+        >
+          Cancelar
+        </Button>
 
-              <div className='md:col-span-2'>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Certificado Digital
-                </label>
-                <Input
-                  {...register('certificado_digital')}
-                  placeholder='Número de certificado digital'
-                />
-              </div>
-            </div>
-          </Card>
-
-          {/* Datos Financieros */}
-          <Card className='p-6'>
-            <h3 className='text-lg font-medium text-gray-900 mb-4 flex items-center gap-2'>
-              <FileText className='h-5 w-5' />
-              Datos Financieros
-            </h3>
-
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Total Facturado
-                </label>
-                <Input
-                  {...register('total_facturado', { valueAsNumber: true })}
-                  type='number'
-                  placeholder='0'
-                  className={cn(errors.total_facturado && 'border-red-500')}
-                />
-                {errors.total_facturado && (
-                  <p className='text-sm text-red-600 mt-1'>
-                    {errors.total_facturado.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Número de Facturas
-                </label>
-                <Input
-                  {...register('numero_facturas', { valueAsNumber: true })}
-                  type='number'
-                  placeholder='0'
-                  className={cn(errors.numero_facturas && 'border-red-500')}
-                />
-                {errors.numero_facturas && (
-                  <p className='text-sm text-red-600 mt-1'>
-                    {errors.numero_facturas.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Promedio Factura
-                </label>
-                <Input
-                  {...register('promedio_factura', { valueAsNumber: true })}
-                  type='number'
-                  placeholder='0'
-                  className={cn(errors.promedio_factura && 'border-red-500')}
-                />
-                {errors.promedio_factura && (
-                  <p className='text-sm text-red-600 mt-1'>
-                    {errors.promedio_factura.message}
-                  </p>
-                )}
-              </div>
-            </div>
-          </Card>
-
-          <DialogFooter>
-            <Button type='button' variant='outline' onClick={handleCancel}>
-              <X className='h-4 w-4 mr-2' />
-              Cancelar
-            </Button>
-            <Button type='submit' disabled={!isValid || loading}>
-              <Save className='h-4 w-4 mr-2' />
-              {loading ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <Button
+          type='submit'
+          loading={loading || isSubmitting}
+          disabled={!isFormValid}
+        >
+          {cliente ? 'Actualizar Cliente' : 'Crear Cliente'}
+        </Button>
+      </div>
+    </form>
   );
 };
 

@@ -1,4 +1,4 @@
-import { cn } from '@/utils/helpers.js';
+import { cn } from '../../utils/helpers.js';
 
 /**
  * Badge Component

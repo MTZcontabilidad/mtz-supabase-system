@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
-import Button from '@/components/ui/Button.jsx';
-import Input from '@/components/ui/Input.jsx';
-import Card from '@/components/ui/Card.jsx';
-import Badge from '@/components/ui/Badge.jsx';
-import { cn } from '@/utils/helpers.js';
+import Button from '../ui/Button.jsx';
+import Input from '../ui/Input.jsx';
+import Card from '../ui/Card.jsx';
+import Badge from '../ui/Badge.jsx';
+import { cn  } from '../../utils/helpers.js';
 import {
   ESTADOS_CLIENTE,
   TIPOS_EMPRESA,

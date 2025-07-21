@@ -1,116 +1,184 @@
-import React from 'react';
-import * as ToastPrimitive from '@radix-ui/react-toast';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
-import { cn } from '@/utils/helpers.js';
 
-/**
- * Toast Component
- * Sistema de notificaciones profesional usando Radix UI.
- * Soporta diferentes tipos y posiciones.
- *
- * @param {Object} props - Propiedades del componente
- * @param {string} props.title - Título de la notificación
- * @param {string} props.description - Descripción de la notificación
- * @param {string} props.variant - Tipo de notificación
- * @param {boolean} props.open - Estado abierto/cerrado
- * @param {Function} props.onOpenChange - Callback para cambio de estado
- */
+// Contexto para las notificaciones
+const ToastContext = createContext();
 
-const ToastProvider = ToastPrimitive.Provider;
-
-const ToastViewport = React.forwardRef(({ className, ...props }, ref) => (
-  <ToastPrimitive.Viewport
-    ref={ref}
-    className={cn(
-      'fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]',
-      className
-    )}
-    {...props}
-  />
-));
-ToastViewport.displayName = ToastPrimitive.Viewport.displayName;
-
-const Toast = React.forwardRef(
-  ({ className, variant = 'default', ...props }, ref) => {
-    const icons = {
-      default: Info,
-      success: CheckCircle,
-      error: AlertCircle,
-      warning: AlertTriangle,
-      info: Info,
-    };
-
-    const variants = {
-      default: 'border-gray-200 bg-white text-gray-900',
-      success: 'border-green-200 bg-green-50 text-green-900',
-      error: 'border-red-200 bg-red-50 text-red-900',
-      warning: 'border-yellow-200 bg-yellow-50 text-yellow-900',
-      info: 'border-blue-200 bg-blue-50 text-blue-900',
-    };
-
-    const Icon = icons[variant];
-
-    return (
-      <ToastPrimitive.Root
-        ref={ref}
-        className={cn(
-          'group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full',
-          variants[variant],
-          className
-        )}
-        {...props}
-      >
-        <div className='flex items-center space-x-3'>
-          <Icon className='h-5 w-5' />
-          <div className='flex-1'>{props.children}</div>
-        </div>
-        <ToastPrimitive.Close className='absolute right-2 top-2 rounded-md p-1 text-gray-500 opacity-0 transition-opacity hover:text-gray-900 focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600'>
-          <X className='h-4 w-4' />
-        </ToastPrimitive.Close>
-      </ToastPrimitive.Root>
-    );
+// Hook personalizado para usar las notificaciones
+export const useToast = () => {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error('useToast debe usarse dentro de un ToastProvider');
   }
-);
-Toast.displayName = ToastPrimitive.Root.displayName;
-
-const ToastAction = React.forwardRef(({ className, ...props }, ref) => (
-  <ToastPrimitive.Action
-    ref={ref}
-    className={cn(
-      'inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive',
-      className
-    )}
-    {...props}
-  />
-));
-ToastAction.displayName = ToastPrimitive.Action.displayName;
-
-const ToastClose = ToastPrimitive.Close;
-
-const ToastTitle = React.forwardRef(({ className, ...props }, ref) => (
-  <ToastPrimitive.Title
-    ref={ref}
-    className={cn('text-sm font-semibold', className)}
-    {...props}
-  />
-));
-ToastTitle.displayName = ToastPrimitive.Title.displayName;
-
-const ToastDescription = React.forwardRef(({ className, ...props }, ref) => (
-  <ToastPrimitive.Description
-    ref={ref}
-    className={cn('text-sm opacity-90', className)}
-    {...props}
-  />
-));
-ToastDescription.displayName = ToastPrimitive.Description.displayName;
-
-export {
-  ToastProvider,
-  ToastViewport,
-  Toast,
-  ToastTitle,
-  ToastDescription,
-  ToastClose,
-  ToastAction,
+  return context;
 };
+
+// Componente Toast individual
+const Toast = ({ id, type, title, message, duration = 5000, onRemove }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Animación de entrada
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    // Auto-remover después del tiempo especificado
+    if (duration > 0) {
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+        setTimeout(() => onRemove(id), 300); // Esperar animación de salida
+      }, duration);
+      return () => clearTimeout(timer);
+    }
+  }, [duration, id, onRemove]);
+
+  const getIcon = () => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle className='w-5 h-5 text-green-500' />;
+      case 'error':
+        return <AlertCircle className='w-5 h-5 text-red-500' />;
+      case 'warning':
+        return <AlertTriangle className='w-5 h-5 text-yellow-500' />;
+      case 'info':
+        return <Info className='w-5 h-5 text-blue-500' />;
+      default:
+        return <Info className='w-5 h-5 text-gray-500' />;
+    }
+  };
+
+  const getStyles = () => {
+    const baseStyles =
+      'flex items-start gap-3 p-4 rounded-lg shadow-lg border-l-4 transition-all duration-300 transform';
+
+    switch (type) {
+      case 'success':
+        return `${baseStyles} bg-green-50 border-green-500 text-green-800`;
+      case 'error':
+        return `${baseStyles} bg-red-50 border-red-500 text-red-800`;
+      case 'warning':
+        return `${baseStyles} bg-yellow-50 border-yellow-500 text-yellow-800`;
+      case 'info':
+        return `${baseStyles} bg-blue-50 border-blue-500 text-blue-800`;
+      default:
+        return `${baseStyles} bg-gray-50 border-gray-500 text-gray-800`;
+    }
+  };
+
+  return (
+    <div
+      className={`${getStyles()} ${
+        isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+      }`}
+      style={{ minWidth: '300px', maxWidth: '400px' }}
+    >
+      {getIcon()}
+      <div className='flex-1 min-w-0'>
+        {title && <h4 className='font-medium text-sm mb-1'>{title}</h4>}
+        {message && <p className='text-sm opacity-90'>{message}</p>}
+      </div>
+      <button
+        onClick={() => {
+          setIsVisible(false);
+          setTimeout(() => onRemove(id), 300);
+        }}
+        className='flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors'
+      >
+        <X className='w-4 h-4' />
+      </button>
+    </div>
+  );
+};
+
+// Contenedor de toasts
+const ToastContainer = ({ toasts, removeToast }) => {
+  return (
+    <div className='fixed top-4 right-4 z-50 space-y-2'>
+      {toasts.map(toast => (
+        <Toast key={toast.id} {...toast} onRemove={removeToast} />
+      ))}
+    </div>
+  );
+};
+
+// Provider principal
+export const ToastProvider = ({ children }) => {
+  const [toasts, setToasts] = useState([]);
+
+  const addToast = toast => {
+    const id = Date.now() + Math.random();
+    const newToast = { id, ...toast };
+    setToasts(prev => [...prev, newToast]);
+    return id;
+  };
+
+  const removeToast = id => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
+
+  const showToast = (type, message, options = {}) => {
+    return addToast({
+      type,
+      message,
+      ...options,
+    });
+  };
+
+  // Métodos de conveniencia
+  const toast = {
+    success: (message, options) => showToast('success', message, options),
+    error: (message, options) => showToast('error', message, options),
+    warning: (message, options) => showToast('warning', message, options),
+    info: (message, options) => showToast('info', message, options),
+    show: showToast,
+    remove: removeToast,
+  };
+
+  return (
+    <ToastContext.Provider value={toast}>
+      {children}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+    </ToastContext.Provider>
+  );
+};
+
+// Componente de ejemplo de uso
+export const ToastExample = () => {
+  const toast = useToast();
+
+  return (
+    <div className='space-y-2'>
+      <button
+        onClick={() => toast.success('Operación completada exitosamente!')}
+        className='px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600'
+      >
+        Mostrar Éxito
+      </button>
+
+      <button
+        onClick={() => toast.error('Ha ocurrido un error inesperado')}
+        className='px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600'
+      >
+        Mostrar Error
+      </button>
+
+      <button
+        onClick={() => toast.warning('Atención: Este archivo será eliminado')}
+        className='px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600'
+      >
+        Mostrar Advertencia
+      </button>
+
+      <button
+        onClick={() => toast.info('Nueva actualización disponible')}
+        className='px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600'
+      >
+        Mostrar Info
+      </button>
+    </div>
+  );
+};
+
+export default Toast;

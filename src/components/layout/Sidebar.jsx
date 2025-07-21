@@ -12,22 +12,48 @@ import {
   X,
   DollarSign,
   ClipboardList,
+  Upload,
+  PieChart,
+  Target,
+  Building,
+  User,
+  Briefcase,
+  Calculator,
 } from 'lucide-react';
-import { cn } from '@/utils/helpers.js';
-import useAuth from '@/hooks/useAuth.js';
+import { cn } from '../../utils/helpers.js';
+import useAuth from '../../hooks/useAuth.js';
 
 const navigation = [
-  { name: 'Dashboard', href: '/app/dashboard', icon: LayoutDashboard },
-  { name: 'Clientes', href: '/app/clients', icon: Users },
-  { name: 'Cobranza', href: '/app/cobranza', icon: DollarSign },
-  { name: 'Requerimientos', href: '/app/requerimientos', icon: ClipboardList },
-  { name: 'Reportes', href: '/app/reports', icon: FileText },
-  { name: 'Analytics', href: '/app/analytics', icon: BarChart3 },
-  { name: 'Proyecciones', href: '/app/proyecciones', icon: TrendingUp },
-  { name: 'Administración', href: '/app/admin', icon: Shield, adminOnly: true },
+  { name: 'Dashboard MTZ', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Clientes', href: '/clientes', icon: Users },
+  {
+    name: 'Portal Clientes',
+    href: '/portal-clientes',
+    icon: User,
+    clienteOnly: true,
+  },
+  { name: 'Ventas', href: '/ventas', icon: FileText },
+  { name: 'Cobranza', href: '/cobranza', icon: DollarSign },
+  { name: 'Compras', href: '/compras', icon: Building },
+  {
+    name: 'Contratos',
+    href: '/contratos',
+    icon: FileText,
+    adminOnly: true,
+  },
+  { name: 'IVA', href: '/iva', icon: Calculator },
+  { name: 'RRHH', href: '/rrhh', icon: Briefcase },
+  { name: 'Carga Masiva', href: '/carga-masiva', icon: Upload },
+  { name: 'Reportes', href: '/reportes', icon: FileText },
+  {
+    name: 'Administración',
+    href: '/admin/usuarios',
+    icon: Shield,
+    adminOnly: true,
+  },
   {
     name: 'Configuración',
-    href: '/app/settings',
+    href: '/configuracion',
     icon: Settings,
     adminOnly: true,
   },
@@ -89,6 +115,11 @@ const Sidebar = () => {
                 return null;
               }
 
+              // Ocultar elementos solo para cliente si el usuario no es cliente
+              if (item.clienteOnly && role !== 'cliente') {
+                return null;
+              }
+
               const Icon = item.icon;
               return (
                 <NavLink
@@ -108,6 +139,9 @@ const Sidebar = () => {
                   {item.name}
                   {item.adminOnly && (
                     <Shield className='ml-auto h-3 w-3 text-gray-400' />
+                  )}
+                  {item.clienteOnly && (
+                    <User className='ml-auto h-3 w-3 text-gray-400' />
                   )}
                 </NavLink>
               );

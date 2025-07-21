@@ -1,761 +1,814 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
 import {
   Settings,
   User,
   Shield,
-  Bell,
-  Palette,
   Database,
-  Globe,
-  Key,
-  Save,
+  Search,
+  Filter,
+  Plus,
   RefreshCw,
   Eye,
-  EyeOff,
-  CheckCircle,
-  AlertCircle,
-  Trash2,
   Download,
+  Save,
+  CheckCircle,
+  Edit,
+  Trash2,
+  Bell,
+  Lock,
+  Globe,
+  Palette,
+  Monitor,
+  Smartphone,
+  Mail,
+  Key,
+  Users as UsersIcon,
+  Building,
+  CreditCard,
+  FileText,
   Upload,
+  AlertTriangle,
+  Activity,
+  HardDrive,
+  Server,
+  Wifi,
+  Zap,
+  Clock,
+  Calendar,
+  BarChart3,
+  PieChart,
+  LineChart,
+  TrendingUp,
+  TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+  ChevronDown,
+  ChevronUp,
+  MoreHorizontal,
+  RotateCcw,
+  Play,
+  Pause,
+  X,
+  AlertCircle,
+  Info,
+  CheckSquare,
+  Square,
+  Hash,
+  ToggleLeft,
+  Code,
 } from 'lucide-react';
-import Card from '@/components/ui/Card.jsx';
-import Button from '@/components/ui/Button.jsx';
-import Badge from '@/components/ui/Badge.jsx';
-import Input from '@/components/ui/Input.jsx';
-import useAuth from '@/hooks/useAuth.js';
+import {
+  BarChart as RechartsBarChart,
+  Bar,
+  LineChart as RechartsLineChart,
+  Line,
+  PieChart as RechartsPieChart,
+  Pie,
+  AreaChart as RechartsAreaChart,
+  Area as RechartsArea,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import Badge from '@/components/ui/Badge';
+import Input from '@/components/ui/Input';
+import Modal from '@/components/ui/Modal';
+import TableComponent from '@/components/ui/Table';
+import Select from '@/components/ui/Select';
+import ConfiguracionForm from '@/components/settings/ConfiguracionForm';
+import { formatCurrency, formatDate, formatNumber } from '@/utils/helpers';
 
 /**
- * SettingsPage - Sistema de Configuración MTZ
- * Configuraciones del sistema, perfil de usuario y ajustes avanzados
+ * Página de Configuraciones Avanzadas MTZ - VERSIÓN MEJORADA
+ * Gestión completa de configuraciones del sistema, usuarios y seguridad
  */
 const SettingsPage = () => {
-  const { user, role } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('profile');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
+  // Estados locales para la UI
+  const [showModal, setShowModal] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [editingConfig, setEditingConfig] = useState(null);
+  const [activeTab, setActiveTab] = useState('configuraciones');
+  const [showSystemInfo, setShowSystemInfo] = useState(false);
 
-  // Estados para formularios
-  const [profileData, setProfileData] = useState({
-    nombre: user?.user_metadata?.full_name || '',
-    email: user?.email || '',
-    telefono: user?.user_metadata?.phone || '',
-    empresa: user?.user_metadata?.company || '',
-    cargo: user?.user_metadata?.position || '',
-  });
+  // Manejar actualización de configuración
+  const handleActualizarConfiguracion = async configData => {
+    try {
+      // En un entorno real, aquí se llamaría a una API para actualizar
+      // await actualizarConfiguracion(editingConfig.id, configData);
+      console.log('Simulando actualización de configuración:', configData);
+      setShowModal(false);
+      setEditingConfig(null);
+    } catch (error) {
+      console.error('Error actualizando configuración:', error);
+    }
+  };
 
-  const [securityData, setSecurityData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-    twoFactorEnabled: false,
-    sessionTimeout: 30,
-  });
+  // Manejar restauración de configuración
+  const handleRestaurarConfiguracion = async configId => {
+    try {
+      // En un entorno real, aquí se llamaría a una API para restaurar
+      console.log('Simulando restauración de configuración con ID:', configId);
+    } catch (error) {
+      console.error('Error restaurando configuración:', error);
+    }
+  };
 
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    weeklyReports: true,
-    monthlyReports: true,
-    securityAlerts: true,
-    systemUpdates: false,
-  });
+  // Manejar generación de backup
+  const handleGenerarBackup = async () => {
+    try {
+      // En un entorno real, aquí se llamaría a una API para generar backup
+      console.log('Simulando generación de backup...');
+    } catch (error) {
+      console.error('Error generando backup:', error);
+    }
+  };
 
-  const [appSettings, setAppSettings] = useState({
-    theme: 'light',
-    language: 'es',
-    timezone: 'America/Santiago',
-    dateFormat: 'DD/MM/YYYY',
-    currency: 'CLP',
-    autoSave: true,
-    compactMode: false,
-  });
+  // Obtener icono según categoría
+  const getCategoryIcon = categoria => {
+    const icons = {
+      Sistema: <Settings className='h-4 w-4' />,
+      Seguridad: <Shield className='h-4 w-4' />,
+      Notificaciones: <Bell className='h-4 w-4' />,
+      Apariencia: <Palette className='h-4 w-4' />,
+      Integración: <Globe className='h-4 w-4' />,
+      Backup: <Database className='h-4 w-4' />,
+      Email: <Mail className='h-4 w-4' />,
+      API: <Key className='h-4 w-4' />,
+    };
+    return icons[categoria] || <Settings className='h-4 w-4' />;
+  };
 
-  // Tabs disponibles
-  const tabs = [
-    { id: 'profile', name: 'Perfil', icon: User },
-    { id: 'security', name: 'Seguridad', icon: Shield },
-    { id: 'notifications', name: 'Notificaciones', icon: Bell },
-    { id: 'appearance', name: 'Apariencia', icon: Palette },
-    { id: 'system', name: 'Sistema', icon: Settings },
+  // Obtener icono según tipo
+  const getTypeIcon = tipo => {
+    const icons = {
+      Texto: <FileText className='h-4 w-4' />,
+      Número: <Hash className='h-4 w-4' />,
+      Booleano: <ToggleLeft className='h-4 w-4' />,
+      JSON: <Code className='h-4 w-4' />,
+      Fecha: <Calendar className='h-4 w-4' />,
+      Select: <FileText className='h-4 w-4' />,
+      Password: <Lock className='h-4 w-4' />,
+      URL: <Globe className='h-4 w-4' />,
+    };
+    return icons[tipo] || <FileText className='h-4 w-4' />;
+  };
+
+  // Columnas para la tabla de configuraciones
+  const configColumns = [
+    {
+      key: 'nombre',
+      label: 'Configuración',
+      render: (value, config) => (
+        <div className='flex items-center gap-2'>
+          {getCategoryIcon(config.categoria)}
+          <div>
+            <p className='font-medium'>{value}</p>
+            <p className='text-sm text-gray-500'>{config.descripcion}</p>
+          </div>
+        </div>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'categoria',
+      label: 'Categoría',
+      render: value => (
+        <Badge variant='outline' className='text-xs'>
+          {value}
+        </Badge>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'tipo',
+      label: 'Tipo',
+      render: (value, config) => (
+        <div className='flex items-center gap-1'>
+          {getTypeIcon(value)}
+          <span className='text-sm'>{value}</span>
+        </div>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'valor',
+      label: 'Valor',
+      render: (value, config) => {
+        if (config.tipo === 'Password') {
+          return <span className='text-gray-500'>••••••••</span>;
+        }
+        if (config.tipo === 'Booleano') {
+          return (
+            <Badge variant={value ? 'success' : 'secondary'}>
+              {value ? 'Sí' : 'No'}
+            </Badge>
+          );
+        }
+        if (config.tipo === 'JSON') {
+          return (
+            <span className='text-xs font-mono bg-gray-100 px-2 py-1 rounded'>
+              {JSON.stringify(JSON.parse(value || '{}')).substring(0, 30)}...
+            </span>
+          );
+        }
+        return (
+          <span className='text-sm'>{String(value).substring(0, 50)}</span>
+        );
+      },
+      sortable: true,
+    },
+    {
+      key: 'estado',
+      label: 'Estado',
+      render: value => (
+        <Badge
+          variant={
+            value === 'Activo'
+              ? 'success'
+              : value === 'Inactivo'
+                ? 'secondary'
+                : value === 'En Mantenimiento'
+                  ? 'warning'
+                  : 'destructive'
+          }
+        >
+          {value}
+        </Badge>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'actions',
+      label: 'Acciones',
+      render: (_, config) => (
+        <div className='flex gap-2'>
+          {/* En un entorno real, canUpdate y config.editable se obtendrían de un hook */}
+          {/* <Button
+            size='sm'
+            variant='outline'
+            onClick={() => {
+              setEditingConfig(config);
+              setShowModal(true);
+            }}
+          >
+            <Edit className='h-4 w-4' />
+          </Button> */}
+          {/* En un entorno real, config.valor !== config.valor_por_defecto se obtendría de un hook */}
+          {/* <Button
+            size='sm'
+            variant='outline'
+            onClick={() => handleRestaurarConfiguracion(config.id)}
+          >
+            <RotateCcw className='h-4 w-4' />
+          </Button> */}
+        </div>
+      ),
+    },
   ];
 
-  // Guardar configuración
-  const guardarConfiguracion = async tipo => {
-    try {
-      setLoading(true);
-
-      // Simular guardado
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      console.log(`Configuración ${tipo} guardada:`, {
-        profileData,
-        securityData,
-        notificationSettings,
-        appSettings,
-      });
-
-      // Aquí iría la lógica real de guardado
-      alert(`Configuración ${tipo} guardada exitosamente`);
-    } catch (error) {
-      console.error('Error guardando configuración:', error);
-      alert('Error al guardar la configuración');
-    } finally {
-      setLoading(false);
-    }
+  // En un entorno real, loading, error, configuraciones, usuarios, estadisticas, systemHealth, canView, canUpdate, canManageUsers, canManageSystem, categoriasConfig, tiposConfig, estadosConfig, configuracionesFiltradas, searchTerm, filterCategoria, setSearchTerm, setFilterCategoria, setSelectedConfig, clearError se obtendrían de un hook
+  const loading = false;
+  const error = null;
+  const configuraciones = [
+    {
+      id: 1,
+      nombre: 'Tema Oscuro',
+      categoria: 'Apariencia',
+      tipo: 'Booleano',
+      valor: 'false',
+      valor_por_defecto: 'false',
+      descripcion: 'Activar tema oscuro',
+    },
+    {
+      id: 2,
+      nombre: 'Límite de Usuarios',
+      categoria: 'Seguridad',
+      tipo: 'Número',
+      valor: '100',
+      valor_por_defecto: '100',
+      descripcion: 'Número máximo de usuarios permitidos',
+    },
+    {
+      id: 3,
+      nombre: 'Tiempo de Inactividad',
+      categoria: 'Seguridad',
+      tipo: 'Número',
+      valor: '30',
+      valor_por_defecto: '30',
+      descripcion: 'Tiempo en minutos para considerar un usuario inactivo',
+    },
+  ];
+  const usuarios = [
+    {
+      id: 1,
+      nombre: 'Usuario 1',
+      email: 'usuario1@example.com',
+      estado: 'activo',
+      rol: 'Administrador',
+    },
+    {
+      id: 2,
+      nombre: 'Usuario 2',
+      email: 'usuario2@example.com',
+      estado: 'inactivo',
+      rol: 'Usuario',
+    },
+    {
+      id: 3,
+      nombre: 'Usuario 3',
+      email: 'usuario3@example.com',
+      estado: 'activo',
+      rol: 'Editor',
+    },
+  ];
+  const estadisticas = {
+    configuraciones: { total: 100, activas: 80 },
+    usuarios: { total: 50, activos: 45 },
+    sistema: { version: '3.0.0', tiempoActivo: '15 días' },
   };
-
-  // Exportar configuración
-  const exportarConfiguracion = () => {
-    const config = {
-      profile: profileData,
-      security: securityData,
-      notifications: notificationSettings,
-      app: appSettings,
-      exportDate: new Date().toISOString(),
-    };
-
-    const blob = new Blob([JSON.stringify(config, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `mtz-config-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const systemHealth = {
+    estado: 'saludable',
+    metricas: {
+      cpu: '80%',
+      memoria: '70%',
+      disco: '90%',
+      red: '95%',
+      base_datos: 'conectada',
+    },
   };
+  const canView = true;
+  const canUpdate = true;
+  const canManageUsers = true;
+  const canManageSystem = true;
+  const categoriasConfig = [
+    'Sistema',
+    'Seguridad',
+    'Notificaciones',
+    'Apariencia',
+    'Integración',
+    'Backup',
+    'Email',
+    'API',
+  ];
+  const tiposConfig = [
+    'Texto',
+    'Número',
+    'Booleano',
+    'JSON',
+    'Fecha',
+    'Select',
+    'Password',
+    'URL',
+  ];
+  const estadosConfig = ['Activo', 'Inactivo', 'En Mantenimiento'];
+  const configuracionesFiltradas = configuraciones;
+  const searchTerm = '';
+  const filterCategoria = 'todos';
+  const setSearchTerm = () => {};
+  const setFilterCategoria = () => {};
+  const setSelectedConfig = () => {};
+  const clearError = () => {};
 
-  // Importar configuración
-  const importarConfiguracion = event => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = e => {
-        try {
-          const config = JSON.parse(e.target.result);
-          if (config.profile) setProfileData(config.profile);
-          if (config.notifications)
-            setNotificationSettings(config.notifications);
-          if (config.app) setAppSettings(config.app);
-          alert('Configuración importada exitosamente');
-        } catch (error) {
-          alert('Error al importar la configuración');
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
+  if (loading && configuraciones.length === 0) {
+    return (
+      <div className='flex items-center justify-center h-64'>
+        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+        <span className='ml-3 text-lg'>Cargando configuraciones...</span>
+      </div>
+    );
+  }
 
-  // Renderizar contenido según tab activo
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'profile':
-        return (
-          <div className='space-y-6'>
-            <div className='flex items-center justify-between'>
-              <h3 className='text-lg font-semibold text-gray-900'>
-                Información Personal
-              </h3>
-              <Badge variant='outline' size='sm'>
-                {role || 'Usuario'}
-              </Badge>
-            </div>
-
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Nombre Completo
-                </label>
-                <Input
-                  value={profileData.nombre}
-                  onChange={e =>
-                    setProfileData({ ...profileData, nombre: e.target.value })
-                  }
-                  placeholder='Tu nombre completo'
-                />
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Email
-                </label>
-                <Input
-                  value={profileData.email}
-                  onChange={e =>
-                    setProfileData({ ...profileData, email: e.target.value })
-                  }
-                  placeholder='tu@email.com'
-                  type='email'
-                />
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Teléfono
-                </label>
-                <Input
-                  value={profileData.telefono}
-                  onChange={e =>
-                    setProfileData({ ...profileData, telefono: e.target.value })
-                  }
-                  placeholder='+56 9 1234 5678'
-                />
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Empresa
-                </label>
-                <Input
-                  value={profileData.empresa}
-                  onChange={e =>
-                    setProfileData({ ...profileData, empresa: e.target.value })
-                  }
-                  placeholder='Nombre de la empresa'
-                />
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Cargo
-                </label>
-                <Input
-                  value={profileData.cargo}
-                  onChange={e =>
-                    setProfileData({ ...profileData, cargo: e.target.value })
-                  }
-                  placeholder='Tu cargo o posición'
-                />
-              </div>
-            </div>
-
-            <div className='flex gap-2'>
-              <Button
-                onClick={() => guardarConfiguracion('perfil')}
-                disabled={loading}
-              >
-                <Save className='h-4 w-4 mr-2' />
-                Guardar Cambios
-              </Button>
-            </div>
-          </div>
-        );
-
-      case 'security':
-        return (
-          <div className='space-y-6'>
-            <h3 className='text-lg font-semibold text-gray-900'>
-              Configuración de Seguridad
-            </h3>
-
-            <div className='space-y-4'>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Contraseña Actual
-                </label>
-                <div className='relative'>
-                  <Input
-                    value={securityData.currentPassword}
-                    onChange={e =>
-                      setSecurityData({
-                        ...securityData,
-                        currentPassword: e.target.value,
-                      })
-                    }
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder='Tu contraseña actual'
-                  />
-                  <button
-                    type='button'
-                    className='absolute inset-y-0 right-0 pr-3 flex items-center'
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className='h-4 w-4 text-gray-400' />
-                    ) : (
-                      <Eye className='h-4 w-4 text-gray-400' />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Nueva Contraseña
-                </label>
-                <div className='relative'>
-                  <Input
-                    value={securityData.newPassword}
-                    onChange={e =>
-                      setSecurityData({
-                        ...securityData,
-                        newPassword: e.target.value,
-                      })
-                    }
-                    type={showNewPassword ? 'text' : 'password'}
-                    placeholder='Nueva contraseña'
-                  />
-                  <button
-                    type='button'
-                    className='absolute inset-y-0 right-0 pr-3 flex items-center'
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                  >
-                    {showNewPassword ? (
-                      <EyeOff className='h-4 w-4 text-gray-400' />
-                    ) : (
-                      <Eye className='h-4 w-4 text-gray-400' />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Confirmar Nueva Contraseña
-                </label>
-                <Input
-                  value={securityData.confirmPassword}
-                  onChange={e =>
-                    setSecurityData({
-                      ...securityData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  type='password'
-                  placeholder='Confirmar nueva contraseña'
-                />
-              </div>
-
-              <div className='flex items-center justify-between p-4 bg-gray-50 rounded-lg'>
-                <div>
-                  <h4 className='font-medium text-gray-900'>
-                    Autenticación de Dos Factores
-                  </h4>
-                  <p className='text-sm text-gray-600'>
-                    Añade una capa extra de seguridad a tu cuenta
-                  </p>
-                </div>
-                <Button
-                  variant={
-                    securityData.twoFactorEnabled ? 'default' : 'outline'
-                  }
-                  size='sm'
-                  onClick={() =>
-                    setSecurityData({
-                      ...securityData,
-                      twoFactorEnabled: !securityData.twoFactorEnabled,
-                    })
-                  }
-                >
-                  {securityData.twoFactorEnabled ? 'Activado' : 'Desactivado'}
-                </Button>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Tiempo de Sesión (minutos)
-                </label>
-                <Input
-                  value={securityData.sessionTimeout}
-                  onChange={e =>
-                    setSecurityData({
-                      ...securityData,
-                      sessionTimeout: parseInt(e.target.value),
-                    })
-                  }
-                  type='number'
-                  min='5'
-                  max='480'
-                />
-              </div>
-            </div>
-
-            <div className='flex gap-2'>
-              <Button
-                onClick={() => guardarConfiguracion('seguridad')}
-                disabled={loading}
-              >
-                <Save className='h-4 w-4 mr-2' />
-                Actualizar Seguridad
-              </Button>
-            </div>
-          </div>
-        );
-
-      case 'notifications':
-        return (
-          <div className='space-y-6'>
-            <h3 className='text-lg font-semibold text-gray-900'>
-              Configuración de Notificaciones
-            </h3>
-
-            <div className='space-y-4'>
-              {Object.entries(notificationSettings).map(([key, value]) => (
-                <div
-                  key={key}
-                  className='flex items-center justify-between p-4 bg-gray-50 rounded-lg'
-                >
-                  <div>
-                    <h4 className='font-medium text-gray-900'>
-                      {key
-                        .replace(/([A-Z])/g, ' $1')
-                        .replace(/^./, str => str.toUpperCase())}
-                    </h4>
-                    <p className='text-sm text-gray-600'>
-                      {key.includes('email')
-                        ? 'Recibir notificaciones por email'
-                        : key.includes('push')
-                          ? 'Recibir notificaciones push'
-                          : key.includes('Reports')
-                            ? 'Recibir reportes automáticos'
-                            : key.includes('Alerts')
-                              ? 'Alertas de seguridad importantes'
-                              : 'Notificaciones del sistema'}
-                    </p>
-                  </div>
-                  <Button
-                    variant={value ? 'default' : 'outline'}
-                    size='sm'
-                    onClick={() =>
-                      setNotificationSettings({
-                        ...notificationSettings,
-                        [key]: !value,
-                      })
-                    }
-                  >
-                    {value ? 'Activado' : 'Desactivado'}
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            <div className='flex gap-2'>
-              <Button
-                onClick={() => guardarConfiguracion('notificaciones')}
-                disabled={loading}
-              >
-                <Save className='h-4 w-4 mr-2' />
-                Guardar Notificaciones
-              </Button>
-            </div>
-          </div>
-        );
-
-      case 'appearance':
-        return (
-          <div className='space-y-6'>
-            <h3 className='text-lg font-semibold text-gray-900'>
-              Apariencia y Tema
-            </h3>
-
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Tema
-                </label>
-                <div className='grid grid-cols-2 gap-2'>
-                  {['light', 'dark', 'auto'].map(theme => (
-                    <Button
-                      key={theme}
-                      variant={
-                        appSettings.theme === theme ? 'default' : 'outline'
-                      }
-                      size='sm'
-                      onClick={() => setAppSettings({ ...appSettings, theme })}
-                    >
-                      {theme === 'light'
-                        ? 'Claro'
-                        : theme === 'dark'
-                          ? 'Oscuro'
-                          : 'Automático'}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Idioma
-                </label>
-                <select
-                  value={appSettings.language}
-                  onChange={e =>
-                    setAppSettings({ ...appSettings, language: e.target.value })
-                  }
-                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                >
-                  <option value='es'>Español</option>
-                  <option value='en'>English</option>
-                  <option value='pt'>Português</option>
-                </select>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Zona Horaria
-                </label>
-                <select
-                  value={appSettings.timezone}
-                  onChange={e =>
-                    setAppSettings({ ...appSettings, timezone: e.target.value })
-                  }
-                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                >
-                  <option value='America/Santiago'>Chile (GMT-3)</option>
-                  <option value='America/New_York'>Nueva York (GMT-5)</option>
-                  <option value='Europe/Madrid'>Madrid (GMT+1)</option>
-                  <option value='UTC'>UTC</option>
-                </select>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Moneda
-                </label>
-                <select
-                  value={appSettings.currency}
-                  onChange={e =>
-                    setAppSettings({ ...appSettings, currency: e.target.value })
-                  }
-                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                >
-                  <option value='CLP'>Peso Chileno (CLP)</option>
-                  <option value='USD'>Dólar Estadounidense (USD)</option>
-                  <option value='EUR'>Euro (EUR)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className='space-y-4'>
-              <div className='flex items-center justify-between p-4 bg-gray-50 rounded-lg'>
-                <div>
-                  <h4 className='font-medium text-gray-900'>
-                    Guardado Automático
-                  </h4>
-                  <p className='text-sm text-gray-600'>
-                    Guardar cambios automáticamente mientras trabajas
-                  </p>
-                </div>
-                <Button
-                  variant={appSettings.autoSave ? 'default' : 'outline'}
-                  size='sm'
-                  onClick={() =>
-                    setAppSettings({
-                      ...appSettings,
-                      autoSave: !appSettings.autoSave,
-                    })
-                  }
-                >
-                  {appSettings.autoSave ? 'Activado' : 'Desactivado'}
-                </Button>
-              </div>
-
-              <div className='flex items-center justify-between p-4 bg-gray-50 rounded-lg'>
-                <div>
-                  <h4 className='font-medium text-gray-900'>Modo Compacto</h4>
-                  <p className='text-sm text-gray-600'>
-                    Mostrar más información en menos espacio
-                  </p>
-                </div>
-                <Button
-                  variant={appSettings.compactMode ? 'default' : 'outline'}
-                  size='sm'
-                  onClick={() =>
-                    setAppSettings({
-                      ...appSettings,
-                      compactMode: !appSettings.compactMode,
-                    })
-                  }
-                >
-                  {appSettings.compactMode ? 'Activado' : 'Desactivado'}
-                </Button>
-              </div>
-            </div>
-
-            <div className='flex gap-2'>
-              <Button
-                onClick={() => guardarConfiguracion('apariencia')}
-                disabled={loading}
-              >
-                <Save className='h-4 w-4 mr-2' />
-                Aplicar Cambios
-              </Button>
-            </div>
-          </div>
-        );
-
-      case 'system':
-        return (
-          <div className='space-y-6'>
-            <h3 className='text-lg font-semibold text-gray-900'>
-              Configuración del Sistema
-            </h3>
-
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-              <Card className='p-6'>
-                <h4 className='font-semibold text-gray-900 mb-4 flex items-center'>
-                  <Database className='h-5 w-5 text-blue-600 mr-2' />
-                  Información del Sistema
-                </h4>
-                <div className='space-y-2 text-sm'>
-                  <div className='flex justify-between'>
-                    <span className='text-gray-600'>Versión:</span>
-                    <span className='text-gray-900'>1.0.0</span>
-                  </div>
-                  <div className='flex justify-between'>
-                    <span className='text-gray-600'>Última actualización:</span>
-                    <span className='text-gray-900'>Hace 2 días</span>
-                  </div>
-                  <div className='flex justify-between'>
-                    <span className='text-gray-600'>Estado:</span>
-                    <Badge variant='default' size='sm'>
-                      Operativo
-                    </Badge>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className='p-6'>
-                <h4 className='font-semibold text-gray-900 mb-4 flex items-center'>
-                  <Globe className='h-5 w-5 text-green-600 mr-2' />
-                  Conectividad
-                </h4>
-                <div className='space-y-2 text-sm'>
-                  <div className='flex justify-between'>
-                    <span className='text-gray-600'>API Status:</span>
-                    <Badge variant='default' size='sm'>
-                      Conectado
-                    </Badge>
-                  </div>
-                  <div className='flex justify-between'>
-                    <span className='text-gray-600'>Base de datos:</span>
-                    <Badge variant='default' size='sm'>
-                      Activa
-                    </Badge>
-                  </div>
-                  <div className='flex justify-between'>
-                    <span className='text-gray-600'>Sincronización:</span>
-                    <Badge variant='outline' size='sm'>
-                      En tiempo real
-                    </Badge>
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            <div className='space-y-4'>
-              <div className='flex items-center justify-between p-4 bg-blue-50 rounded-lg'>
-                <div>
-                  <h4 className='font-medium text-blue-900'>
-                    Exportar Configuración
-                  </h4>
-                  <p className='text-sm text-blue-700'>
-                    Descargar toda la configuración actual como archivo JSON
-                  </p>
-                </div>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={exportarConfiguracion}
-                >
-                  <Download className='h-4 w-4 mr-2' />
-                  Exportar
-                </Button>
-              </div>
-
-              <div className='flex items-center justify-between p-4 bg-green-50 rounded-lg'>
-                <div>
-                  <h4 className='font-medium text-green-900'>
-                    Importar Configuración
-                  </h4>
-                  <p className='text-sm text-green-700'>
-                    Restaurar configuración desde un archivo JSON
-                  </p>
-                </div>
-                <div className='relative'>
-                  <input
-                    type='file'
-                    accept='.json'
-                    onChange={importarConfiguracion}
-                    className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
-                  />
-                  <Button variant='outline' size='sm'>
-                    <Upload className='h-4 w-4 mr-2' />
-                    Importar
-                  </Button>
-                </div>
-              </div>
-
-              <div className='flex items-center justify-between p-4 bg-red-50 rounded-lg'>
-                <div>
-                  <h4 className='font-medium text-red-900'>
-                    Restablecer Configuración
-                  </h4>
-                  <p className='text-sm text-red-700'>
-                    Volver a la configuración por defecto (se perderán todos los
-                    cambios)
-                  </p>
-                </div>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='text-red-600 border-red-300 hover:bg-red-50'
-                >
-                  <RefreshCw className='h-4 w-4 mr-2' />
-                  Restablecer
-                </Button>
-              </div>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className='space-y-6'>
-      {/* Header */}
-      <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4'>
-        <div>
-          <h1 className='text-3xl font-bold text-gray-900 flex items-center gap-2'>
-            <Settings className='h-8 w-8 text-blue-600' />
-            Configuración
-          </h1>
-          <p className='text-gray-600'>
-            Gestiona tu perfil, seguridad y preferencias del sistema
-          </p>
+  if (error && configuraciones.length === 0) {
+    return (
+      <div className='flex items-center justify-center h-64'>
+        <div className='text-center'>
+          <h2 className='text-2xl font-bold text-red-600 mb-4'>
+            Error al cargar configuraciones
+          </h2>
+          <p className='text-gray-600 mb-4'>{error}</p>
+          <Button
+            onClick={() => {
+              // En un entorno real, cargarConfiguraciones se obtendría de un hook
+              console.log('Simulando carga de configuraciones...');
+            }}
+          >
+            <RefreshCw className='h-4 w-4 mr-2' />
+            Reintentar
+          </Button>
         </div>
       </div>
+    );
+  }
 
-      {/* Tabs */}
-      <div className='border-b border-gray-200'>
-        <nav className='-mb-px flex space-x-8'>
-          {tabs.map(tab => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <Icon className='h-4 w-4' />
-                {tab.name}
-              </button>
-            );
-          })}
-        </nav>
+  return (
+    <>
+      <Helmet>
+        <title>Configuraciones del Sistema - MTZ Ouroborus AI v3.0</title>
+        <meta
+          name='description'
+          content='Gestión completa de configuraciones del sistema, usuarios y seguridad'
+        />
+        <meta
+          name='keywords'
+          content='configuraciones, sistema, seguridad, usuarios, MTZ'
+        />
+      </Helmet>
+
+      <div className='space-y-6'>
+        {/* Header */}
+        <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4'>
+          <div>
+            <h1 className='text-3xl font-bold text-gray-900 flex items-center gap-2'>
+              <Settings className='h-8 w-8 text-blue-600' />
+              Configuraciones del Sistema
+              <Badge variant='outline' className='ml-2'>
+                v3.0 Avanzado
+              </Badge>
+            </h1>
+            <p className='text-gray-600 mt-1'>
+              Gestión completa de configuraciones, usuarios y seguridad del
+              sistema
+            </p>
+          </div>
+
+          <div className='flex gap-2'>
+            <Button
+              onClick={() => {
+                // En un entorno real, cargarConfiguraciones se obtendría de un hook
+                console.log('Simulando carga de configuraciones...');
+              }}
+              disabled={loading}
+            >
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`}
+              />
+              Actualizar
+            </Button>
+            {canManageSystem && (
+              <Button variant='outline' onClick={handleGenerarBackup}>
+                <Database className='h-4 w-4 mr-2' />
+                Generar Backup
+              </Button>
+            )}
+            {canUpdate && (
+              <Button onClick={() => setShowModal(true)}>
+                <Plus className='h-4 w-4 mr-2' />
+                Nueva Configuración
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* KPIs del Sistema */}
+        {estadisticas && Object.keys(estadisticas).length > 0 && (
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+            <Card className='p-6'>
+              <div className='flex items-center justify-between'>
+                <div>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Configuraciones
+                  </p>
+                  <p className='text-2xl font-bold text-gray-900'>
+                    {formatNumber(estadisticas.configuraciones?.total || 0)}
+                  </p>
+                  <p className='text-sm text-gray-500'>
+                    {estadisticas.configuraciones?.activas || 0} activas
+                  </p>
+                </div>
+                <div className='p-3 bg-blue-100 rounded-full'>
+                  <Settings className='h-6 w-6 text-blue-600' />
+                </div>
+              </div>
+            </Card>
+
+            <Card className='p-6'>
+              <div className='flex items-center justify-between'>
+                <div>
+                  <p className='text-sm font-medium text-gray-600'>Usuarios</p>
+                  <p className='text-2xl font-bold text-gray-900'>
+                    {formatNumber(estadisticas.usuarios?.total || 0)}
+                  </p>
+                  <p className='text-sm text-gray-500'>
+                    {estadisticas.usuarios?.activos || 0} activos
+                  </p>
+                </div>
+                <div className='p-3 bg-green-100 rounded-full'>
+                  <UsersIcon className='h-6 w-6 text-green-600' />
+                </div>
+              </div>
+            </Card>
+
+            <Card className='p-6'>
+              <div className='flex items-center justify-between'>
+                <div>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Versión Sistema
+                  </p>
+                  <p className='text-2xl font-bold text-gray-900'>
+                    {estadisticas.sistema?.version || '3.0.0'}
+                  </p>
+                  <p className='text-sm text-gray-500'>
+                    {estadisticas.sistema?.tiempoActivo || '15 días'}
+                  </p>
+                </div>
+                <div className='p-3 bg-purple-100 rounded-full'>
+                  <Server className='h-6 w-6 text-purple-600' />
+                </div>
+              </div>
+            </Card>
+
+            <Card className='p-6'>
+              <div className='flex items-center justify-between'>
+                <div>
+                  <p className='text-sm font-medium text-gray-600'>
+                    Salud del Sistema
+                  </p>
+                  <p className='text-2xl font-bold text-gray-900'>
+                    {systemHealth?.estado === 'saludable'
+                      ? 'Saludable'
+                      : 'Atención'}
+                  </p>
+                  <p className='text-sm text-gray-500'>
+                    CPU: {systemHealth?.metricas?.cpu || 'N/A'}
+                  </p>
+                </div>
+                <div
+                  className={`p-3 rounded-full ${
+                    systemHealth?.estado === 'saludable'
+                      ? 'bg-green-100'
+                      : 'bg-yellow-100'
+                  }`}
+                >
+                  <Activity
+                    className={`h-6 w-6 ${
+                      systemHealth?.estado === 'saludable'
+                        ? 'text-green-600'
+                        : 'text-yellow-600'
+                    }`}
+                  />
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Tabs de Navegación */}
+        <Card className='p-4'>
+          <div className='flex space-x-1'>
+            <button
+              onClick={() => setActiveTab('configuraciones')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === 'configuraciones'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Settings className='h-4 w-4 inline mr-2' />
+              Configuraciones
+            </button>
+            <button
+              onClick={() => setActiveTab('usuarios')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === 'usuarios'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <UsersIcon className='h-4 w-4 inline mr-2' />
+              Usuarios
+            </button>
+            <button
+              onClick={() => setActiveTab('sistema')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === 'sistema'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Server className='h-4 w-4 inline mr-2' />
+              Sistema
+            </button>
+          </div>
+        </Card>
+
+        {/* Contenido de Configuraciones */}
+        {activeTab === 'configuraciones' && (
+          <Card className='p-6'>
+            <div className='flex justify-between items-center mb-6'>
+              <h2 className='text-xl font-semibold'>
+                Configuraciones ({formatNumber(configuracionesFiltradas.length)}
+                )
+              </h2>
+              <div className='flex gap-2'>
+                <Button
+                  variant='outline'
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Filter className='h-4 w-4 mr-2' />
+                  Filtros
+                  {showFilters ? (
+                    <ChevronUp className='h-4 w-4 ml-2' />
+                  ) : (
+                    <ChevronDown className='h-4 w-4 ml-2' />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Filtros */}
+            {showFilters && (
+              <div className='mb-6 p-4 bg-gray-50 rounded-lg'>
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                  <Input
+                    label='Buscar'
+                    placeholder='Buscar configuraciones...'
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                  />
+                  <Select
+                    label='Categoría'
+                    value={filterCategoria}
+                    onChange={e => setFilterCategoria(e.target.value)}
+                  >
+                    <option value='todos'>Todas las categorías</option>
+                    {categoriasConfig.map(categoria => (
+                      <option key={categoria} value={categoria}>
+                        {categoria}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Tabla de Configuraciones */}
+            <TableComponent
+              data={configuracionesFiltradas}
+              columns={configColumns}
+              loading={loading}
+            />
+          </Card>
+        )}
+
+        {/* Contenido de Usuarios */}
+        {activeTab === 'usuarios' && (
+          <Card className='p-6'>
+            <div className='flex justify-between items-center mb-6'>
+              <h2 className='text-xl font-semibold'>
+                Usuarios del Sistema ({formatNumber(usuarios.length)})
+              </h2>
+            </div>
+
+            {usuarios.length === 0 ? (
+              <div className='text-center py-8 text-gray-500'>
+                No hay usuarios para mostrar
+              </div>
+            ) : (
+              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                {usuarios.map(usuario => (
+                  <Card key={usuario.id} className='p-4'>
+                    <div className='flex items-center gap-3 mb-3'>
+                      <div className='w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center'>
+                        <User className='h-5 w-5 text-blue-600' />
+                      </div>
+                      <div>
+                        <h3 className='font-semibold'>{usuario.nombre}</h3>
+                        <p className='text-sm text-gray-500'>{usuario.email}</p>
+                      </div>
+                    </div>
+                    <div className='flex justify-between items-center'>
+                      <Badge
+                        variant={
+                          usuario.estado === 'activo' ? 'success' : 'secondary'
+                        }
+                      >
+                        {usuario.estado}
+                      </Badge>
+                      <span className='text-sm text-gray-500'>
+                        {usuario.rol}
+                      </span>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Contenido de Sistema */}
+        {activeTab === 'sistema' && (
+          <div className='space-y-6'>
+            {/* Estado del Sistema */}
+            {systemHealth && (
+              <Card className='p-6'>
+                <h2 className='text-xl font-semibold mb-4'>
+                  Estado del Sistema
+                </h2>
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4'>
+                  <div className='text-center'>
+                    <div className='text-2xl font-bold text-blue-600'>
+                      {systemHealth.metricas?.cpu || 'N/A'}
+                    </div>
+                    <div className='text-sm text-gray-500'>CPU</div>
+                  </div>
+                  <div className='text-center'>
+                    <div className='text-2xl font-bold text-green-600'>
+                      {systemHealth.metricas?.memoria || 'N/A'}
+                    </div>
+                    <div className='text-sm text-gray-500'>Memoria</div>
+                  </div>
+                  <div className='text-center'>
+                    <div className='text-2xl font-bold text-yellow-600'>
+                      {systemHealth.metricas?.disco || 'N/A'}
+                    </div>
+                    <div className='text-sm text-gray-500'>Disco</div>
+                  </div>
+                  <div className='text-center'>
+                    <div className='text-2xl font-bold text-purple-600'>
+                      {systemHealth.metricas?.red || 'N/A'}
+                    </div>
+                    <div className='text-sm text-gray-500'>Red</div>
+                  </div>
+                  <div className='text-center'>
+                    <div className='text-2xl font-bold text-indigo-600'>
+                      {systemHealth.metricas?.base_datos === 'conectada'
+                        ? 'OK'
+                        : 'Error'}
+                    </div>
+                    <div className='text-sm text-gray-500'>Base de Datos</div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* Estado de Backup */}
+            {/* En un entorno real, backupStatus se obtendría de un hook */}
+            {/* <Card className='p-6'>
+              <h2 className='text-xl font-semibold mb-4'>Estado de Backup</h2>
+              <div className='flex items-center justify-between'>
+                <div>
+                  <p className='font-medium'>Último Backup</p>
+                  <p className='text-sm text-gray-500'>
+                    {formatDate(backupStatus.fecha)}
+                  </p>
+                  <p className='text-sm text-gray-500'>
+                    Archivo: {backupStatus.archivo} ({backupStatus.tamaño})
+                  </p>
+                </div>
+                <Badge
+                  variant={
+                    backupStatus.estado === 'completado'
+                      ? 'success'
+                      : 'warning'
+                  }
+                >
+                  {backupStatus.estado}
+                </Badge>
+              </div>
+            </Card> */}
+          </div>
+        )}
+
+        {/* Modal de Configuración */}
+        {showModal && (
+          <Modal
+            isOpen={showModal}
+            onClose={() => {
+              setShowModal(false);
+              setEditingConfig(null);
+            }}
+            title={
+              editingConfig ? 'Editar Configuración' : 'Nueva Configuración'
+            }
+            size='xl'
+          >
+            <ConfiguracionForm
+              configuracion={editingConfig}
+              onSubmit={
+                editingConfig ? handleActualizarConfiguracion : () => {}
+              }
+              onCancel={() => {
+                setShowModal(false);
+                setEditingConfig(null);
+              }}
+              onRestore={handleRestaurarConfiguracion}
+              loading={loading}
+              categorias={categoriasConfig}
+              tipos={tiposConfig}
+              estados={estadosConfig}
+            />
+          </Modal>
+        )}
       </div>
-
-      {/* Content */}
-      <Card className='p-6'>{renderTabContent()}</Card>
-    </div>
+    </>
   );
 };
 

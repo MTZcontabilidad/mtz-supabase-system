@@ -15,8 +15,8 @@ import {
   AreaChart,
   Area,
 } from 'recharts';
-import Card from '@/components/ui/Card.jsx';
-import { formatCurrency } from '@/utils/helpers.js';
+import Card from '../ui/Card.jsx';
+import { formatCurrency  } from '../../utils/helpers.js';
 
 /**
  * ClientesChart Component

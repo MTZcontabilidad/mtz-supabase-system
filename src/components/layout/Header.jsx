@@ -1,6 +1,7 @@
-import useAuth from '@/hooks/useAuth.js';
+import useAuth from '../../hooks/useAuth.js';
 import { LogOut, User, Settings } from 'lucide-react';
-import Button from '@/components/ui/Button.jsx';
+import Button from '../ui/Button.jsx';
+import GlobalSearch from '../shared/GlobalSearch.jsx';
 
 const Header = () => {
   const { user, signOut } = useAuth();
@@ -42,6 +43,9 @@ const Header = () => {
             </p>
           </div>
         </div>
+
+        {/* Búsqueda Global */}
+        <GlobalSearch />
 
         {/* Usuario */}
         <div className='flex items-center gap-4'>

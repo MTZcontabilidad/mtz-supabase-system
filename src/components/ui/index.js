@@ -4,10 +4,20 @@
 // Componentes base
 export { default as Button } from './Button.jsx';
 export { default as Input } from './Input.jsx';
+export { default as Select } from './Select.jsx';
+export { default as Textarea } from './Textarea.jsx';
 export { default as Card } from './Card.jsx';
 export { default as Badge } from './Badge.jsx';
 export { default as Modal } from './Modal.jsx';
 export { default as LoadingSpinner } from './LoadingSpinner.jsx';
+export {
+  default as Skeleton,
+  TableSkeleton,
+  CardSkeleton,
+  FormSkeleton,
+  ChartSkeleton,
+  ListSkeleton,
+} from './Skeleton.jsx';
 
 // Componentes avanzados
 export { default as Table } from './Table.jsx';

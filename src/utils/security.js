@@ -65,6 +65,7 @@ export const sanitizeInput = input => {
     .replace(/[<>]/g, '') // Remover < y >
     .replace(/javascript:/gi, '') // Remover javascript:
     .replace(/on\w+=/gi, '') // Remover event handlers
+    .replace(/"/g, '') // Remover comillas dobles
     .trim();
 };
 

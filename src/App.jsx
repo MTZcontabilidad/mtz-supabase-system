@@ -1,97 +1,254 @@
-﻿import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext.jsx';
-import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
-import PublicRoute from './components/auth/PublicRoute.jsx';
+﻿import React, { Suspense, lazy } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from '@/contexts/AuthContext.jsx';
+import { ToastProvider } from '@/components/ui/Toast.jsx';
+import Layout from '@/components/layout/Layout.jsx';
+import ProtectedRoute from '@/components/auth/ProtectedRoute.jsx';
+import PublicRoute from '@/components/auth/PublicRoute.jsx';
+import LoadingSpinner from '@/components/ui/LoadingSpinner.jsx';
 
-// Páginas principales
-import Login from './pages/Auth/Login.jsx';
-import Register from './pages/Auth/Register.jsx';
-import LandingPage from './pages/Landing/LandingPage.jsx';
-import Dashboard from './pages/Dashboard/Dashboard.jsx';
-import ClientsList from './pages/Clients/ClientsList.jsx';
-import CobranzaPage from './pages/Cobranza/CobranzaPage.jsx';
-import RequerimientosPage from './pages/Requerimientos/RequerimientosPage.jsx';
-import ReportsPage from './pages/Reports/ReportsPage.jsx';
-import AnalyticsPage from './pages/Analytics/AnalyticsPage.jsx';
-import ProyeccionesPage from './pages/Proyecciones/ProyeccionesPage.jsx';
-import SettingsPage from './pages/Settings/SettingsPage.jsx';
-import AdminUsersPanel from './pages/Admin/AdminUsersPanel.jsx';
-import UserManagementPage from './pages/Admin/UserManagementPage.jsx';
-import Layout from './components/layout/Layout.jsx';
+// Lazy loading de páginas para mejor performance
+const Login = lazy(() => import('@/pages/Auth/Login.jsx'));
+const Register = lazy(() => import('@/pages/Auth/Register.jsx'));
+const ResetPassword = lazy(() => import('@/pages/Auth/ResetPassword.jsx'));
+
+// Páginas principales con lazy loading
+const Dashboard = lazy(() => import('@/pages/Dashboard/Dashboard.jsx'));
+const ClientesPage = lazy(() => import('@/pages/Clientes/ClientesPage.jsx'));
+const VentasPage = lazy(() => import('@/pages/Ventas/VentasPage.jsx'));
+const CobranzaPage = lazy(() => import('@/pages/Cobranza/CobranzaPage.jsx'));
+const ComprasPage = lazy(() => import('@/pages/Compras/ComprasPage.jsx'));
+const ContratosPanel = lazy(
+  () => import('@/pages/Contratos/ContratosPanel.jsx')
+);
+const CargaMasivaPage = lazy(
+  () => import('@/pages/CargaMasiva/CargaMasivaPage.jsx')
+);
+const ReportsPage = lazy(() => import('@/pages/Reports/ReportsPage.jsx'));
+const SettingsPage = lazy(() => import('@/pages/Settings/SettingsPage.jsx'));
+const UserManagementPage = lazy(
+  () => import('@/pages/Admin/UserManagementPage.jsx')
+);
+const PortalClientes = lazy(
+  () => import('@/pages/Clientes/PortalClientes.jsx')
+);
+
+// Páginas adicionales con lazy loading
+const IVAPage = lazy(() => import('@/pages/IVA/IVAPage.jsx'));
+const RRHHPage = lazy(() => import('@/pages/RRHH/RRHHPage.jsx'));
+const EjemploPage = lazy(() => import('@/pages/Ejemplo/EjemploPage.jsx'));
+
+// Landing page
+const LandingPage = lazy(() => import('@/pages/Landing/LandingPage.jsx'));
+
+import '@/index.css';
 
 function App() {
   return (
-    <AuthProvider>
-      <div className='min-h-screen bg-gray-50'>
-        <Routes>
-          {/* Ruta raíz - LandingPage */}
-          <Route path='/' element={<LandingPage />} />
+    <ToastProvider>
+      <AuthProvider>
+        <div className='App'>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              {/* Ruta pública - Landing Page */}
+              <Route
+                path='/'
+                element={
+                  <PublicRoute>
+                    <LandingPage />
+                  </PublicRoute>
+                }
+              />
 
-          {/* Rutas públicas */}
-          <Route
-            path='/login'
-            element={
-              <PublicRoute>
-                <Login />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path='/register'
-            element={
-              <PublicRoute>
-                <Register />
-              </PublicRoute>
-            }
-          />
-          <Route path='/landing' element={<LandingPage />} />
+              {/* Rutas de autenticación */}
+              <Route
+                path='/login'
+                element={
+                  <PublicRoute>
+                    <Login />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path='/register'
+                element={
+                  <PublicRoute>
+                    <Register />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path='/reset-password'
+                element={
+                  <PublicRoute>
+                    <ResetPassword />
+                  </PublicRoute>
+                }
+              />
 
-          {/* Rutas protegidas con Layout */}
-          <Route
-            path='/app'
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            {/* Ruta por defecto para /app */}
-            <Route index element={<Navigate to='/app/dashboard' replace />} />
+              {/* Rutas protegidas con Layout */}
+              <Route
+                path='/dashboard'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Dashboard />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Dashboard */}
-            <Route path='dashboard' element={<Dashboard />} />
+              <Route
+                path='/clientes'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <ClientesPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Clientes */}
-            <Route path='clients' element={<ClientsList />} />
+              <Route
+                path='/ventas'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <VentasPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Cobranza */}
-            <Route path='cobranza' element={<CobranzaPage />} />
+              <Route
+                path='/cobranza'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <CobranzaPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Requerimientos */}
-            <Route path='requerimientos' element={<RequerimientosPage />} />
+              <Route
+                path='/compras'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <ComprasPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Reportes */}
-            <Route path='reports' element={<ReportsPage />} />
+              <Route
+                path='/contratos'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <ContratosPanel />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Analytics */}
-            <Route path='analytics' element={<AnalyticsPage />} />
+              <Route
+                path='/carga-masiva'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <CargaMasivaPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Proyecciones */}
-            <Route path='proyecciones' element={<ProyeccionesPage />} />
+              <Route
+                path='/reportes'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <ReportsPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Configuración */}
-            <Route path='settings' element={<SettingsPage />} />
+              <Route
+                path='/configuracion'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <SettingsPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Administración */}
-            <Route path='admin' element={<AdminUsersPanel />} />
-            <Route path='admin/users' element={<UserManagementPage />} />
-          </Route>
+              <Route
+                path='/admin/usuarios'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <UserManagementPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
 
-          {/* Ruta 404 */}
-          <Route path='*' element={<Navigate to='/login' replace />} />
-        </Routes>
-      </div>
-    </AuthProvider>
+              <Route
+                path='/portal-clientes'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <PortalClientes />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path='/ejemplo'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <EjemploPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Páginas adicionales */}
+              <Route
+                path='/iva'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <IVAPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path='/rrhh'
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <RRHHPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Redirección por defecto */}
+              <Route path='*' element={<Navigate to='/dashboard' replace />} />
+            </Routes>
+          </Suspense>
+        </div>
+      </AuthProvider>
+    </ToastProvider>
   );
 }
 
