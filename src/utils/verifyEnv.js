@@ -2,7 +2,12 @@
 // 🔍 VERIFICACIÓN DE ENTORNO - SISTEMA MTZ v3.0
 // =====================================================================
 
-import { MTZ_CONFIG } from '@/lib/config.js';
+// Configuración del sistema
+const MTZ_CONFIG = {
+  buildDate: new Date().toISOString(),
+  version: '3.0.0',
+  name: 'MTZ Sistema',
+};
 
 /**
  * Verificar variables de entorno críticas
