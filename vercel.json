@@ -4,9 +4,7 @@
   "devCommand": "npm run dev",
   "installCommand": "npm ci",
   "framework": "vite",
-  "regions": [
-    "cle1"
-  ],
+  "regions": ["cle1"],
   "rewrites": [
     {
       "source": "/(.*)",
@@ -45,7 +43,7 @@
       ]
     },
     {
-      "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot))",
+      "source": "/assets/(.*)",
       "headers": [
         {
           "key": "Cache-Control",

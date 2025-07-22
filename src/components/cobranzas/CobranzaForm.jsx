@@ -2,18 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  CreditCard,
-  Calendar,
-  User,
-  FileText,
-  DollarSign,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  CheckSquare,
-  Square,
-} from 'lucide-react';
+import { CreditCard, Calendar, User, FileText, DollarSign, AlertCircle, CheckCircle, Clock,  } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';

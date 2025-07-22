@@ -2,7 +2,6 @@
 // 🔐 LAYOUT DE AUTENTICACIÓN - SISTEMA MTZ v3.0
 // =====================================================================
 
-import React from 'react';
 import { Link } from 'react-router-dom';
 import LogoMTZ from '@/components/ui/LogoMTZ.jsx';
 import { COMPANY, UI } from '@/utils/constants.js';

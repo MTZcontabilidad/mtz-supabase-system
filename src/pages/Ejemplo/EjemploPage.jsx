@@ -1,4 +1,3 @@
-import React from 'react';
 import ClientesEjemplo from '../../components/ejemplo/ClientesEjemplo.jsx';
 
 function EjemploPage() {

@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
+import useAuth from '@/hooks/useAuth.js';
+
 import { ContratosService } from '@/lib/dataService';
 import usePermissions from './usePermissions';
 

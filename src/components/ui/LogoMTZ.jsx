@@ -3,9 +3,6 @@
 // Logo corporativo de MTZ Consultores Tributarios
 // =====================================================================
 
-import React from 'react';
-import { LineChart } from 'lucide-react';
-
 const LogoMTZ = ({
   size = 'md',
   showText = true,

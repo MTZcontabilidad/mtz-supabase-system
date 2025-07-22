@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Header from './Header.jsx';
 import Sidebar from './Sidebar.jsx';
+import DemoBanner from '../ui/DemoBanner.jsx';
 
 /**
  * Layout Component
@@ -11,7 +12,13 @@ import Sidebar from './Sidebar.jsx';
 const Layout = () => {
   return (
     <div className='min-h-screen bg-gray-50'>
+      {/* Banner de modo demo */}
+      <DemoBanner />
+
+      {/* Header principal */}
       <Header />
+
+      {/* Contenido principal con sidebar */}
       <div className='flex'>
         <Sidebar />
         <main className='flex-1 p-4 lg:p-8 transition-all duration-300'>

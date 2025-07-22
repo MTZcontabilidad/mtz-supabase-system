@@ -2,7 +2,7 @@ import { useState, useEffect, createContext } from 'react';
 import { supabase } from '../lib/supabase.js';
 
 // =====================================================================
-// 🔧 CONTEXTO DE AUTENTICACION COMPLETO - SISTEMA MTZ v3.0
+// 🔧 CONTEXTO DE AUTENTICACION - SISTEMA MTZ v3.0 (SIN MODO DEMO)
 // =====================================================================
 
 const AuthContext = createContext({
@@ -120,26 +120,25 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('🔄 Cargando perfil de usuario...');
 
-      // Primero obtener el perfil del usuario
+      // Primero obtener el perfil del usuario desde usuarios_sistema
       const { data: profile, error } = await supabase
-        .from('usuarios')
+        .from('usuarios_sistema')
         .select('*')
         .eq('id', authUser.id)
         .single();
 
       if (error) {
         console.error('❌ Error cargando perfil:', error);
-        // Si no existe en usuarios, crear perfil básico
+        // Si no existe en usuarios_sistema, crear perfil básico
         setUserProfile({
           id: authUser.id,
           email: authUser.email,
-          nombre:
+          nombre_completo:
             authUser.user_metadata?.nombre || authUser.email.split('@')[0],
-          apellido: authUser.user_metadata?.apellido || 'MTZ',
           rol_id: 1, // Rol admin por defecto
           activo: true,
         });
-        setRole('admin');
+        setRole('Administrador');
         setPermissions({});
         return;
       }
@@ -164,35 +163,18 @@ export const AuthProvider = ({ children }) => {
             console.log(
               '⚠️ No se pudo cargar el rol, usando admin por defecto'
             );
-            setRole('admin');
+            setRole('Administrador');
             setPermissions({});
           }
         } else {
-          setRole('admin');
+          setRole('Administrador');
           setPermissions({});
-        }
-
-        // Si tiene empresa_id, obtener los detalles de la empresa
-        if (profile.empresa_id) {
-          const { data: empresaData, error: empresaError } = await supabase
-            .from('empresas')
-            .select('*')
-            .eq('id', profile.empresa_id)
-            .single();
-
-          if (!empresaError && empresaData) {
-            console.log('✅ Empresa cargada:', empresaData);
-            setUserProfile(prev => ({
-              ...prev,
-              empresa: empresaData,
-            }));
-          }
         }
       }
     } catch (err) {
       console.error('❌ Error cargando perfil:', err);
       setUserProfile(null);
-      setRole('admin');
+      setRole('Administrador');
       setPermissions({});
     }
   };
@@ -203,7 +185,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Administradores tienen todos los permisos
-    if (role === 'administrador') {
+    if (role === 'Administrador') {
       return true;
     }
 
@@ -326,35 +308,7 @@ export const AuthProvider = ({ children }) => {
     signOut,
     hasPermission,
     isAuthenticated: !!user,
-    // Funciones adicionales para compatibilidad
-    updateProfile: async () => ({ success: false, error: 'No implementado' }),
-    updatePassword: async () => ({ success: false, error: 'No implementado' }),
-    refreshUser: async () => ({ success: false, error: 'No implementado' }),
   };
-
-  // Modo demo - simular usuario autenticado
-  const [demoMode, setDemoMode] = useState(false);
-
-  // Verificar si estamos en modo demo
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('demo') === 'true') {
-      setDemoMode(true);
-      setUser({
-        id: 'demo-user',
-        email: 'mtzcontabilidad@gmail.com',
-        user_metadata: { role: 'admin' },
-      });
-      setUserProfile({
-        nombre_completo: 'MTZ Consultores Tributarios',
-        cargo: 'Administrador',
-        empresa_asignada: 'MTZ Consultores Tributarios',
-      });
-      setRole('admin');
-      setPermissions({ '*': true });
-      setLoading(false);
-    }
-  }, []);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

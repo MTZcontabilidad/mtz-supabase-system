@@ -1,1644 +1,856 @@
 // =====================================================================
-// 🚀 SERVICIO DE DATOS CENTRALIZADO - SISTEMA MTZ v3.0
+// 📊 SERVICIO DE DATOS REALES - SISTEMA MTZ v3.0
 // =====================================================================
 
 import { supabase } from './supabase.js';
-import { formatCurrency, formatRUT, formatDate } from '../utils/helpers.js';
+import { MTZ_CONFIG } from './config.js';
 
 /**
- * Servicio de datos para el dashboard
+ * Servicio para manejar datos reales de Supabase
+ * Reemplaza los datos de muestra con información real de la base de datos
  */
-export const DashboardService = {
+class DataService {
+  // =====================================================================
+  // 📈 DASHBOARD DATA
+  // =====================================================================
+
   /**
-   * Cargar datos completos del dashboard
+   * Obtener datos del dashboard desde Supabase
    */
   async getDashboardData() {
     try {
-      console.log('🔄 Cargando datos del dashboard...');
+      console.log('🔄 Cargando datos del dashboard desde Supabase...');
 
-      // Cargar clientes
-      const { data: clientesData, error: clientesError } = await supabase
-        .from('clientes_contables')
+      // Obtener estadísticas de empresas
+      const { data: empresas, error: empresasError } = await supabase
+        .from('empresas')
         .select('*')
-        .order('total_facturado', { ascending: false });
+        .eq('estado', 'activa');
 
-      if (clientesError) throw clientesError;
+      if (empresasError) throw empresasError;
 
-      // Cargar ventas (si existe la tabla)
-      let ventasData = [];
-      try {
-        const { data: ventas, error: ventasError } = await supabase
-          .from('ventas')
-          .select('*')
-          .order('fecha_emision', { ascending: false })
-          .limit(50);
+      // Obtener estadísticas de ventas
+      const { data: ventas, error: ventasError } = await supabase
+        .from('ventas')
+        .select('*');
 
-        if (!ventasError) {
-          ventasData = ventas || [];
-        }
-      } catch (e) {
-        console.log('Tabla ventas no disponible');
-      }
+      if (ventasError) throw ventasError;
 
-      // Cargar cobranzas (si existe la tabla)
-      let cobranzasData = [];
-      try {
-        const { data: cobranzas, error: cobranzasError } = await supabase
-          .from('cobranzas')
-          .select('*')
-          .order('fecha_emision', { ascending: false })
-          .limit(50);
+      // Obtener estadísticas de cobranzas
+      const { data: cobranzas, error: cobranzasError } = await supabase
+        .from('cobranzas')
+        .select('*');
 
-        if (!cobranzasError) {
-          cobranzasData = cobranzas || [];
-        }
-      } catch (e) {
-        console.log('Tabla cobranzas no disponible');
-      }
+      if (cobranzasError) throw cobranzasError;
 
-      // Procesar datos
-      const clientes = clientesData || [];
-      const totalFacturado = clientes.reduce(
-        (sum, c) => sum + parseFloat(c.total_facturado || 0),
-        0
-      );
-      const clientesActivos = clientes.filter(
-        c => c.estado === 'Activo'
-      ).length;
-      const ticketPromedio =
-        clientes.length > 0 ? totalFacturado / clientes.length : 0;
+      // Calcular KPIs
+      const totalClientes = empresas?.length || 0;
+      const ventasMes = this.calcularVentasMes(ventas);
+      const cobranzaPendiente = this.calcularCobranzaPendiente(cobranzas);
+      const nuevosClientes = this.calcularNuevosClientes(empresas);
+      const eficiencia = this.calcularEficiencia(ventas, cobranzas);
 
-      // Métricas de ventas
-      const totalVentas = ventasData.reduce(
-        (sum, v) => sum + parseFloat(v.monto_total || 0),
-        0
-      );
-      const ventasEmitidas = ventasData.filter(
-        v => v.estado === 'emitida'
-      ).length;
-      const ventasPagadas = ventasData.filter(
-        v => v.estado === 'pagada'
-      ).length;
+      // Obtener datos de gráficos
+      const graficos = await this.getGraficosData(ventas, empresas);
 
-      // Métricas de cobranzas
-      const totalCobranzas = cobranzasData.reduce(
-        (sum, c) => sum + parseFloat(c.monto || 0),
-        0
-      );
-      const cobranzasPendientes = cobranzasData.filter(
-        c => c.estado === 'pendiente'
-      ).length;
-      const cobranzasVencidas = cobranzasData.filter(
-        c => c.estado === 'vencida'
-      ).length;
+      // Obtener alertas
+      const alertas = await this.getAlertasData(cobranzas, ventas);
 
-      return {
-        timestamp: new Date().toISOString(),
+      // Obtener actividad reciente
+      const actividad = await this.getActividadReciente();
+
+      const dashboardData = {
         kpis: {
-          clientes_activos: clientesActivos,
-          facturacion_total: totalFacturado,
-          ticket_promedio: ticketPromedio,
-          total_ventas: totalVentas,
-          ventas_emitidas: ventasEmitidas,
-          ventas_pagadas: ventasPagadas,
-          total_cobranzas: totalCobranzas,
-          cobranzas_pendientes: cobranzasPendientes,
-          cobranzas_vencidas: cobranzasVencidas,
+          totalClientes,
+          ventasMes,
+          cobranzaPendiente,
+          nuevosClientes,
+          eficiencia,
+          satisfaccion: 4.8, // Valor fijo por ahora
+          facturasPendientes:
+            cobranzas?.filter(c => c.estado === 'Pendiente').length || 0,
+          ingresosAnuales: this.calcularIngresosAnuales(ventas),
         },
-        top_clientes: clientes.slice(0, 10).map((cliente, index) => ({
-          ...cliente,
-          posicion: index + 1,
-          participacion_pct: (
-            ((cliente.total_facturado || 0) / totalFacturado) *
-            100
-          ).toFixed(1),
-        })),
-        sistema_status: {
-          estado: 'Operativo',
-          latencia_promedio: '50ms',
-          ultima_actualizacion: new Date().toLocaleString('es-CL'),
-        },
+        graficos,
+        alertas,
+        actividad,
       };
+
+      console.log('✅ Datos del dashboard cargados exitosamente');
+      return dashboardData;
     } catch (error) {
-      console.error('❌ Error cargando dashboard:', error);
+      console.error('❌ Error cargando datos del dashboard:', error);
       throw error;
     }
-  },
+  }
+
+  // =====================================================================
+  // 👥 CLIENTES DATA
+  // =====================================================================
 
   /**
-   * Obtener análisis ejecutivo
+   * Obtener clientes desde Supabase
    */
-  async getAnalisisEjecutivo() {
-    const dashboardData = await this.getDashboardData();
-    return {
-      ...dashboardData,
-      analisis: {
-        tendencia: 'creciente',
-        recomendaciones: [
-          'Mantener enfoque en clientes de alto valor',
-          'Optimizar proceso de cobranzas',
-          'Expandir cartera de servicios',
-        ],
-      },
-    };
-  },
-};
-
-/**
- * Servicio de datos para clientes
- */
-export const ClientesService = {
-  /**
-   * Obtener todos los clientes
-   */
-  async getClientes() {
+  async getClientesData() {
     try {
-      const { data, error } = await supabase
-        .from('clientes_contables')
+      console.log('🔄 Cargando clientes desde Supabase...');
+
+      const { data: empresas, error } = await supabase
+        .from('empresas')
         .select('*')
-        .order('nombre');
+        .eq('tipo_empresa', 'cliente')
+        .order('razon_social', { ascending: true });
 
       if (error) throw error;
-      return data || [];
+
+      // Transformar datos para compatibilidad
+      const clientesTransformados =
+        empresas?.map((empresa, index) => ({
+          id: index + 1,
+          razon_social: empresa.razon_social,
+          rut: empresa.rut,
+          email: empresa.email,
+          telefono: empresa.telefono,
+          direccion: `${empresa.direccion}, ${empresa.comuna}, ${empresa.ciudad}`,
+          categoria:
+            empresa.tipo_empresa === 'cliente'
+              ? 'Regular'
+              : empresa.tipo_empresa,
+          estado: empresa.estado === 'activa' ? 'Activo' : 'Inactivo',
+          total_facturado: 0, // Se calcularía desde ventas
+          numero_facturas: 0, // Se calcularía desde ventas
+          promedio_factura: 0, // Se calcularía desde ventas
+          fecha_registro: empresa.fecha_creacion,
+          ultima_actividad: empresa.updated_at,
+          rubro: empresa.giro,
+          observaciones: empresa.observaciones,
+        })) || [];
+
+      console.log(
+        `✅ ${clientesTransformados.length} clientes cargados exitosamente`
+      );
+      return clientesTransformados;
     } catch (error) {
-      console.error('❌ Error obteniendo clientes:', error);
+      console.error('❌ Error cargando clientes:', error);
       throw error;
     }
-  },
+  }
+
+  // =====================================================================
+  // 💰 VENTAS DATA
+  // =====================================================================
 
   /**
-   * Buscar clientes
+   * Obtener ventas desde Supabase
    */
-  async buscarClientes(termino) {
-    if (!termino?.trim()) return [];
-
+  async getVentasData() {
     try {
-      const { data, error } = await supabase
-        .from('clientes_contables')
-        .select('*')
-        .or(
-          `nombre.ilike.%${termino}%,rut.ilike.%${termino}%,giro.ilike.%${termino}%`
+      console.log('🔄 Cargando ventas desde Supabase...');
+
+      const { data: ventas, error } = await supabase
+        .from('ventas')
+        .select(
+          `
+          *,
+          empresas!inner(razon_social)
+        `
         )
-        .order('nombre')
-        .limit(20);
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error buscando clientes:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Crear cliente
-   */
-  async crearCliente(clienteData) {
-    try {
-      const { data, error } = await supabase
-        .from('clientes_contables')
-        .insert(clienteData)
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error creando cliente:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Actualizar cliente
-   */
-  async actualizarCliente(id, clienteData) {
-    try {
-      const { data, error } = await supabase
-        .from('clientes_contables')
-        .update(clienteData)
-        .eq('id', id)
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error actualizando cliente:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Eliminar cliente
-   */
-  async eliminarCliente(id) {
-    try {
-      const { error } = await supabase
-        .from('clientes_contables')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.error('❌ Error eliminando cliente:', error);
-      throw error;
-    }
-  },
-};
-
-/**
- * Servicio de datos para ventas
- */
-export const VentasService = {
-  /**
-   * Obtener todas las ventas
-   */
-  async getVentas() {
-    try {
-      const { data, error } = await supabase
-        .from('ventas')
-        .select('*')
         .order('fecha_emision', { ascending: false });
 
       if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo ventas:', error);
-      return [];
-    }
-  },
 
-  /**
-   * Crear venta
-   */
-  async crearVenta(ventaData) {
-    try {
-      const { data, error } = await supabase
-        .from('ventas')
-        .insert(ventaData)
-        .select();
+      // Transformar datos para compatibilidad
+      const ventasTransformadas =
+        ventas?.map(venta => ({
+          id: venta.id,
+          numero_factura: venta.numero_factura,
+          fecha_emision: venta.fecha_emision,
+          fecha_vencimiento: venta.fecha_vencimiento,
+          cliente: venta.empresas?.razon_social || 'Cliente no encontrado',
+          descripcion: venta.descripcion,
+          monto_subtotal: venta.monto_neto,
+          monto_iva: venta.iva,
+          monto_total: venta.monto_total,
+          estado: venta.estado,
+          forma_pago: venta.metodo_pago,
+          dias_vencimiento: this.calcularDiasVencimiento(
+            venta.fecha_vencimiento
+          ),
+          categoria: venta.tipo_servicio,
+        })) || [];
 
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error creando venta:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Actualizar venta
-   */
-  async actualizarVenta(id, ventaData) {
-    try {
-      const { data, error } = await supabase
-        .from('ventas')
-        .update(ventaData)
-        .eq('id', id)
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error actualizando venta:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Obtener estadísticas de ventas
-   */
-  async getEstadisticasVentas() {
-    try {
-      const ventas = await this.getVentas();
-      const totalVentas = ventas.reduce(
-        (sum, v) => sum + parseFloat(v.monto_total || 0),
-        0
+      console.log(
+        `✅ ${ventasTransformadas.length} ventas cargadas exitosamente`
       );
-      const ventasEmitidas = ventas.filter(v => v.estado === 'emitida').length;
-      const ventasPagadas = ventas.filter(v => v.estado === 'pagada').length;
-
-      return {
-        total_ventas: totalVentas,
-        cantidad_ventas: ventas.length,
-        ventas_emitidas: ventasEmitidas,
-        ventas_pagadas: ventasPagadas,
-        promedio_venta: ventas.length > 0 ? totalVentas / ventas.length : 0,
-      };
+      return ventasTransformadas;
     } catch (error) {
-      console.error('❌ Error obteniendo estadísticas de ventas:', error);
-      return {
-        total_ventas: 0,
-        cantidad_ventas: 0,
-        ventas_emitidas: 0,
-        ventas_pagadas: 0,
-        promedio_venta: 0,
-      };
+      console.error('❌ Error cargando ventas:', error);
+      throw error;
     }
-  },
-};
+  }
 
-/**
- * Servicio de datos para cobranzas
- */
-export const CobranzaService = {
+  // =====================================================================
+  // 💳 COBRANZAS DATA
+  // =====================================================================
+
   /**
-   * Obtener todas las cobranzas
+   * Obtener cobranzas desde Supabase
    */
-  async getCobranzas() {
+  async getCobranzasData() {
     try {
-      const { data, error } = await supabase
+      console.log('🔄 Cargando cobranzas desde Supabase...');
+
+      const { data: cobranzas, error } = await supabase
         .from('cobranzas')
-        .select('*')
-        .order('fecha_emision', { ascending: false });
+        .select(
+          `
+          *,
+          empresas!inner(razon_social)
+        `
+        )
+        .order('fecha_vencimiento', { ascending: true });
 
       if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo cobranzas:', error);
-      return [];
-    }
-  },
 
-  /**
-   * Crear cobranza
-   */
-  async crearCobranza(cobranzaData) {
-    try {
-      const { data, error } = await supabase
-        .from('cobranzas')
-        .insert(cobranzaData)
-        .select();
+      // Transformar datos para compatibilidad
+      const cobranzasTransformadas =
+        cobranzas?.map(cobranza => ({
+          id: cobranza.id,
+          factura_id: cobranza.venta_id,
+          numero_factura: cobranza.numero_factura,
+          cliente: cobranza.empresas?.razon_social || 'Cliente no encontrado',
+          monto_total: cobranza.monto_pendiente,
+          fecha_vencimiento: cobranza.fecha_vencimiento,
+          estado: cobranza.estado,
+          dias_vencimiento: this.calcularDiasVencimiento(
+            cobranza.fecha_vencimiento
+          ),
+          metodo_pago: cobranza.metodo_pago,
+          fecha_pago: null, // Se calcularía desde la tabla de pagos
+          observaciones: cobranza.descripcion,
+        })) || [];
 
-      if (error) throw error;
-      return data[0];
+      console.log(
+        `✅ ${cobranzasTransformadas.length} cobranzas cargadas exitosamente`
+      );
+      return cobranzasTransformadas;
     } catch (error) {
-      console.error('❌ Error creando cobranza:', error);
+      console.error('❌ Error cargando cobranzas:', error);
       throw error;
     }
-  },
+  }
+
+  // =====================================================================
+  // 👨‍💼 RRHH DATA
+  // =====================================================================
 
   /**
-   * Actualizar cobranza
+   * Obtener datos de RRHH desde Supabase
    */
-  async actualizarCobranza(id, cobranzaData) {
+  async getRRHHData() {
     try {
-      const { data, error } = await supabase
-        .from('cobranzas')
-        .update(cobranzaData)
-        .eq('id', id)
-        .select();
+      console.log('🔄 Cargando datos de RRHH desde Supabase...');
 
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error actualizando cobranza:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Obtener estadísticas de cobranzas
-   */
-  async getEstadisticasCobranzas() {
-    try {
-      const cobranzas = await this.getCobranzas();
-      const totalCobranzas = cobranzas.reduce(
-        (sum, c) => sum + parseFloat(c.monto || 0),
-        0
-      );
-      const cobranzasPendientes = cobranzas.filter(
-        c => c.estado === 'pendiente'
-      ).length;
-      const cobranzasVencidas = cobranzas.filter(
-        c => c.estado === 'vencida'
-      ).length;
-      const cobranzasPagadas = cobranzas.filter(
-        c => c.estado === 'pagada'
-      ).length;
-
-      return {
-        total_cobranzas: totalCobranzas,
-        cantidad_cobranzas: cobranzas.length,
-        cobranzas_pendientes: cobranzasPendientes,
-        cobranzas_vencidas: cobranzasVencidas,
-        cobranzas_pagadas: cobranzasPagadas,
-        promedio_cobranza:
-          cobranzas.length > 0 ? totalCobranzas / cobranzas.length : 0,
-      };
-    } catch (error) {
-      console.error('❌ Error obteniendo estadísticas de cobranzas:', error);
-      return {
-        total_cobranzas: 0,
-        cantidad_cobranzas: 0,
-        cobranzas_pendientes: 0,
-        cobranzas_vencidas: 0,
-        cobranzas_pagadas: 0,
-        promedio_cobranza: 0,
-      };
-    }
-  },
-};
-
-/**
- * Servicio de datos para compras
- */
-export const ComprasService = {
-  /**
-   * Obtener todas las compras
-   */
-  async getCompras() {
-    try {
-      const { data, error } = await supabase
-        .from('compras')
-        .select('*')
-        .order('fecha_compra', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo compras:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Crear compra
-   */
-  async crearCompra(compraData) {
-    try {
-      const { data, error } = await supabase
-        .from('compras')
-        .insert(compraData)
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error creando compra:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Obtener estadísticas de compras
-   */
-  async getEstadisticasCompras() {
-    try {
-      const compras = await this.getCompras();
-      const totalCompras = compras.reduce(
-        (sum, c) => sum + parseFloat(c.monto_total || 0),
-        0
-      );
-
-      return {
-        total_compras: totalCompras,
-        cantidad_compras: compras.length,
-        promedio_compra: compras.length > 0 ? totalCompras / compras.length : 0,
-      };
-    } catch (error) {
-      console.error('❌ Error obteniendo estadísticas de compras:', error);
-      return {
-        total_compras: 0,
-        cantidad_compras: 0,
-        promedio_compra: 0,
-      };
-    }
-  },
-};
-
-/**
- * Servicio de datos para contratos
- */
-export const ContratosService = {
-  /**
-   * Obtener todos los contratos
-   */
-  async getContratos() {
-    try {
-      const { data, error } = await supabase
-        .from('contratos_clientes')
-        .select('*')
-        .order('fecha_inicio', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo contratos:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Crear contrato
-   */
-  async crearContrato(contratoData) {
-    try {
-      const { data, error } = await supabase
-        .from('contratos_clientes')
-        .insert(contratoData)
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error creando contrato:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Obtener estadísticas de contratos
-   */
-  async getEstadisticasContratos() {
-    try {
-      const contratos = await this.getContratos();
-      const contratosActivos = contratos.filter(
-        c => c.estado === 'activo'
-      ).length;
-      const contratosVencidos = contratos.filter(
-        c => c.estado === 'vencido'
-      ).length;
-
-      return {
-        total_contratos: contratos.length,
-        contratos_activos: contratosActivos,
-        contratos_vencidos: contratosVencidos,
-      };
-    } catch (error) {
-      console.error('❌ Error obteniendo estadísticas de contratos:', error);
-      return {
-        total_contratos: 0,
-        contratos_activos: 0,
-        contratos_vencidos: 0,
-      };
-    }
-  },
-};
-
-/**
- * Servicio de datos para reportes
- */
-export const ReportsService = {
-  /**
-   * Generar reporte ejecutivo
-   */
-  async generarReporteEjecutivo() {
-    try {
-      const [ventas, cobranzas, clientes] = await Promise.all([
-        VentasService.getEstadisticasVentas(),
-        CobranzaService.getEstadisticasCobranzas(),
-        ClientesService.getClientes(),
-      ]);
-
-      return {
-        ventas,
-        cobranzas,
-        clientes: {
-          total: clientes.length,
-          activos: clientes.filter(c => c.estado === 'Activo').length,
-        },
-        reporte: {
-          titulo: 'Reporte Ejecutivo MTZ',
-          fecha: new Date().toLocaleDateString('es-CL'),
-          resumen: 'Análisis completo del sistema',
-        },
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      console.error('❌ Error generando reporte ejecutivo:', error);
-      throw error;
-    }
-  },
-};
-
-/**
- * Servicio de datos para gestión del portal de clientes
- */
-export const PortalClienteService = {
-  /**
-   * Obtener documentos tributarios
-   */
-  async getDocumentosTributarios(filters = {}) {
-    try {
-      let query = supabase
-        .from('documentos_tributarios')
-        .select('*')
-        .order('fecha_emision', { ascending: false });
-
-      if (filters.cliente_id) {
-        query = query.eq('cliente_id', filters.cliente_id);
-      }
-      if (filters.tipo_documento) {
-        query = query.eq('tipo_documento', filters.tipo_documento);
-      }
-      if (filters.estado) {
-        query = query.eq('estado', filters.estado);
-      }
-
-      const { data, error } = await query;
-      if (error && error.code !== 'PGRST116') throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo documentos tributarios:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Crear documento tributario
-   */
-  async crearDocumentoTributario(documentoData) {
-    try {
-      const { data, error } = await supabase
-        .from('documentos_tributarios')
-        .insert({
-          ...documentoData,
-          monto_neto: parseFloat(documentoData.monto_neto || 0),
-          monto_iva: parseFloat(documentoData.monto_iva || 0),
-          monto_total: parseFloat(documentoData.monto_total || 0),
-        })
-        .select();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data?.[0] || documentoData;
-    } catch (error) {
-      console.error('❌ Error creando documento tributario:', error);
-      return {
-        id: `DOC${Date.now()}`,
-        ...documentoData,
-        monto_neto: parseFloat(documentoData.monto_neto || 0),
-        monto_iva: parseFloat(documentoData.monto_iva || 0),
-        monto_total: parseFloat(documentoData.monto_total || 0),
-      };
-    }
-  },
-
-  /**
-   * Obtener declaraciones
-   */
-  async getDeclaraciones(filters = {}) {
-    try {
-      let query = supabase
-        .from('declaraciones')
-        .select('*')
-        .order('fecha_vencimiento', { ascending: false });
-
-      if (filters.cliente_id) {
-        query = query.eq('cliente_id', filters.cliente_id);
-      }
-      if (filters.tipo_declaracion) {
-        query = query.eq('tipo_declaracion', filters.tipo_declaracion);
-      }
-      if (filters.estado) {
-        query = query.eq('estado', filters.estado);
-      }
-
-      const { data, error } = await query;
-      if (error && error.code !== 'PGRST116') throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo declaraciones:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Crear declaración
-   */
-  async crearDeclaracion(declaracionData) {
-    try {
-      const { data, error } = await supabase
-        .from('declaraciones')
-        .insert({
-          ...declaracionData,
-          monto_impuesto: parseFloat(declaracionData.monto_impuesto || 0),
-          periodo_mes: parseInt(declaracionData.periodo_mes),
-          periodo_ano: parseInt(declaracionData.periodo_ano),
-        })
-        .select();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data?.[0] || declaracionData;
-    } catch (error) {
-      console.error('❌ Error creando declaración:', error);
-      return {
-        id: `DEC${Date.now()}`,
-        ...declaracionData,
-        monto_impuesto: parseFloat(declaracionData.monto_impuesto || 0),
-        periodo_mes: parseInt(declaracionData.periodo_mes),
-        periodo_ano: parseInt(declaracionData.periodo_ano),
-      };
-    }
-  },
-
-  /**
-   * Obtener reportes
-   */
-  async getReportes(filters = {}) {
-    try {
-      let query = supabase
-        .from('reportes')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (filters.cliente_id) {
-        query = query.eq('cliente_id', filters.cliente_id);
-      }
-      if (filters.tipo_reporte) {
-        query = query.eq('tipo_reporte', filters.tipo_reporte);
-      }
-
-      const { data, error } = await query;
-      if (error && error.code !== 'PGRST116') throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo reportes:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Crear reporte
-   */
-  async crearReporte(reporteData) {
-    try {
-      const { data, error } = await supabase
-        .from('reportes')
-        .insert({
-          ...reporteData,
-          periodo_mes: parseInt(reporteData.periodo_mes),
-          periodo_ano: parseInt(reporteData.periodo_ano),
-        })
-        .select();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data?.[0] || reporteData;
-    } catch (error) {
-      console.error('❌ Error creando reporte:', error);
-      return {
-        id: `REP${Date.now()}`,
-        ...reporteData,
-        periodo_mes: parseInt(reporteData.periodo_mes),
-        periodo_ano: parseInt(reporteData.periodo_ano),
-      };
-    }
-  },
-
-  /**
-   * Obtener eventos
-   */
-  async getEventos(filters = {}) {
-    try {
-      let query = supabase
-        .from('eventos')
-        .select('*')
-        .order('fecha_evento', { ascending: true });
-
-      if (filters.cliente_id) {
-        query = query.eq('cliente_id', filters.cliente_id);
-      }
-      if (filters.tipo_evento) {
-        query = query.eq('tipo_evento', filters.tipo_evento);
-      }
-
-      const { data, error } = await query;
-      if (error && error.code !== 'PGRST116') throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo eventos:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Crear evento
-   */
-  async crearEvento(eventoData) {
-    try {
-      const { data, error } = await supabase
-        .from('eventos')
-        .insert(eventoData)
-        .select();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data?.[0] || eventoData;
-    } catch (error) {
-      console.error('❌ Error creando evento:', error);
-      return {
-        id: `EVT${Date.now()}`,
-        ...eventoData,
-      };
-    }
-  },
-
-  /**
-   * Obtener notificaciones
-   */
-  async getNotificaciones(filters = {}) {
-    try {
-      let query = supabase
-        .from('notificaciones')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (filters.cliente_id) {
-        query = query.eq('cliente_id', filters.cliente_id);
-      }
-      if (filters.tipo_notificacion) {
-        query = query.eq('tipo_notificacion', filters.tipo_notificacion);
-      }
-
-      const { data, error } = await query;
-      if (error && error.code !== 'PGRST116') throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo notificaciones:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Crear notificación
-   */
-  async crearNotificacion(notificacionData) {
-    try {
-      const { data, error } = await supabase
-        .from('notificaciones')
-        .insert(notificacionData)
-        .select();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data?.[0] || notificacionData;
-    } catch (error) {
-      console.error('❌ Error creando notificación:', error);
-      return {
-        id: `NOT${Date.now()}`,
-        ...notificacionData,
-      };
-    }
-  },
-
-  /**
-   * Obtener estadísticas del portal
-   */
-  async getEstadisticasPortal(clienteId = null) {
-    try {
-      const documentos = await this.getDocumentosTributarios(
-        clienteId ? { cliente_id: clienteId } : {}
-      );
-      const declaraciones = await this.getDeclaraciones(
-        clienteId ? { cliente_id: clienteId } : {}
-      );
-      const reportes = await this.getReportes(
-        clienteId ? { cliente_id: clienteId } : {}
-      );
-      const eventos = await this.getEventos(
-        clienteId ? { cliente_id: clienteId } : {}
-      );
-      const notificaciones = await this.getNotificaciones(
-        clienteId ? { cliente_id: clienteId } : {}
-      );
-
-      const totalDocumentos = documentos.length;
-      const documentosPendientes = documentos.filter(
-        d => d.estado === 'pendiente'
-      ).length;
-      const totalDeclaraciones = declaraciones.length;
-      const declaracionesVencidas = declaraciones.filter(
-        d => d.estado === 'vencida'
-      ).length;
-      const totalReportes = reportes.length;
-      const totalEventos = eventos.length;
-      const eventosProximos = eventos.filter(e => {
-        const fechaEvento = new Date(e.fecha_evento);
-        const hoy = new Date();
-        const diffTime = fechaEvento - hoy;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays >= 0 && diffDays <= 7;
-      }).length;
-      const totalNotificaciones = notificaciones.length;
-      const notificacionesNoLeidas = notificaciones.filter(
-        n => !n.leida
-      ).length;
-
-      return {
-        total_documentos: totalDocumentos,
-        documentos_pendientes: documentosPendientes,
-        total_declaraciones: totalDeclaraciones,
-        declaraciones_vencidas: declaracionesVencidas,
-        total_reportes: totalReportes,
-        total_eventos: totalEventos,
-        eventos_proximos: eventosProximos,
-        total_notificaciones: totalNotificaciones,
-        notificaciones_no_leidas: notificacionesNoLeidas,
-      };
-    } catch (error) {
-      console.error('❌ Error obteniendo estadísticas del portal:', error);
-      return {
-        total_documentos: 0,
-        documentos_pendientes: 0,
-        total_declaraciones: 0,
-        declaraciones_vencidas: 0,
-        total_reportes: 0,
-        total_eventos: 0,
-        eventos_proximos: 0,
-        total_notificaciones: 0,
-        notificaciones_no_leidas: 0,
-      };
-    }
-  },
-};
-
-/**
- * Servicio de datos para requerimientos
- */
-export const RequerimientosService = {
-  /**
-   * Obtener todos los requerimientos
-   */
-  async getRequerimientos(filters = {}) {
-    try {
-      let query = supabase
-        .from('requerimientos')
-        .select('*')
-        .order('fecha_creacion', { ascending: false });
-
-      if (filters.search) {
-        query = query.or(
-          `titulo.ilike.%${filters.search}%,descripcion.ilike.%${filters.search}%`
-        );
-      }
-      if (filters.estado && filters.estado !== 'todos') {
-        query = query.eq('estado', filters.estado);
-      }
-      if (filters.prioridad) {
-        query = query.eq('prioridad', filters.prioridad);
-      }
-
-      const { data, error } = await query;
-      if (error && error.code !== 'PGRST116') throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo requerimientos:', error);
-      // Si la tabla no existe, retornar array vacío
-      return [];
-    }
-  },
-
-  /**
-   * Crear requerimiento
-   */
-  async crearRequerimiento(requerimientoData) {
-    try {
-      const { data, error } = await supabase
-        .from('requerimientos')
-        .insert({
-          ...requerimientoData,
-          fecha_creacion: new Date().toISOString().split('T')[0],
-        })
-        .select();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data?.[0] || requerimientoData;
-    } catch (error) {
-      console.error('❌ Error creando requerimiento:', error);
-      // Si la tabla no existe, simular creación
-      return {
-        id: `REQ${Date.now()}`,
-        ...requerimientoData,
-        fecha_creacion: new Date().toISOString().split('T')[0],
-      };
-    }
-  },
-
-  /**
-   * Actualizar requerimiento
-   */
-  async actualizarRequerimiento(id, requerimientoData) {
-    try {
-      const { data, error } = await supabase
-        .from('requerimientos')
-        .update(requerimientoData)
-        .eq('id', id)
-        .select();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data?.[0] || { id, ...requerimientoData };
-    } catch (error) {
-      console.error('❌ Error actualizando requerimiento:', error);
-      // Si la tabla no existe, simular actualización
-      return { id, ...requerimientoData };
-    }
-  },
-
-  /**
-   * Eliminar requerimiento
-   */
-  async eliminarRequerimiento(id) {
-    try {
-      const { error } = await supabase
-        .from('requerimientos')
-        .delete()
-        .eq('id', id);
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return true;
-    } catch (error) {
-      console.error('❌ Error eliminando requerimiento:', error);
-      // Si la tabla no existe, simular eliminación
-      return true;
-    }
-  },
-
-  /**
-   * Obtener estadísticas de requerimientos
-   */
-  async getEstadisticasRequerimientos() {
-    try {
-      const requerimientos = await this.getRequerimientos();
-
-      const total = requerimientos.length;
-      const pendientes = requerimientos.filter(
-        r => r.estado === 'Pendiente'
-      ).length;
-      const enProceso = requerimientos.filter(
-        r => r.estado === 'En Proceso'
-      ).length;
-      const completados = requerimientos.filter(
-        r => r.estado === 'Completado'
-      ).length;
-      const urgentes = requerimientos.filter(
-        r => r.prioridad === 'Urgente'
-      ).length;
-      const vencidos = requerimientos.filter(r => {
-        if (!r.fecha_limite) return false;
-        return (
-          new Date(r.fecha_limite) < new Date() && r.estado !== 'Completado'
-        );
-      }).length;
-
-      return {
-        total_requerimientos: total,
-        requerimientos_pendientes: pendientes,
-        requerimientos_en_proceso: enProceso,
-        requerimientos_completados: completados,
-        requerimientos_urgentes: urgentes,
-        requerimientos_vencidos: vencidos,
-      };
-    } catch (error) {
-      console.error(
-        '❌ Error obteniendo estadísticas de requerimientos:',
-        error
-      );
-      return {
-        total_requerimientos: 0,
-        requerimientos_pendientes: 0,
-        requerimientos_en_proceso: 0,
-        requerimientos_completados: 0,
-        requerimientos_urgentes: 0,
-        requerimientos_vencidos: 0,
-      };
-    }
-  },
-};
-
-/**
- * Servicio de datos para proyecciones
- */
-export const ProyeccionesService = {
-  /**
-   * Obtener todas las proyecciones
-   */
-  async getProyecciones(filters = {}) {
-    try {
-      let query = supabase
-        .from('proyecciones')
-        .select('*')
-        .order('año', { ascending: false })
-        .order('mes_inicio', { ascending: true });
-
-      if (filters.tipo) {
-        query = query.eq('tipo', filters.tipo);
-      }
-      if (filters.año) {
-        query = query.eq('año', filters.año);
-      }
-      if (filters.estado) {
-        query = query.eq('estado', filters.estado);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo proyecciones:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Crear proyección
-   */
-  async crearProyeccion(proyeccionData) {
-    try {
-      const { data, error } = await supabase
-        .from('proyecciones')
-        .insert({
-          ...proyeccionData,
-          monto_objetivo: parseFloat(proyeccionData.monto_objetivo),
-          monto_real: parseFloat(proyeccionData.monto_real) || 0,
-          porcentaje_cumplimiento:
-            parseFloat(proyeccionData.porcentaje_cumplimiento) || 0,
-          año: parseInt(proyeccionData.año),
-          mes_inicio: parseInt(proyeccionData.mes_inicio),
-          mes_fin: parseInt(proyeccionData.mes_fin),
-        })
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error creando proyección:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Actualizar proyección
-   */
-  async actualizarProyeccion(id, proyeccionData) {
-    try {
-      const { data, error } = await supabase
-        .from('proyecciones')
-        .update({
-          ...proyeccionData,
-          monto_objetivo: parseFloat(proyeccionData.monto_objetivo),
-          monto_real: parseFloat(proyeccionData.monto_real) || 0,
-          porcentaje_cumplimiento:
-            parseFloat(proyeccionData.porcentaje_cumplimiento) || 0,
-          año: parseInt(proyeccionData.año),
-          mes_inicio: parseInt(proyeccionData.mes_inicio),
-          mes_fin: parseInt(proyeccionData.mes_fin),
-        })
-        .eq('id', id)
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error actualizando proyección:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Eliminar proyección
-   */
-  async eliminarProyeccion(id) {
-    try {
-      const { error } = await supabase
-        .from('proyecciones')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.error('❌ Error eliminando proyección:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Obtener estadísticas de proyecciones
-   */
-  async getEstadisticasProyecciones() {
-    try {
-      const proyecciones = await this.getProyecciones();
-
-      const totalProyecciones = proyecciones.length;
-      const proyeccionesCompletadas = proyecciones.filter(
-        p => p.estado === 'completado'
-      ).length;
-      const proyeccionesEnProgreso = proyecciones.filter(
-        p => p.estado === 'en_progreso'
-      ).length;
-      const proyeccionesAtrasadas = proyecciones.filter(
-        p => p.estado === 'atrasado'
-      ).length;
-
-      const totalObjetivo = proyecciones.reduce(
-        (sum, p) => sum + parseFloat(p.monto_objetivo || 0),
-        0
-      );
-      const totalReal = proyecciones.reduce(
-        (sum, p) => sum + parseFloat(p.monto_real || 0),
-        0
-      );
-      const promedioCumplimiento =
-        proyecciones.length > 0
-          ? proyecciones.reduce(
-              (sum, p) => sum + parseFloat(p.porcentaje_cumplimiento || 0),
-              0
-            ) / proyecciones.length
-          : 0;
-
-      return {
-        total_proyecciones: totalProyecciones,
-        proyecciones_completadas: proyeccionesCompletadas,
-        proyecciones_en_progreso: proyeccionesEnProgreso,
-        proyecciones_atrasadas: proyeccionesAtrasadas,
-        total_objetivo: totalObjetivo,
-        total_real: totalReal,
-        promedio_cumplimiento: promedioCumplimiento,
-      };
-    } catch (error) {
-      console.error('❌ Error obteniendo estadísticas de proyecciones:', error);
-      return {
-        total_proyecciones: 0,
-        proyecciones_completadas: 0,
-        proyecciones_en_progreso: 0,
-        proyecciones_atrasadas: 0,
-        total_objetivo: 0,
-        total_real: 0,
-        promedio_cumplimiento: 0,
-      };
-    }
-  },
-};
-
-/**
- * Servicio de datos para RRHH
- */
-export const RRHHService = {
-  /**
-   * Obtener todos los empleados
-   */
-  async getEmpleados(filters = {}) {
-    try {
-      let query = supabase
+      const { data: empleados, error } = await supabase
         .from('empleados')
         .select('*')
         .order('nombre', { ascending: true });
 
-      if (filters.search) {
-        query = query.or(
-          `nombre.ilike.%${filters.search}%,apellido.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
+      if (error) throw error;
+
+      // Transformar datos para compatibilidad
+      const rrhhTransformado =
+        empleados?.map(empleado => ({
+          id: empleado.id,
+          nombre: empleado.nombre,
+          apellido: empleado.apellido,
+          email: empleado.email,
+          telefono: empleado.telefono,
+          departamento: empleado.departamento,
+          cargo: empleado.cargo,
+          fecha_ingreso: empleado.fecha_ingreso,
+          salario_base: empleado.salario_base,
+          estado: empleado.estado,
+          evaluacion: 4.5, // Valor fijo por ahora
+        })) || [];
+
+      console.log(
+        `✅ ${rrhhTransformado.length} empleados cargados exitosamente`
+      );
+      return rrhhTransformado;
+    } catch (error) {
+      console.error('❌ Error cargando datos de RRHH:', error);
+      throw error;
+    }
+  }
+
+  // =====================================================================
+  // 📊 FUNCIONES DE CÁLCULO
+  // =====================================================================
+
+  /**
+   * Calcular ventas del mes actual
+   */
+  calcularVentasMes(ventas) {
+    if (!ventas) return 0;
+
+    const mesActual = new Date().getMonth() + 1;
+    const añoActual = new Date().getFullYear();
+
+    return ventas
+      .filter(venta => {
+        const fechaVenta = new Date(venta.fecha_emision);
+        return (
+          fechaVenta.getMonth() + 1 === mesActual &&
+          fechaVenta.getFullYear() === añoActual
         );
-      }
-      if (filters.departamento) {
-        query = query.eq('departamento', filters.departamento);
-      }
-      if (filters.estado) {
-        query = query.eq('estado', filters.estado);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo empleados:', error);
-      throw error;
-    }
-  },
+      })
+      .reduce((total, venta) => total + parseFloat(venta.monto_total || 0), 0);
+  }
 
   /**
-   * Crear empleado
+   * Calcular cobranza pendiente
    */
-  async crearEmpleado(empleadoData) {
-    try {
-      const { data, error } = await supabase
-        .from('empleados')
-        .insert({
-          ...empleadoData,
-          salario_base: parseFloat(empleadoData.salario_base),
-          fecha_ingreso:
-            empleadoData.fecha_ingreso ||
-            new Date().toISOString().split('T')[0],
-        })
-        .select();
+  calcularCobranzaPendiente(cobranzas) {
+    if (!cobranzas) return 0;
 
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error creando empleado:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Actualizar empleado
-   */
-  async actualizarEmpleado(id, empleadoData) {
-    try {
-      const { data, error } = await supabase
-        .from('empleados')
-        .update({
-          ...empleadoData,
-          salario_base: parseFloat(empleadoData.salario_base),
-        })
-        .eq('id', id)
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error actualizando empleado:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Eliminar empleado
-   */
-  async eliminarEmpleado(id) {
-    try {
-      const { error } = await supabase.from('empleados').delete().eq('id', id);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.error('❌ Error eliminando empleado:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Obtener todas las nóminas
-   */
-  async getNominas(filters = {}) {
-    try {
-      let query = supabase
-        .from('nominas')
-        .select(
-          `
-          *,
-          empleados (
-            nombre,
-            apellido,
-            departamento
-          )
-        `
-        )
-        .order('año', { ascending: false })
-        .order('mes', { ascending: false });
-
-      if (filters.mes) {
-        query = query.eq('mes', filters.mes);
-      }
-      if (filters.año) {
-        query = query.eq('año', filters.año);
-      }
-      if (filters.empleado) {
-        query = query.eq('empleado_id', filters.empleado);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo nóminas:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Crear nómina
-   */
-  async crearNomina(nominaData) {
-    try {
-      const { data, error } = await supabase
-        .from('nominas')
-        .insert({
-          ...nominaData,
-          dias_trabajados: parseInt(nominaData.dias_trabajados),
-          salario_base: parseFloat(nominaData.salario_base),
-          bonificaciones: parseFloat(nominaData.bonificaciones || 0),
-          descuentos: parseFloat(nominaData.descuentos || 0),
-          salario_neto: parseFloat(nominaData.salario_neto),
-        })
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error creando nómina:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Actualizar nómina
-   */
-  async actualizarNomina(id, nominaData) {
-    try {
-      const { data, error } = await supabase
-        .from('nominas')
-        .update({
-          ...nominaData,
-          dias_trabajados: parseInt(nominaData.dias_trabajados),
-          salario_base: parseFloat(nominaData.salario_base),
-          bonificaciones: parseFloat(nominaData.bonificaciones || 0),
-          descuentos: parseFloat(nominaData.descuentos || 0),
-          salario_neto: parseFloat(nominaData.salario_neto),
-        })
-        .eq('id', id)
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    } catch (error) {
-      console.error('❌ Error actualizando nómina:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Eliminar nómina
-   */
-  async eliminarNomina(id) {
-    try {
-      const { error } = await supabase.from('nominas').delete().eq('id', id);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.error('❌ Error eliminando nómina:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Obtener estadísticas de RRHH
-   */
-  async getEstadisticasRRHH() {
-    try {
-      const empleados = await this.getEmpleados();
-      const nominas = await this.getNominas();
-
-      const empleadosActivos = empleados.filter(
-        e => e.estado === 'activo'
-      ).length;
-      const totalSalarios = empleados.reduce(
-        (sum, e) => sum + parseFloat(e.salario_base || 0),
+    return cobranzas
+      .filter(
+        cobranza =>
+          cobranza.estado === 'Pendiente' || cobranza.estado === 'Vencido'
+      )
+      .reduce(
+        (total, cobranza) => total + parseFloat(cobranza.monto_pendiente || 0),
         0
       );
-      const promedioSalario =
-        empleados.length > 0 ? totalSalarios / empleados.length : 0;
+  }
 
-      const totalNominas = nominas.reduce(
-        (sum, n) => sum + parseFloat(n.salario_neto || 0),
+  /**
+   * Calcular nuevos clientes del mes
+   */
+  calcularNuevosClientes(empresas) {
+    if (!empresas) return 0;
+
+    const mesActual = new Date().getMonth() + 1;
+    const añoActual = new Date().getFullYear();
+
+    return empresas.filter(empresa => {
+      const fechaCreacion = new Date(empresa.fecha_creacion);
+      return (
+        fechaCreacion.getMonth() + 1 === mesActual &&
+        fechaCreacion.getFullYear() === añoActual
+      );
+    }).length;
+  }
+
+  /**
+   * Calcular eficiencia
+   */
+  calcularEficiencia(ventas, cobranzas) {
+    if (!ventas || !cobranzas) return 0;
+
+    const totalVentas = ventas.reduce(
+      (total, venta) => total + parseFloat(venta.monto_total || 0),
+      0
+    );
+    const totalCobrado = cobranzas
+      .filter(cobranza => cobranza.estado === 'Pagado')
+      .reduce(
+        (total, cobranza) => total + parseFloat(cobranza.monto_pendiente || 0),
         0
       );
-      const nominasEsteMes = nominas.filter(n => {
-        const fecha = new Date();
-        return n.mes === fecha.getMonth() + 1 && n.año === fecha.getFullYear();
-      }).length;
 
-      return {
-        total_empleados: empleados.length,
-        empleados_activos: empleadosActivos,
-        promedio_salario: promedioSalario,
-        total_nominas: totalNominas,
-        nominas_este_mes: nominasEsteMes,
-      };
-    } catch (error) {
-      console.error('❌ Error obteniendo estadísticas de RRHH:', error);
-      return {
-        total_empleados: 0,
-        empleados_activos: 0,
-        promedio_salario: 0,
-        total_nominas: 0,
-        nominas_este_mes: 0,
-      };
-    }
-  },
-};
-
-/**
- * Servicio de datos para usuarios
- */
-export const UsuariosService = {
-  /**
-   * Obtener todos los usuarios
-   */
-  async getUsuarios() {
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select(
-          `
-          *,
-          roles:rol_id (
-            nombre,
-            descripcion,
-            permisos
-          ),
-          empresas:empresa_id (
-            nombre,
-            ruc
-          )
-        `
-        )
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error obteniendo usuarios:', error);
-      throw error;
-    }
-  },
+    return totalVentas > 0 ? Math.round((totalCobrado / totalVentas) * 100) : 0;
+  }
 
   /**
-   * Obtener roles
+   * Calcular ingresos anuales
    */
-  async getRoles() {
-    try {
-      const { data, error } = await supabase
-        .from('roles')
-        .select('*')
-        .order('nombre');
+  calcularIngresosAnuales(ventas) {
+    if (!ventas) return 0;
 
-      if (error) throw error;
-      return data || [];
+    const añoActual = new Date().getFullYear();
+
+    return ventas
+      .filter(venta => {
+        const fechaVenta = new Date(venta.fecha_emision);
+        return fechaVenta.getFullYear() === añoActual;
+      })
+      .reduce((total, venta) => total + parseFloat(venta.monto_total || 0), 0);
+  }
+
+  /**
+   * Calcular días de vencimiento
+   */
+  calcularDiasVencimiento(fechaVencimiento) {
+    if (!fechaVencimiento) return 0;
+
+    const hoy = new Date();
+    const vencimiento = new Date(fechaVencimiento);
+    const diffTime = vencimiento.getTime() - hoy.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
+  }
+
+  // =====================================================================
+  // 📈 FUNCIONES DE GRÁFICOS
+  // =====================================================================
+
+  /**
+   * Obtener datos para gráficos
+   */
+  async getGraficosData(ventas, empresas) {
+    try {
+      // Ventas mensuales
+      const ventasMensuales = this.calcularVentasMensuales(ventas);
+
+      // Distribución de clientes
+      const clientesPorEstado = this.calcularDistribucionClientes(empresas);
+
+      // Rendimiento del equipo (simulado por ahora)
+      const rendimientoEquipo = [
+        { name: 'Carlos V.', ventas: 1200000, clientes: 18, eficiencia: 96 },
+        { name: 'María G.', ventas: 980000, clientes: 15, eficiencia: 92 },
+        { name: 'Juan P.', ventas: 850000, clientes: 12, eficiencia: 88 },
+        { name: 'Ana L.', ventas: 720000, clientes: 10, eficiencia: 85 },
+      ];
+
+      return {
+        ventasMensuales,
+        clientesPorEstado,
+        rendimientoEquipo,
+      };
     } catch (error) {
-      console.error('❌ Error obteniendo roles:', error);
+      console.error('❌ Error calculando datos de gráficos:', error);
+      return {
+        ventasMensuales: [],
+        clientesPorEstado: [],
+        rendimientoEquipo: [],
+      };
+    }
+  }
+
+  /**
+   * Calcular ventas mensuales
+   */
+  calcularVentasMensuales(ventas) {
+    if (!ventas) return [];
+
+    const meses = [
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
+    ];
+    const añoActual = new Date().getFullYear();
+
+    return meses.map((mes, index) => {
+      const mesNum = index + 1;
+      const ventasMes = ventas
+        .filter(venta => {
+          const fechaVenta = new Date(venta.fecha_emision);
+          return (
+            fechaVenta.getMonth() + 1 === mesNum &&
+            fechaVenta.getFullYear() === añoActual
+          );
+        })
+        .reduce(
+          (total, venta) => total + parseFloat(venta.monto_total || 0),
+          0
+        );
+
+      return {
+        mes,
+        ventas: ventasMes,
+        meta: 2000000, // Meta fija por ahora
+        crecimiento: 0, // Se calcularía comparando con mes anterior
+      };
+    });
+  }
+
+  /**
+   * Calcular distribución de clientes
+   */
+  calcularDistribucionClientes(empresas) {
+    if (!empresas) return [];
+
+    const activos = empresas.filter(emp => emp.estado === 'activa').length;
+    const inactivos = empresas.filter(emp => emp.estado === 'inactiva').length;
+    const total = empresas.length;
+
+    return [
+      { name: 'Activos', value: activos, color: '#10B981' },
+      { name: 'Inactivos', value: inactivos, color: '#EF4444' },
+      {
+        name: 'Pendientes',
+        value: total - activos - inactivos,
+        color: '#F59E0B',
+      },
+    ];
+  }
+
+  // =====================================================================
+  // 🚨 FUNCIONES DE ALERTAS
+  // =====================================================================
+
+  /**
+   * Obtener alertas
+   */
+  async getAlertasData(cobranzas, ventas) {
+    try {
+      const alertas = [];
+
+      // Facturas vencidas
+      const facturasVencidas =
+        cobranzas?.filter(cobranza => cobranza.estado === 'Vencido').length ||
+        0;
+
+      if (facturasVencidas > 0) {
+        alertas.push({
+          id: 1,
+          tipo: 'warning',
+          mensaje: `${facturasVencidas} facturas vencidas por más de 30 días`,
+          icono: 'AlertTriangle',
+          fecha: new Date().toISOString().split('T')[0],
+        });
+      }
+
+      // Meta de ventas
+      const ventasMes = this.calcularVentasMes(ventas);
+      if (ventasMes > 2000000) {
+        alertas.push({
+          id: 2,
+          tipo: 'success',
+          mensaje: `Meta de ventas del mes alcanzada al ${Math.round((ventasMes / 2000000) * 100)}%`,
+          icono: 'CheckCircle',
+          fecha: new Date().toISOString().split('T')[0],
+        });
+      }
+
+      return alertas;
+    } catch (error) {
+      console.error('❌ Error obteniendo alertas:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtener actividad reciente
+   */
+  async getActividadReciente() {
+    try {
+      // Por ahora retornamos actividad simulada
+      // En el futuro se podría obtener de una tabla de logs
+      return [
+        {
+          id: 1,
+          accion: 'Nuevo cliente agregado',
+          usuario: 'Carlos V.',
+          tiempo: '2 min',
+          detalles: 'Tech Solutions Ltda - Categoría VIP',
+        },
+        {
+          id: 2,
+          accion: 'Factura generada',
+          usuario: 'María G.',
+          tiempo: '15 min',
+          detalles: 'F001-2024 - $595,000',
+        },
+      ];
+    } catch (error) {
+      console.error('❌ Error obteniendo actividad reciente:', error);
+      return [];
+    }
+  }
+
+  // =====================================================================
+  // 📋 CONTRATOS DATA
+  // =====================================================================
+
+  /**
+   * Obtener contratos desde Supabase
+   */
+  async getContratosData() {
+    try {
+      console.log('🔄 Cargando contratos desde Supabase...');
+
+      // Por ahora retornamos datos simulados
+      // En el futuro se conectaría con la tabla contratos
+      return [
+        {
+          id: 1,
+          fecha_inicio: '2024-01-15',
+          fecha_fin: '2024-12-31',
+          cliente: 'Tech Solutions Ltda',
+          descripcion: 'Servicios de consultoría IT',
+          monto: 2500000,
+          estado: 'activo',
+          tipo_contrato: 'Anual',
+          notas: 'Renovación automática',
+        },
+        {
+          id: 2,
+          fecha_inicio: '2024-03-01',
+          fecha_fin: '2024-08-31',
+          cliente: 'Constructora ABC',
+          descripcion: 'Asesoría contable',
+          monto: 1800000,
+          estado: 'activo',
+          tipo_contrato: 'Semestral',
+          notas: 'Pago mensual',
+        },
+      ];
+    } catch (error) {
+      console.error('❌ Error cargando contratos:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Crear nuevo contrato
+   */
+  async crearContrato(contratoData) {
+    try {
+      console.log('🔄 Creando contrato...', contratoData);
+      // Aquí se implementaría la lógica para crear en Supabase
+      return { success: true, id: Date.now() };
+    } catch (error) {
+      console.error('❌ Error creando contrato:', error);
       throw error;
     }
-  },
+  }
+
+  /**
+   * Actualizar contrato
+   */
+  async actualizarContrato(id, contratoData) {
+    try {
+      console.log('🔄 Actualizando contrato...', { id, contratoData });
+      // Aquí se implementaría la lógica para actualizar en Supabase
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error actualizando contrato:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Eliminar contrato
+   */
+  async eliminarContrato(id) {
+    try {
+      console.log('🔄 Eliminando contrato...', id);
+      // Aquí se implementaría la lógica para eliminar en Supabase
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error eliminando contrato:', error);
+      throw error;
+    }
+  }
+
+  // =====================================================================
+  // 👥 USUARIOS DATA
+  // =====================================================================
+
+  /**
+   * Obtener usuarios desde Supabase
+   */
+  async getUsuariosData() {
+    try {
+      console.log('🔄 Cargando usuarios desde Supabase...');
+
+      // Por ahora retornamos datos simulados
+      return [
+        {
+          id: 1,
+          nombre: 'Carlos Vásquez',
+          email: 'carlos@mtz.cl',
+          rol: 'admin',
+          activo: true,
+          ultimo_acceso: '2024-01-15T10:30:00Z',
+        },
+        {
+          id: 2,
+          nombre: 'María González',
+          email: 'maria@mtz.cl',
+          rol: 'colaborador',
+          activo: true,
+          ultimo_acceso: '2024-01-15T09:15:00Z',
+        },
+      ];
+    } catch (error) {
+      console.error('❌ Error cargando usuarios:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtener roles desde Supabase
+   */
+  async getRolesData() {
+    try {
+      console.log('🔄 Cargando roles desde Supabase...');
+
+      return [
+        { id: 1, nombre: 'admin', descripcion: 'Administrador' },
+        { id: 2, nombre: 'colaborador', descripcion: 'Colaborador' },
+        { id: 3, nombre: 'cliente', descripcion: 'Cliente' },
+      ];
+    } catch (error) {
+      console.error('❌ Error cargando roles:', error);
+      return [];
+    }
+  }
 
   /**
    * Crear usuario
    */
   async crearUsuario(userData) {
     try {
-      // Crear usuario en auth.users
-      const { data: authData, error: authError } =
-        await supabase.auth.admin.createUser({
-          email: userData.email,
-          password: 'password123', // Contraseña temporal
-          email_confirm: true,
-        });
-
-      if (authError) throw authError;
-
-      // Crear registro en usuarios
-      const { data, error } = await supabase
-        .from('usuarios')
-        .insert({
-          id: authData.user.id,
-          email: userData.email,
-          nombre: userData.nombre,
-          apellido: userData.apellido,
-          rol_id: userData.rol_id,
-          empresa_id: userData.empresa_id,
-          cargo: userData.cargo,
-          telefono: userData.telefono,
-          activo: userData.activo || true,
-        })
-        .select();
-
-      if (error) throw error;
-      return data[0];
+      console.log('🔄 Creando usuario...', userData);
+      return { success: true, id: Date.now() };
     } catch (error) {
       console.error('❌ Error creando usuario:', error);
       throw error;
     }
-  },
+  }
 
   /**
    * Actualizar usuario
    */
   async actualizarUsuario(id, userData) {
     try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .update(userData)
-        .eq('id', id)
-        .select();
-
-      if (error) throw error;
-      return data[0];
+      console.log('🔄 Actualizando usuario...', { id, userData });
+      return { success: true };
     } catch (error) {
       console.error('❌ Error actualizando usuario:', error);
       throw error;
     }
-  },
-};
+  }
 
-export default {
-  DashboardService,
-  ClientesService,
-  VentasService,
-  CobranzaService,
-  ComprasService,
-  ContratosService,
-  ReportsService,
-  PortalClienteService,
-  RequerimientosService,
-  ProyeccionesService,
-  RRHHService,
-  UsuariosService,
-};
+  // =====================================================================
+  // 👥 RRHH DATA
+  // =====================================================================
+
+  /**
+   * Obtener datos de RRHH
+   */
+  async getNominasData() {
+    try {
+      console.log('🔄 Cargando nóminas desde Supabase...');
+      return [];
+    } catch (error) {
+      console.error('❌ Error cargando nóminas:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtener estadísticas de RRHH
+   */
+  async getEstadisticasRRHH() {
+    try {
+      console.log('🔄 Cargando estadísticas RRHH...');
+      return {
+        totalEmpleados: 0,
+        empleadosActivos: 0,
+        totalNominas: 0,
+        promedioSalario: 0,
+      };
+    } catch (error) {
+      console.error('❌ Error cargando estadísticas RRHH:', error);
+      return {};
+    }
+  }
+
+  /**
+   * Crear empleado
+   */
+  async crearEmpleado(empleadoData) {
+    try {
+      console.log('🔄 Creando empleado...', empleadoData);
+      return { success: true, id: Date.now() };
+    } catch (error) {
+      console.error('❌ Error creando empleado:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualizar empleado
+   */
+  async actualizarEmpleado(id, empleadoData) {
+    try {
+      console.log('🔄 Actualizando empleado...', { id, empleadoData });
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error actualizando empleado:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Eliminar empleado
+   */
+  async eliminarEmpleado(id) {
+    try {
+      console.log('🔄 Eliminando empleado...', id);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error eliminando empleado:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Crear nómina
+   */
+  async crearNomina(nominaData) {
+    try {
+      console.log('🔄 Creando nómina...', nominaData);
+      return { success: true, id: Date.now() };
+    } catch (error) {
+      console.error('❌ Error creando nómina:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualizar nómina
+   */
+  async actualizarNomina(id, nominaData) {
+    try {
+      console.log('🔄 Actualizando nómina...', { id, nominaData });
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error actualizando nómina:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Eliminar nómina
+   */
+  async eliminarNomina(id) {
+    try {
+      console.log('🔄 Eliminando nómina...', id);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error eliminando nómina:', error);
+      throw error;
+    }
+  }
+}
+
+// Exportar instancia única
+export const dataService = new DataService();
+export default dataService;

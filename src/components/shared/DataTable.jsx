@@ -1,17 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Search,
-  Filter,
-  Download,
-  Eye,
-  Edit,
-  Trash2,
-  MoreHorizontal,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Download,  } from 'lucide-react';
 import Table from '../ui/Table.jsx';
 import Button from '../ui/Button.jsx';
 import Input from '../ui/Input.jsx';

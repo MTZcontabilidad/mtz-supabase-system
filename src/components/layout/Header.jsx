@@ -4,10 +4,41 @@ import Button from '../ui/Button.jsx';
 import GlobalSearch from '../shared/GlobalSearch.jsx';
 
 const Header = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isDemoMode, userProfile } = useAuth();
 
   const handleLogout = async () => {
-    await signOut();
+    try {
+      console.log('🔄 Cerrando sesión...');
+      await signOut();
+      console.log('✅ Sesión cerrada exitosamente');
+    } catch (error) {
+      console.error('❌ Error al cerrar sesión:', error);
+    }
+  };
+
+  // Obtener nombre del usuario
+  const getUserName = () => {
+    if (isDemoMode) {
+      return 'Demo User';
+    }
+    if (userProfile?.nombre_completo) {
+      return userProfile.nombre_completo;
+    }
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name;
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'Usuario';
+  };
+
+  // Obtener email del usuario
+  const getUserEmail = () => {
+    if (isDemoMode) {
+      return 'demo@mtz.cl';
+    }
+    return user?.email || 'usuario@mtz.cl';
   };
 
   return (
@@ -40,6 +71,11 @@ const Header = () => {
             </h1>
             <p className='text-sm text-gray-600'>
               Consultores Tributarios v3.0
+              {isDemoMode && (
+                <span className='ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full'>
+                  DEMO
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -54,10 +90,13 @@ const Header = () => {
               <User className='w-4 h-4 text-blue-600' />
             </div>
             <div className='text-sm'>
-              <p className='font-medium text-gray-900'>
-                {user?.user_metadata?.full_name || 'Usuario'}
-              </p>
-              <p className='text-gray-600'>{user?.email}</p>
+              <p className='font-medium text-gray-900'>{getUserName()}</p>
+              <p className='text-gray-600'>{getUserEmail()}</p>
+              {isDemoMode && (
+                <p className='text-xs text-blue-600 font-medium'>
+                  🎭 Modo Demo
+                </p>
+              )}
             </div>
           </div>
 
@@ -65,7 +104,12 @@ const Header = () => {
             <Settings className='w-4 h-4' />
           </Button>
 
-          <Button variant='ghost' size='sm' onClick={handleLogout}>
+          <Button
+            variant='ghost'
+            size='sm'
+            onClick={handleLogout}
+            title={isDemoMode ? 'Salir del modo demo' : 'Cerrar sesión'}
+          >
             <LogOut className='w-4 h-4' />
           </Button>
         </div>

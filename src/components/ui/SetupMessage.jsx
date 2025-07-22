@@ -1,5 +1,4 @@
-import { AlertCircle, Database, CheckCircle } from 'lucide-react';
-
+import { Database, CheckCircle } from 'lucide-react';
 const SetupMessage = ({ isSetupComplete = false }) => {
   if (isSetupComplete) {
     return (

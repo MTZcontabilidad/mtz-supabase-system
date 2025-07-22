@@ -4,17 +4,12 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  BarChart3,
   Settings,
-  TrendingUp,
   Shield,
   Menu,
   X,
   DollarSign,
-  ClipboardList,
   Upload,
-  PieChart,
-  Target,
   Building,
   User,
   Briefcase,
@@ -61,7 +56,7 @@ const navigation = [
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { role } = useAuth();
+  const { role, isDemoMode } = useAuth();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
 
@@ -97,6 +92,11 @@ const Sidebar = () => {
               <LayoutDashboard className='w-5 h-5 text-white' />
             </div>
             <span className='font-semibold text-gray-900'>MTZ</span>
+            {isDemoMode && (
+              <span className='ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full'>
+                DEMO
+              </span>
+            )}
           </div>
           <button
             onClick={toggleSidebar}
@@ -157,6 +157,16 @@ const Sidebar = () => {
               <p className='text-sm text-gray-900 capitalize'>
                 {role || 'Sin rol'}
               </p>
+              {isDemoMode && (
+                <div className='mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200'>
+                  <p className='text-xs text-blue-700 font-medium'>
+                    🎭 Modo Demo Activo
+                  </p>
+                  <p className='text-xs text-blue-600 mt-1'>
+                    Funcionalidad limitada para pruebas
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </nav>

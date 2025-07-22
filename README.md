@@ -1,222 +1,270 @@
-# 🚀 MTZ Ouroborus AI v3.0
+# 🚀 Sistema MTZ v3.0 - Sin Modo Demo
 
-**Sistema de Gestión Empresarial Inteligente**
-_Desarrollado para MTZ Consultores Tributarios_
+Sistema integral de gestión empresarial para MTZ Consultores Tributarios, configurado para leer datos reales de Supabase.
 
----
+## ✨ Características
 
-## 📊 **ESTADO DEL PROYECTO**
-
-### ✅ **PRODUCCIÓN READY**
-
-- **URL:** https://mtz-supabase-system-eatif2o4g.vercel.app
-- **Estado:** ✅ **FUNCIONANDO**
-- **Último Deploy:** Julio 2025
-- **Versión:** 3.0.0
-
----
-
-## 🎯 **CARACTERÍSTICAS PRINCIPALES**
-
-### **📈 Dashboard Ejecutivo**
-
-- **Métricas en tiempo real:** $85,555,727 facturación total
-- **8 clientes activos** con análisis detallado
-- **Gráficos interactivos** con Recharts
-- **Alertas inteligentes** y priorización automática
-
-### **👥 Gestión de Clientes**
-
-- **CRUD completo** de clientes empresariales
-- **Búsqueda inteligente** con filtros avanzados
-- **Carga masiva** desde archivos CSV/Excel
-- **Exportación** en múltiples formatos
-
-### **🔐 Sistema de Autenticación**
-
-- **Login seguro** con Supabase Auth
+- **Autenticación real** con Supabase Auth
+- **Datos reales** desde Supabase Database
 - **Roles y permisos** granulares
-- **Protección de rutas** automática
-- **Credenciales demo** incluidas
+- **Dashboard en tiempo real** con métricas reales
+- **Gestión de clientes, ventas y cobranzas**
+- **Sistema de RRHH** completo
+- **Proyecciones financieras**
+- **Interfaz moderna** con Tailwind CSS
 
-### **📱 Interfaz Moderna**
+## 🛠️ Configuración Rápida
 
-- **Diseño responsive** para todos los dispositivos
-- **UI/UX profesional** con Tailwind CSS
-- **Componentes reutilizables** y modulares
-- **Navegación intuitiva** con React Router
+### 1. Prerrequisitos
 
----
+- Node.js 18+
+- npm o yarn
+- Cuenta de Supabase
 
-## 🚀 **INICIO RÁPIDO**
+### 2. Configurar Supabase
 
-### **1. Instalación**
+1. **Crear proyecto en Supabase**
+   - Ve a [supabase.com](https://supabase.com)
+   - Crea un nuevo proyecto
+   - Guarda la URL y anon key
+
+2. **Configurar variables de entorno**
+
+   ```bash
+   # Crear archivo .env.local
+   VITE_SUPABASE_URL=tu_url_de_supabase
+   VITE_SUPABASE_ANON_KEY=tu_anon_key
+   ```
+
+3. **Ejecutar scripts de base de datos**
+   ```sql
+   -- En el SQL Editor de Supabase, ejecutar:
+   -- 1. Los esquemas en database/01_schemas/
+   -- 2. El script setup_rapido.sql
+   -- 3. El script insert_test_data.sql (después de crear usuarios)
+   ```
+
+### 3. Crear Usuarios de Prueba
+
+En Supabase Dashboard > Authentication > Users > Add User:
+
+```
+1. mtzcontabilidad@gmail.com / Alohomora33@ (ADMINISTRADOR PRINCIPAL)
+2. gerente@mtz.cl / password123
+3. analista@mtz.cl / password123
+4. asistente@mtz.cl / password123
+5. cliente@techcorp.cl / password123
+```
+
+**Nota:** El usuario `mtzcontabilidad@gmail.com` es el administrador principal del sistema.
+
+### 4. Instalar Dependencias
 
 ```bash
 npm install
 ```
 
-### **2. Configuración**
-
-```bash
-# Copiar variables de entorno
-cp env.local .env.local
-```
-
-### **3. Desarrollo**
+### 5. Ejecutar el Proyecto
 
 ```bash
 npm run dev
 ```
 
-### **4. Deploy**
+## 📊 Estructura de Datos
 
-```bash
-npm run build
-git add .
-git commit -m "feat: Actualización MTZ v3.0"
-git push origin main
+### Tablas Principales
+
+- **`roles`** - Roles del sistema con permisos JSONB
+- **`usuarios_sistema`** - Perfiles de usuarios extendidos
+- **`empresas`** - Clientes y proveedores
+- **`ventas`** - Facturas emitidas
+- **`cobranzas`** - Gestión de pagos pendientes
+- **`servicios`** - Catálogo de servicios
+- **`empleados`** - Gestión de RRHH
+- **`proyecciones`** - Proyecciones financieras
+
+### Datos de Prueba Incluidos
+
+- 5 roles del sistema
+- 5 usuarios de prueba
+- 5 empresas/clientes
+- 5 ventas con detalles
+- 5 cobranzas
+- 5 servicios del catálogo
+- 5 empleados con nóminas
+- 3 proyecciones financieras
+
+## 🔐 Autenticación y Permisos
+
+### Roles Disponibles
+
+1. **Administrador** - Acceso completo al sistema
+2. **Gerente** - Gestión de operaciones y reportes
+3. **Analista** - Análisis y reportes
+4. **Asistente** - Tareas administrativas
+5. **Cliente** - Acceso limitado al portal
+
+### Sistema de Permisos
+
+Los permisos se manejan en formato JSONB en la tabla `roles`:
+
+```json
+{
+  "clientes": { "read": true, "write": true },
+  "ventas": { "read": true, "write": true },
+  "cobranza": { "read": true, "write": true },
+  "reportes": { "read": true }
+}
 ```
 
----
+## 📱 Funcionalidades
 
-## 🔑 **CREDENCIALES DE ACCESO**
+### Dashboard
 
-### **🌐 URL de Producción**
+- KPIs en tiempo real desde Supabase
+- Gráficos de ventas mensuales
+- Distribución de clientes
+- Alertas automáticas
+- Actividad reciente
 
-**https://mtz-supabase-system-eatif2o4g.vercel.app**
+### Gestión de Clientes
 
-### **👤 Credenciales Demo**
+- Listado de empresas/clientes
+- Información detallada
+- Historial de facturación
+- Estados y categorías
 
-- **Email:** `mtzcontabilidad@gmail.com`
-- **Contraseña:** `Alohomora33.`
+### Ventas y Cobranzas
 
-### **🔧 Credenciales de Desarrollo**
+- Facturas emitidas
+- Estados de pago
+- Seguimiento de cobranzas
+- Métodos de pago
 
-- **Email:** `admin@mtz.cl`
-- **Contraseña:** `admin123`
+### RRHH
 
----
+- Gestión de empleados
+- Nóminas mensuales
+- Salarios y bonificaciones
+- Estados de empleados
 
-## 🏗️ **ARQUITECTURA TÉCNICA**
+### Proyecciones
 
-### **Frontend**
+- Proyecciones financieras
+- Seguimiento de objetivos
+- Análisis de cumplimiento
+- Reportes de tendencias
+
+## 🏗️ Arquitectura
+
+### Frontend
 
 - **React 18** con Vite
 - **React Router** para navegación
+- **React Hook Form** con Zod para validación
 - **Tailwind CSS** para estilos
-- **Recharts** para gráficos
-- **React Hook Form** para formularios
+- **Lucide React** para iconos
 
-### **Backend**
+### Backend
 
-- **Supabase** como BaaS
-- **PostgreSQL** como base de datos
-- **Row Level Security (RLS)** habilitado
-- **Autenticación** integrada
+- **Supabase** como backend completo
+- **PostgreSQL** para base de datos
+- **Row Level Security (RLS)** para seguridad
+- **Supabase Auth** para autenticación
 
-### **Deploy**
-
-- **Vercel** para hosting
-- **Variables de entorno** configuradas
-- **CI/CD** automático desde GitHub
-
----
-
-## 📁 **ESTRUCTURA DEL PROYECTO**
+### Estructura de Archivos
 
 ```
-MTZ-NUEVO/
-├── src/
-│   ├── components/          # Componentes reutilizables
-│   │   ├── ui/             # Componentes base (Button, Input, etc.)
-│   │   ├── layout/         # Layout principal (Header, Sidebar)
-│   │   ├── auth/           # Componentes de autenticación
-│   │   ├── clientes/       # Componentes específicos de clientes
-│   │   ├── charts/         # Componentes de gráficos
-│   │   └── shared/         # Componentes compartidos
-│   ├── pages/              # Páginas principales
-│   │   ├── Auth/           # Login y registro
-│   │   ├── Dashboard/      # Dashboard principal
-│   │   ├── Clients/        # Gestión de clientes
-│   │   └── Admin/          # Panel administrativo
-│   ├── hooks/              # Custom hooks
-│   ├── contexts/           # Context providers
-│   ├── lib/                # Configuraciones (Supabase)
-│   ├── utils/              # Utilidades y constantes
-│   └── store/              # Estado global (Zustand)
-├── database/               # Scripts de base de datos
-├── docs/                   # Documentación
-├── scripts/                # Scripts SQL importantes
-└── public/                 # Archivos públicos
+src/
+├── components/          # Componentes reutilizables
+├── pages/              # Páginas de la aplicación
+├── hooks/              # Hooks personalizados
+├── contexts/           # Contextos de React
+├── lib/                # Servicios y configuración
+├── utils/              # Utilidades
+└── styles/             # Estilos globales
+
+database/
+├── 01_schemas/         # Esquemas de tablas
+├── 02_functions/       # Funciones de base de datos
+├── 03_security/        # Políticas de seguridad
+├── 04_data/            # Datos de prueba
+└── scripts/            # Scripts de configuración
 ```
 
----
+## 🔧 Desarrollo
 
-## 🔧 **COMANDOS DISPONIBLES**
+### Scripts Disponibles
 
 ```bash
-npm run dev          # Servidor de desarrollo
-npm run build        # Build de producción
-npm run preview      # Preview del build
-npm run lint         # Linter ESLint
-npm run format       # Formatear con Prettier
-npm run test         # Ejecutar tests
+npm run dev          # Desarrollo
+npm run build        # Construcción
+npm run preview      # Vista previa
+npm run test         # Tests
+npm run lint         # Linting
 ```
 
+### Variables de Entorno
+
+```bash
+VITE_SUPABASE_URL=           # URL de Supabase
+VITE_SUPABASE_ANON_KEY=      # Anon Key de Supabase
+VITE_GA_TRACKING_ID=         # Google Analytics (opcional)
+```
+
+## 🚀 Despliegue
+
+### Vercel (Recomendado)
+
+1. Conectar repositorio a Vercel
+2. Configurar variables de entorno
+3. Desplegar automáticamente
+
+### Otros Proveedores
+
+El proyecto es compatible con cualquier proveedor que soporte aplicaciones React estáticas.
+
+## 📝 Notas Importantes
+
+### Sin Modo Demo
+
+- El sistema **NO** incluye modo demo
+- Todos los datos provienen de Supabase
+- Se requieren datos reales para funcionar
+- Incluye datos de prueba para desarrollo
+
+### Seguridad
+
+- Row Level Security (RLS) habilitado
+- Políticas de acceso configuradas
+- Autenticación obligatoria
+- Permisos granulares por rol
+
+### Performance
+
+- Lazy loading de componentes
+- Optimización de consultas
+- Caché de datos
+- Compresión de assets
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crear rama de feature (`git checkout -b feature/AmazingFeature`)
+3. Commit cambios (`git commit -m 'Add AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abrir Pull Request
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
+
+## 📞 Soporte
+
+- **Email**: mtzcontabilidad@gmail.com
+- **Documentación**: Ver archivos en `docs/`
+- **Issues**: Usar GitHub Issues
+
 ---
 
-## 📊 **MÉTRICAS ACTUALES**
-
-- **Clientes Activos:** 8
-- **Facturación Total:** $85,555,727
-- **Score Sistema:** 9.2/10
-- **Performance:** <100ms tiempo carga
-- **Uptime:** 99.9%
-
----
-
-## 🎯 **PRÓXIMOS DESARROLLOS**
-
-### **🔄 Versión 3.1 (Próxima)**
-
-- [ ] **Notificaciones push** en tiempo real
-- [ ] **Reportes avanzados** con PDF
-- [ ] **Integración con APIs** externas
-- [ ] **Dashboard móvil** optimizado
-
-### **🚀 Versión 4.0 (Futura)**
-
-- [ ] **IA predictiva** para análisis de clientes
-- [ ] **Automatización** de procesos
-- [ ] **Multi-tenant** avanzado
-- [ ] **API REST** completa
-
----
-
-## 📞 **SOPORTE Y CONTACTO**
-
-- **Empresa:** MTZ Consultores Tributarios
-- **Email:** mtzcontabilidad@gmail.com
-- **Sistema:** MTZ Ouroborus AI v3.0
-- **Versión:** 3.0.0 (Julio 2025)
-
----
-
-## 📄 **LICENCIA**
-
-Proyecto privado - MTZ Consultores Tributarios
-© 2025 MTZ Ouroborus AI. Todos los derechos reservados.
-
----
-
-## 🎖️ **DESARROLLADO CON**
-
-- ❤️ Pasión por la excelencia empresarial
-- 🧠 IA Conversacional Claude
-- ⚡ Tecnologías modernas
-- 🎯 Enfoque en resultados
-
----
-
-**🚀 MTZ Ouroborus AI v3.0** - El futuro de la gestión empresarial inteligente
+**MTZ Consultores Tributarios** - Sistema de Gestión Empresarial v3.0

@@ -1,1210 +1,645 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   Users,
-  Search,
   Plus,
+  Search,
   Filter,
   Download,
-  Upload,
   Edit,
   Trash2,
   Eye,
-  Star,
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  DollarSign,
-  Building,
-  MapPin,
-  Phone,
-  Mail,
-  Globe,
+  MoreHorizontal,
+  RefreshCw,
+  UserPlus,
   FileText,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  TrendingUp,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   Clock,
-  User,
-  Settings,
-  BarChart3,
-  PieChart,
-  LineChart,
-  Activity,
-  Target,
-  Award,
-  Shield,
-  Zap,
-  RefreshCw,
-  MoreHorizontal,
-  ChevronDown,
-  ChevronUp,
-  Filter as FilterIcon,
-  SortAsc,
-  SortDesc,
-  Grid,
-  Table as TableIcon,
 } from 'lucide-react';
-import {
-  BarChart as RechartsBarChart,
-  Bar,
-  LineChart as RechartsLineChart,
-  Line,
-  PieChart as RechartsPieChart,
-  Pie,
-  AreaChart as RechartsAreaChart,
-  Area as RechartsArea,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Cell,
-  ComposedChart as RechartsComposedChart,
-  ScatterChart as RechartsScatterChart,
-  Scatter,
-} from 'recharts';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
 import Modal from '@/components/ui/Modal';
 import TableComponent from '@/components/ui/Table';
-import ClienteForm from '@/components/clientes/ClienteForm';
-import { formatCurrency, formatDate, formatNumber } from '@/utils/helpers';
-import ExportData from '@/components/shared/ExportData';
-import FileUpload from '@/components/shared/FileUpload';
-import GlobalSearch from '@/components/shared/GlobalSearch';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import {
+  clientesData,
+  formatCurrency,
+  formatDate,
+  getStatusColor,
+  getStatusLabel,
+} from '@/lib/sampleData';
 
 /**
- * Página de Clientes Avanzada MTZ - VERSIÓN MEJORADA
- * Gestión completa de clientes con análisis avanzado, búsqueda inteligente
- * y sistema de documentos integrado
+ * Página de Gestión de Clientes MTZ - VERSIÓN MEJORADA
+ * Gestión completa de clientes con filtros, búsqueda y acciones
  */
 const ClientesPage = () => {
-  // Estados locales para la UI
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [clientes, setClientes] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [showDocuments, setShowDocuments] = useState(false);
-  const [editingCliente, setEditingCliente] = useState(null);
-  const [showExportData, setShowExportData] = useState(false);
-  const [showCargaMasiva, setShowCargaMasiva] = useState(false);
-  const [documents, setDocuments] = useState([]);
-  const [viewMode, setViewMode] = useState('table'); // table, grid, kanban
-  const [selectedDocuments, setSelectedDocuments] = useState([]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [bulkActions, setBulkActions] = useState([]);
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [selectedCliente, setSelectedCliente] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategoria, setFilterCategoria] = useState('');
+  const [filterEstado, setFilterEstado] = useState('');
+  const [sortBy, setSortBy] = useState('razon_social');
+  const [sortOrder, setSortOrder] = useState('asc');
 
-  // Obtener historial del cliente (función local para simulación)
-  const obtenerHistorialCliente = clienteId => {
-    // Simulación de historial
-    return [
-      {
-        fecha: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        accion: 'Nueva venta',
-        monto: 2500000,
-        tipo: 'venta',
-      },
-      {
-        fecha: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-        accion: 'Pago recibido',
-        monto: 1800000,
-        tipo: 'pago',
-      },
-      {
-        fecha: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-        accion: 'Contacto realizado',
-        monto: 0,
-        tipo: 'contacto',
-      },
-    ];
-  };
-
-  // Manejar ordenamiento
-  const handleSort = key => {
-    // setSortConfig(prev => ({
-    //   key,
-    //   direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc',
-    // }));
-  };
-
-  // Manejar creación de cliente
-  const handleCrearCliente = async clienteData => {
+  // Cargar datos de clientes
+  const cargarClientes = useCallback(async () => {
     try {
-      // await crearCliente(clienteData); // Originalmente de useClientes
-      console.log('Simulando creación de cliente:', clienteData);
-      // setShowModal(false);
-      // setEditingCliente(null);
-    } catch (error) {
-      console.error('Error creando cliente:', error);
-    }
-  };
+      setLoading(true);
+      setError(null);
+      console.log('🔄 Cargando clientes...');
 
-  // Manejar actualización de cliente
-  const handleActualizarCliente = async clienteData => {
-    try {
-      // await actualizarCliente(editingCliente.id, clienteData); // Originalmente de useClientes
-      console.log(
-        'Simulando actualización de cliente:',
-        editingCliente.id,
-        clienteData
-      );
-      // setShowModal(false);
-      // setEditingCliente(null);
-    } catch (error) {
-      console.error('Error actualizando cliente:', error);
+      // Simular carga de datos (en producción usaría un servicio real)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      setClientes(clientesData);
+    } catch (err) {
+      console.error('❌ Error cargando clientes:', err);
+      setError('Error al cargar los clientes');
+    } finally {
+      setLoading(false);
     }
+  }, []);
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    cargarClientes();
+  }, [cargarClientes]);
+
+  // Filtrar y ordenar clientes
+  const clientesFiltrados = clientes
+    .filter(cliente => {
+      const matchesSearch =
+        cliente.razon_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cliente.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cliente.rut.includes(searchTerm);
+      const matchesCategoria =
+        !filterCategoria || cliente.categoria === filterCategoria;
+      const matchesEstado = !filterEstado || cliente.estado === filterEstado;
+
+      return matchesSearch && matchesCategoria && matchesEstado;
+    })
+    .sort((a, b) => {
+      const aValue = a[sortBy];
+      const bValue = b[sortBy];
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+  // Manejar edición de cliente
+  const handleEditCliente = cliente => {
+    setSelectedCliente(cliente);
+    setShowModal(true);
   };
 
   // Manejar eliminación de cliente
-  const handleEliminarCliente = async clienteId => {
+  const handleDeleteCliente = async clienteId => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este cliente?')) {
       try {
-        // await eliminarCliente(clienteId); // Originalmente de useClientes
-        console.log('Simulando eliminación de cliente:', clienteId);
+        console.log('🗑️ Eliminando cliente:', clienteId);
+        // En producción aquí se llamaría a la API
+        setClientes(prev => prev.filter(c => c.id !== clienteId));
       } catch (error) {
-        console.error('Error eliminando cliente:', error);
+        console.error('❌ Error eliminando cliente:', error);
       }
     }
   };
 
-  // Abrir perfil del cliente
-  const abrirPerfil = cliente => {
-    // setSelectedCliente(cliente); // Originalmente de useClientes
-    setShowProfile(true);
-  };
-
-  // Abrir análisis del cliente
-  const abrirAnalisis = cliente => {
-    // setSelectedCliente(cliente); // Originalmente de useClientes
-    setShowAnalytics(true);
-  };
-
-  // Abrir documentos del cliente
-  const abrirDocumentos = cliente => {
-    // setSelectedCliente(cliente); // Originalmente de useClientes
-    setShowDocuments(true);
-    cargarDocumentos(cliente.id);
-  };
-
-  // Cargar documentos del cliente
-  const cargarDocumentos = async clienteId => {
+  // Manejar guardar cambios
+  const handleSaveCliente = async clienteData => {
     try {
-      // Simulación de documentos
-      const docs = [
-        {
-          id: 1,
-          nombre: 'Contrato de Servicios.pdf',
-          tipo: 'contrato',
-          fecha: new Date(),
-          tamaño: '2.5 MB',
-          estado: 'activo',
-        },
-        {
-          id: 2,
-          nombre: 'Factura 001-2024.pdf',
-          tipo: 'factura',
-          fecha: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          tamaño: '1.2 MB',
-          estado: 'activo',
-        },
-        {
-          id: 3,
-          nombre: 'Certificado Tributario.pdf',
-          tipo: 'certificado',
-          fecha: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          tamaño: '3.1 MB',
-          estado: 'activo',
-        },
-      ];
-      setDocuments(docs);
+      if (selectedCliente) {
+        // Actualizar cliente existente
+        setClientes(prev =>
+          prev.map(c =>
+            c.id === selectedCliente.id ? { ...c, ...clienteData } : c
+          )
+        );
+      } else {
+        // Crear nuevo cliente
+        const newCliente = {
+          id: Date.now(),
+          ...clienteData,
+          fecha_registro: new Date().toISOString().split('T')[0],
+          ultima_actividad: new Date().toISOString().split('T')[0],
+        };
+        setClientes(prev => [...prev, newCliente]);
+      }
+      setShowModal(false);
+      setSelectedCliente(null);
     } catch (error) {
-      console.error('Error cargando documentos:', error);
+      console.error('❌ Error guardando cliente:', error);
     }
   };
 
-  // Generar datos para gráficos de análisis
-  const generarDatosAnalisis = cliente => {
-    const analisis = cliente.analisis;
-    const historial = cliente.historial;
-
-    // Gráfico de evolución de facturación
-    const evolucionFacturacion = historial
-      .filter(h => h.tipo === 'venta')
-      .map((h, index) => ({
-        mes: `Mes ${index + 1}`,
-        facturacion: h.monto,
-        crecimiento:
-          index > 0
-            ? ((h.monto - historial[index - 1]?.monto) /
-                historial[index - 1]?.monto) *
-              100
-            : 0,
-      }));
-
-    // Gráfico de distribución por tipo de actividad
-    const distribucionActividad = [
-      {
-        tipo: 'Ventas',
-        cantidad: historial.filter(h => h.tipo === 'venta').length,
-        color: '#3B82F6',
-      },
-      {
-        tipo: 'Pagos',
-        cantidad: historial.filter(h => h.tipo === 'pago').length,
-        color: '#10B981',
-      },
-      {
-        tipo: 'Contactos',
-        cantidad: historial.filter(h => h.tipo === 'contacto').length,
-        color: '#F59E0B',
-      },
-    ];
-
-    return {
-      evolucionFacturacion,
-      distribucionActividad,
-    };
-  };
-
-  // Auto-refresh
-  useEffect(() => {
-    if (autoRefresh) {
-      const interval = setInterval(() => {
-        // Simular carga de clientes
-        console.log('Simulando carga de clientes...');
-      }, 60000); // 1 minuto
-      return () => clearInterval(interval);
-    }
-  }, [autoRefresh]);
-
-  // Cargar datos al montar
-  useEffect(() => {
-    // Simular carga de clientes
-    console.log('Simulando carga de clientes al montar...');
-  }, []);
-
-  // Configuración para exportación
-  const exportColumns = [
-    { key: 'razon_social', label: 'Razón Social', format: 'text' },
-    { key: 'rut', label: 'RUT', format: 'text' },
-    { key: 'email', label: 'Email', format: 'text' },
-    { key: 'telefono', label: 'Teléfono', format: 'text' },
-    { key: 'total_facturado', label: 'Total Facturado', format: 'currency' },
-    { key: 'categoria_cliente', label: 'Categoría', format: 'text' },
-    { key: 'estado', label: 'Estado', format: 'text' },
-    { key: 'region', label: 'Región', format: 'text' },
-  ];
-
-  if (false && clientes.length === 0) {
-    // Simular loading y error
-    return (
-      <div className='flex items-center justify-center h-64'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
-        <span className='ml-3 text-lg'>Cargando análisis de clientes...</span>
-      </div>
-    );
-  }
-
-  if (false && clientes.length === 0) {
-    // Simular loading y error
-    return (
-      <div className='flex items-center justify-center h-64'>
-        <div className='text-center'>
-          <h2 className='text-2xl font-bold text-red-600 mb-4'>
-            Error al cargar clientes
-          </h2>
-          <p className='text-gray-600 mb-4'>{error}</p>
+  // Columnas de la tabla
+  const columns = [
+    {
+      key: 'razon_social',
+      label: 'Razón Social',
+      sortable: true,
+      render: (value, cliente) => (
+        <div className='flex items-center space-x-3'>
+          <div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
+            <Users className='h-4 w-4 text-blue-600' />
+          </div>
+          <div>
+            <p className='font-medium text-gray-900'>{value}</p>
+            <p className='text-sm text-gray-500'>{cliente.rut}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'categoria',
+      label: 'Categoría',
+      sortable: true,
+      render: value => (
+        <Badge
+          variant={
+            value === 'VIP'
+              ? 'success'
+              : value === 'Premium'
+                ? 'warning'
+                : 'info'
+          }
+        >
+          {value}
+        </Badge>
+      ),
+    },
+    {
+      key: 'estado',
+      label: 'Estado',
+      sortable: true,
+      render: value => (
+        <Badge variant={getStatusColor(value)}>{getStatusLabel(value)}</Badge>
+      ),
+    },
+    {
+      key: 'total_facturado',
+      label: 'Total Facturado',
+      sortable: true,
+      render: value => formatCurrency(value),
+    },
+    {
+      key: 'contacto',
+      label: 'Contacto',
+      render: (_, cliente) => (
+        <div className='space-y-1'>
+          <div className='flex items-center text-sm'>
+            <Mail className='h-3 w-3 mr-1 text-gray-400' />
+            <span className='text-gray-600'>{cliente.email}</span>
+          </div>
+          <div className='flex items-center text-sm'>
+            <Phone className='h-3 w-3 mr-1 text-gray-400' />
+            <span className='text-gray-600'>{cliente.telefono}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'ultima_actividad',
+      label: 'Última Actividad',
+      sortable: true,
+      render: value => (
+        <div className='flex items-center text-sm text-gray-500'>
+          <Calendar className='h-3 w-3 mr-1' />
+          {formatDate(value)}
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Acciones',
+      render: (_, cliente) => (
+        <div className='flex items-center space-x-2'>
           <Button
-            onClick={() => {
-              // Simular carga de clientes
-              console.log('Simulando reintentar carga de clientes...');
-            }}
+            size='sm'
+            variant='ghost'
+            onClick={() => handleEditCliente(cliente)}
           >
-            <RefreshCw className='h-4 w-4 mr-2' />
-            Reintentar
+            <Eye className='h-4 w-4' />
+          </Button>
+          <Button
+            size='sm'
+            variant='ghost'
+            onClick={() => handleEditCliente(cliente)}
+          >
+            <Edit className='h-4 w-4' />
+          </Button>
+          <Button
+            size='sm'
+            variant='ghost'
+            onClick={() => handleDeleteCliente(cliente.id)}
+          >
+            <Trash2 className='h-4 w-4' />
           </Button>
         </div>
-      </div>
-    );
-  }
+      ),
+    },
+  ];
 
-  const datosAnalisis = selectedCliente
-    ? generarDatosAnalisis(selectedCliente)
-    : null;
+  // Estadísticas
+  const estadisticas = {
+    total: clientes.length,
+    activos: clientes.filter(c => c.estado === 'Activo').length,
+    vip: clientes.filter(c => c.categoria === 'VIP').length,
+    totalFacturado: clientes.reduce((sum, c) => sum + c.total_facturado, 0),
+  };
 
   return (
     <>
       <Helmet>
-        <title>Gestión de Clientes - MTZ Ouroborus AI v3.0</title>
-        <meta
-          name='description'
-          content='Administra y analiza tu cartera de clientes con herramientas avanzadas de gestión y análisis'
-        />
-        <meta
-          name='keywords'
-          content='clientes, gestión, análisis, cartera, MTZ'
-        />
+        <title>Clientes - MTZ Consultores Tributarios</title>
+        <meta name='description' content='Gestión de clientes MTZ' />
       </Helmet>
 
       <div className='space-y-6'>
         {/* Header */}
-        <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4'>
+        <div className='flex justify-between items-center'>
           <div>
-            <h1 className='text-3xl font-bold text-gray-900 flex items-center gap-2'>
-              <Users className='h-8 w-8 text-blue-600' />
+            <h1 className='text-2xl font-bold text-gray-900'>
               Gestión de Clientes
-              <Badge variant='outline' className='ml-2'>
-                v3.0 Avanzado
-              </Badge>
             </h1>
-            <p className='text-gray-600 mt-1'>
-              Análisis avanzado y gestión integral de clientes
+            <p className='text-gray-600'>
+              Administra y gestiona todos los clientes del sistema
             </p>
           </div>
-
-          <div className='flex gap-2'>
-            <Button
-              onClick={() => {
-                // Simular carga de clientes
-                console.log('Simulando actualizar clientes...');
-              }}
-              disabled={false}
-            >
-              <RefreshCw
-                className={`h-4 w-4 mr-2 ${false ? 'animate-spin' : ''}`}
-              />
+          <div className='flex items-center space-x-3'>
+            <Button onClick={cargarClientes} variant='outline'>
+              <RefreshCw className='h-4 w-4 mr-2' />
               Actualizar
             </Button>
-            <Button variant='outline' onClick={() => setShowCargaMasiva(true)}>
-              <Upload className='h-4 w-4 mr-2' />
-              Carga Masiva
-            </Button>
-            <Button variant='outline' onClick={() => setShowExportData(true)}>
-              <Download className='h-4 w-4 mr-2' />
-              Exportar
-            </Button>
-            <Button onClick={() => setShowModal(true)}>
-              <Plus className='h-4 w-4 mr-2' />
+            <Button onClick={() => setShowModal(true)} variant='primary'>
+              <UserPlus className='h-4 w-4 mr-2' />
               Nuevo Cliente
             </Button>
           </div>
         </div>
 
-        {/* Filtros y Búsqueda Avanzada */}
-        <Card className='p-4'>
-          <div className='flex flex-col lg:flex-row gap-4'>
-            <div className='flex-1'>
-              <GlobalSearch
-                value={searchTerm}
-                onChange={setSearchTerm}
-                placeholder='Buscar por nombre, RUT, email...'
-              />
-            </div>
-
-            <div className='flex gap-2'>
-              <Button
-                variant='outline'
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <FilterIcon className='h-4 w-4 mr-2' />
-                Filtros
-                {showFilters ? (
-                  <ChevronUp className='h-4 w-4 ml-2' />
-                ) : (
-                  <ChevronDown className='h-4 w-4 ml-2' />
-                )}
-              </Button>
-
-              <div className='flex gap-1'>
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'outline'}
-                  size='sm'
-                  onClick={() => setViewMode('table')}
-                >
-                  <TableIcon className='h-4 w-4' />
-                </Button>
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'outline'}
-                  size='sm'
-                  onClick={() => setViewMode('grid')}
-                >
-                  <Grid className='h-4 w-4' />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Filtros Avanzados */}
-          {showFilters && (
-            <div className='mt-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4'>
-              <select
-                value={filters.categoria}
-                onChange={e =>
-                  setFilters(prev => ({ ...prev, categoria: e.target.value }))
-                }
-                className='border rounded-lg px-3 py-2'
-              >
-                <option value=''>Todas las categorías</option>
-                <option value='VIP'>VIP</option>
-                <option value='Premium'>Premium</option>
-                <option value='Top'>Top</option>
-                <option value='Regular'>Regular</option>
-                <option value='Bajo'>Bajo</option>
-              </select>
-
-              <select
-                value={filters.estado}
-                onChange={e =>
-                  setFilters(prev => ({ ...prev, estado: e.target.value }))
-                }
-                className='border rounded-lg px-3 py-2'
-              >
-                <option value=''>Todos los estados</option>
-                <option value='Activo'>Activo</option>
-                <option value='Inactivo'>Inactivo</option>
-                <option value='Suspendido'>Suspendido</option>
-              </select>
-
-              <Input
-                type='number'
-                placeholder='Facturación mín.'
-                value={filters.facturacion_min}
-                onChange={e =>
-                  setFilters(prev => ({
-                    ...prev,
-                    facturacion_min: e.target.value,
-                  }))
-                }
-              />
-
-              <Input
-                type='number'
-                placeholder='Facturación máx.'
-                value={filters.facturacion_max}
-                onChange={e =>
-                  setFilters(prev => ({
-                    ...prev,
-                    facturacion_max: e.target.value,
-                  }))
-                }
-              />
-
-              <Input
-                type='date'
-                value={filters.fecha_registro}
-                onChange={e =>
-                  setFilters(prev => ({
-                    ...prev,
-                    fecha_registro: e.target.value,
-                  }))
-                }
-              />
-
-              <Button
-                variant='outline'
-                onClick={() =>
-                  setFilters({
-                    categoria: '',
-                    estado: '',
-                    region: '',
-                    facturacion_min: '',
-                    facturacion_max: '',
-                    fecha_registro: '',
-                  })
-                }
-              >
-                Limpiar
-              </Button>
-            </div>
-          )}
-        </Card>
-
-        {/* Estadísticas Rápidas */}
-        <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-          <Card className='p-4'>
-            <div className='flex items-center'>
-              <div className='p-2 bg-blue-100 rounded-full'>
-                <Users className='h-5 w-5 text-blue-600' />
-              </div>
-              <div className='ml-3'>
-                <p className='text-sm text-gray-600'>Total Clientes</p>
-                <p className='text-xl font-bold'>
-                  {formatNumber(clientesFiltrados.length)}
+        {/* Estadísticas */}
+        <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
+          <Card>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-gray-600'>
+                  Total Clientes
                 </p>
+                <p className='text-2xl font-bold text-gray-900'>
+                  {estadisticas.total}
+                </p>
+              </div>
+              <div className='p-3 bg-blue-100 rounded-lg'>
+                <Users className='h-6 w-6 text-blue-600' />
               </div>
             </div>
           </Card>
 
-          <Card className='p-4'>
-            <div className='flex items-center'>
-              <div className='p-2 bg-green-100 rounded-full'>
-                <TrendingUp className='h-5 w-5 text-green-600' />
-              </div>
-              <div className='ml-3'>
-                <p className='text-sm text-gray-600'>Facturación Total</p>
-                <p className='text-xl font-bold'>
-                  {formatCurrency(
-                    clientesFiltrados.reduce(
-                      (sum, c) => sum + parseFloat(c.total_facturado || 0),
-                      0
-                    )
-                  )}
+          <Card>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-gray-600'>
+                  Clientes Activos
                 </p>
+                <p className='text-2xl font-bold text-gray-900'>
+                  {estadisticas.activos}
+                </p>
+              </div>
+              <div className='p-3 bg-green-100 rounded-lg'>
+                <CheckCircle className='h-6 w-6 text-green-600' />
               </div>
             </div>
           </Card>
 
-          <Card className='p-4'>
-            <div className='flex items-center'>
-              <div className='p-2 bg-yellow-100 rounded-full'>
-                <Star className='h-5 w-5 text-yellow-600' />
-              </div>
-              <div className='ml-3'>
-                <p className='text-sm text-gray-600'>Clientes Premium</p>
-                <p className='text-xl font-bold'>
-                  {formatNumber(
-                    clientesFiltrados.filter(
-                      c =>
-                        c.categoria_cliente === 'Premium' ||
-                        c.categoria_cliente === 'VIP'
-                    ).length
-                  )}
+          <Card>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-gray-600'>
+                  Clientes VIP
                 </p>
+                <p className='text-2xl font-bold text-gray-900'>
+                  {estadisticas.vip}
+                </p>
+              </div>
+              <div className='p-3 bg-purple-100 rounded-lg'>
+                <TrendingUp className='h-6 w-6 text-purple-600' />
               </div>
             </div>
           </Card>
 
-          <Card className='p-4'>
-            <div className='flex items-center'>
-              <div className='p-2 bg-red-100 rounded-full'>
-                <AlertTriangle className='h-5 w-5 text-red-600' />
-              </div>
-              <div className='ml-3'>
-                <p className='text-sm text-gray-600'>En Riesgo</p>
-                <p className='text-xl font-bold'>
-                  {formatNumber(
-                    clientesFiltrados.filter(
-                      c => c.analisis?.riesgo?.nivel === 'alto'
-                    ).length
-                  )}
+          <Card>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-gray-600'>
+                  Total Facturado
                 </p>
+                <p className='text-2xl font-bold text-gray-900'>
+                  {formatCurrency(estadisticas.totalFacturado)}
+                </p>
+              </div>
+              <div className='p-3 bg-yellow-100 rounded-lg'>
+                <FileText className='h-6 w-6 text-yellow-600' />
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Vista de Clientes */}
-        {viewMode === 'table' ? (
-          <Card className='p-6'>
-            <TableComponent>
-              <thead>
-                <tr>
-                  <th
-                    onClick={() => handleSort('razon_social')}
-                    className='cursor-pointer'
-                  >
-                    <div className='flex items-center gap-2'>
-                      Cliente
-                      {sortConfig.key === 'razon_social' &&
-                        (sortConfig.direction === 'asc' ? (
-                          <SortAsc className='h-4 w-4' />
-                        ) : (
-                          <SortDesc className='h-4 w-4' />
-                        ))}
-                    </div>
-                  </th>
-                  <th
-                    onClick={() => handleSort('total_facturado')}
-                    className='cursor-pointer'
-                  >
-                    <div className='flex items-center gap-2'>
-                      Facturación
-                      {sortConfig.key === 'total_facturado' &&
-                        (sortConfig.direction === 'asc' ? (
-                          <SortAsc className='h-4 w-4' />
-                        ) : (
-                          <SortDesc className='h-4 w-4' />
-                        ))}
-                    </div>
-                  </th>
-                  <th>Categoría</th>
-                  <th>Estado</th>
-                  <th>Riesgo</th>
-                  <th>Análisis</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clientesFiltrados.map(cliente => (
-                  <tr key={cliente.id} className='hover:bg-gray-50'>
-                    <td>
-                      <div className='flex items-center gap-3'>
-                        <div className='w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center'>
-                          <Building className='h-5 w-5 text-blue-600' />
-                        </div>
-                        <div>
-                          <p className='font-semibold'>
-                            {cliente.razon_social}
-                          </p>
-                          <p className='text-sm text-gray-600'>{cliente.rut}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div>
-                        <p className='font-semibold'>
-                          {formatCurrency(cliente.total_facturado)}
-                        </p>
-                        <p className='text-sm text-gray-600'>
-                          {cliente.analisis?.crecimiento > 0 ? '+' : ''}
-                          {formatNumber(cliente.analisis?.crecimiento)}% vs mes
-                          anterior
-                        </p>
-                      </div>
-                    </td>
-                    <td>
-                      <Badge
-                        variant={
-                          cliente.categoria_cliente === 'VIP'
-                            ? 'default'
-                            : cliente.categoria_cliente === 'Premium'
-                              ? 'secondary'
-                              : 'outline'
-                        }
-                      >
-                        {cliente.categoria_cliente}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Badge
-                        variant={
-                          cliente.estado === 'Activo'
-                            ? 'default'
-                            : cliente.estado === 'Inactivo'
-                              ? 'secondary'
-                              : 'destructive'
-                        }
-                      >
-                        {cliente.estado}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Badge
-                        variant={
-                          cliente.analisis?.riesgo?.nivel === 'alto'
-                            ? 'destructive'
-                            : cliente.analisis?.riesgo?.nivel === 'medio'
-                              ? 'secondary'
-                              : 'default'
-                        }
-                      >
-                        {cliente.analisis?.riesgo?.nivel}
-                      </Badge>
-                    </td>
-                    <td>
-                      <div className='flex items-center gap-2'>
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          onClick={() => abrirAnalisis(cliente)}
-                        >
-                          <BarChart3 className='h-4 w-4' />
-                        </Button>
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          onClick={() => abrirDocumentos(cliente)}
-                        >
-                          <FileText className='h-4 w-4' />
-                        </Button>
-                      </div>
-                    </td>
-                    <td>
-                      <div className='flex items-center gap-2'>
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          onClick={() => abrirPerfil(cliente)}
-                        >
-                          <Eye className='h-4 w-4' />
-                        </Button>
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          onClick={() => setEditingCliente(cliente)}
-                        >
-                          <Edit className='h-4 w-4' />
-                        </Button>
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          onClick={() => {
-                            /* Implementar eliminación */
-                          }}
-                        >
-                          <Trash2 className='h-4 w-4' />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableComponent>
-          </Card>
-        ) : (
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {clientesFiltrados.map(cliente => (
-              <Card
-                key={cliente.id}
-                className='p-6 hover:shadow-lg transition-shadow'
+        {/* Filtros y Búsqueda */}
+        <Card>
+          <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Buscar
+              </label>
+              <div className='relative'>
+                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
+                <Input
+                  type='text'
+                  placeholder='Buscar por nombre, email o RUT...'
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className='pl-10'
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Categoría
+              </label>
+              <Select
+                value={filterCategoria}
+                onChange={e => setFilterCategoria(e.target.value)}
               >
-                <div className='flex items-start justify-between mb-4'>
-                  <div className='flex items-center gap-3'>
-                    <div className='w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center'>
-                      <Building className='h-6 w-6 text-blue-600' />
-                    </div>
-                    <div>
-                      <h3 className='font-semibold text-lg'>
-                        {cliente.razon_social}
-                      </h3>
-                      <p className='text-sm text-gray-600'>{cliente.rut}</p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant={
-                      cliente.categoria_cliente === 'VIP'
-                        ? 'default'
-                        : cliente.categoria_cliente === 'Premium'
-                          ? 'secondary'
-                          : 'outline'
-                    }
-                  >
-                    {cliente.categoria_cliente}
-                  </Badge>
-                </div>
+                <option value=''>Todas las categorías</option>
+                <option value='VIP'>VIP</option>
+                <option value='Premium'>Premium</option>
+                <option value='Regular'>Regular</option>
+              </Select>
+            </div>
 
-                <div className='space-y-3 mb-4'>
-                  <div className='flex justify-between'>
-                    <span className='text-sm text-gray-600'>Facturación:</span>
-                    <span className='font-semibold'>
-                      {formatCurrency(cliente.total_facturado)}
-                    </span>
-                  </div>
-                  <div className='flex justify-between'>
-                    <span className='text-sm text-gray-600'>Estado:</span>
-                    <Badge
-                      variant={
-                        cliente.estado === 'Activo'
-                          ? 'default'
-                          : cliente.estado === 'Inactivo'
-                            ? 'secondary'
-                            : 'destructive'
-                      }
-                    >
-                      {cliente.estado}
-                    </Badge>
-                  </div>
-                  <div className='flex justify-between'>
-                    <span className='text-sm text-gray-600'>Riesgo:</span>
-                    <Badge
-                      variant={
-                        cliente.analisis?.riesgo?.nivel === 'alto'
-                          ? 'destructive'
-                          : cliente.analisis?.riesgo?.nivel === 'medio'
-                            ? 'secondary'
-                            : 'default'
-                      }
-                    >
-                      {cliente.analisis?.riesgo?.nivel}
-                    </Badge>
-                  </div>
-                </div>
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Estado
+              </label>
+              <Select
+                value={filterEstado}
+                onChange={e => setFilterEstado(e.target.value)}
+              >
+                <option value=''>Todos los estados</option>
+                <option value='Activo'>Activo</option>
+                <option value='Inactivo'>Inactivo</option>
+                <option value='Pendiente'>Pendiente</option>
+              </Select>
+            </div>
 
-                <div className='flex gap-2'>
-                  <Button
-                    size='sm'
-                    variant='outline'
-                    onClick={() => abrirPerfil(cliente)}
-                    className='flex-1'
-                  >
-                    <Eye className='h-4 w-4 mr-1' />
-                    Ver
-                  </Button>
-                  <Button
-                    size='sm'
-                    variant='outline'
-                    onClick={() => abrirAnalisis(cliente)}
-                    className='flex-1'
-                  >
-                    <BarChart3 className='h-4 w-4 mr-1' />
-                    Análisis
-                  </Button>
-                </div>
-              </Card>
-            ))}
+            <div className='flex items-end'>
+              <Button variant='outline' className='w-full'>
+                <Filter className='h-4 w-4 mr-2' />
+                Aplicar Filtros
+              </Button>
+            </div>
           </div>
-        )}
+        </Card>
 
-        {/* Modal de Perfil del Cliente */}
-        {showProfile && selectedCliente && (
-          <Modal
-            isOpen={showProfile}
-            onClose={() => setShowProfile(false)}
-            title={`Perfil de ${selectedCliente.razon_social}`}
-            size='lg'
-          >
-            <div className='space-y-6'>
-              {/* Información Básica */}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                <div>
-                  <h3 className='text-lg font-semibold mb-3'>
-                    Información General
-                  </h3>
-                  <div className='space-y-2'>
-                    <div className='flex justify-between'>
-                      <span className='text-sm text-gray-600'>
-                        Razón Social:
-                      </span>
-                      <span className='font-medium'>
-                        {selectedCliente.razon_social}
-                      </span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-sm text-gray-600'>RUT:</span>
-                      <span className='font-medium'>{selectedCliente.rut}</span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-sm text-gray-600'>Email:</span>
-                      <span className='font-medium'>
-                        {selectedCliente.email}
-                      </span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-sm text-gray-600'>Teléfono:</span>
-                      <span className='font-medium'>
-                        {selectedCliente.telefono}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+        {/* Tabla de Clientes */}
+        <Card>
+          <div className='flex justify-between items-center mb-4'>
+            <h3 className='text-lg font-semibold text-gray-900'>
+              Lista de Clientes ({clientesFiltrados.length})
+            </h3>
+            <Button variant='outline'>
+              <Download className='h-4 w-4 mr-2' />
+              Exportar
+            </Button>
+          </div>
 
-                <div>
-                  <h3 className='text-lg font-semibold mb-3'>
-                    Análisis de Riesgo
-                  </h3>
-                  <div className='space-y-2'>
-                    <div className='flex justify-between'>
-                      <span className='text-sm text-gray-600'>
-                        Nivel de Riesgo:
-                      </span>
-                      <Badge
-                        variant={
-                          selectedCliente.analisis?.riesgo?.nivel === 'alto'
-                            ? 'destructive'
-                            : selectedCliente.analisis?.riesgo?.nivel ===
-                                'medio'
-                              ? 'secondary'
-                              : 'default'
-                        }
-                      >
-                        {selectedCliente.analisis?.riesgo?.nivel}
-                      </Badge>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-sm text-gray-600'>Puntuación:</span>
-                      <span className='font-medium'>
-                        {selectedCliente.analisis?.riesgo?.puntuacion}/100
-                      </span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-sm text-gray-600'>
-                        Crecimiento:
-                      </span>
-                      <span className='font-medium'>
-                        {selectedCliente.analisis?.crecimiento > 0 ? '+' : ''}
-                        {formatNumber(selectedCliente.analisis?.crecimiento)}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Oportunidades */}
-              {selectedCliente.oportunidades?.length > 0 && (
-                <div>
-                  <h3 className='text-lg font-semibold mb-3'>
-                    Oportunidades Identificadas
-                  </h3>
-                  <div className='space-y-3'>
-                    {selectedCliente.oportunidades.map((oportunidad, index) => (
-                      <div key={index} className='p-3 bg-blue-50 rounded-lg'>
-                        <div className='flex justify-between items-start'>
-                          <div>
-                            <p className='font-medium'>
-                              {oportunidad.descripcion}
-                            </p>
-                            <p className='text-sm text-gray-600'>
-                              Probabilidad: {oportunidad.probabilidad}%
-                            </p>
-                          </div>
-                          <Badge variant='outline'>
-                            {formatCurrency(oportunidad.valor_estimado)}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Historial Reciente */}
-              <div>
-                <h3 className='text-lg font-semibold mb-3'>
-                  Historial Reciente
-                </h3>
-                <div className='space-y-2'>
-                  {selectedCliente.historial
-                    ?.slice(0, 5)
-                    .map((evento, index) => (
-                      <div
-                        key={index}
-                        className='flex items-center justify-between p-2 bg-gray-50 rounded'
-                      >
-                        <div className='flex items-center gap-3'>
-                          <div
-                            className={`p-1 rounded ${
-                              evento.tipo === 'venta'
-                                ? 'bg-green-100'
-                                : evento.tipo === 'pago'
-                                  ? 'bg-blue-100'
-                                  : 'bg-yellow-100'
-                            }`}
-                          >
-                            {evento.tipo === 'venta' ? (
-                              <TrendingUp className='h-4 w-4 text-green-600' />
-                            ) : evento.tipo === 'pago' ? (
-                              <CheckCircle className='h-4 w-4 text-blue-600' />
-                            ) : (
-                              <Clock className='h-4 w-4 text-yellow-600' />
-                            )}
-                          </div>
-                          <div>
-                            <p className='font-medium'>{evento.accion}</p>
-                            <p className='text-sm text-gray-600'>
-                              {formatDate(evento.fecha)}
-                            </p>
-                          </div>
-                        </div>
-                        {evento.monto > 0 && (
-                          <span className='font-semibold'>
-                            {formatCurrency(evento.monto)}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                </div>
-              </div>
+          {loading ? (
+            <div className='flex justify-center py-8'>
+              <LoadingSpinner />
             </div>
-          </Modal>
-        )}
-
-        {/* Modal de Análisis */}
-        {showAnalytics && selectedCliente && datosAnalisis && (
-          <Modal
-            isOpen={showAnalytics}
-            onClose={() => setShowAnalytics(false)}
-            title={`Análisis de ${selectedCliente.razon_social}`}
-            size='xl'
-          >
-            <div className='space-y-6'>
-              {/* Métricas Clave */}
-              <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-                <Card className='p-4'>
-                  <div className='text-center'>
-                    <p className='text-2xl font-bold text-blue-600'>
-                      {formatNumber(selectedCliente.analisis?.satisfaccion)}%
-                    </p>
-                    <p className='text-sm text-gray-600'>Satisfacción</p>
-                  </div>
-                </Card>
-                <Card className='p-4'>
-                  <div className='text-center'>
-                    <p className='text-2xl font-bold text-green-600'>
-                      {formatCurrency(
-                        selectedCliente.analisis?.ticket_promedio
-                      )}
-                    </p>
-                    <p className='text-sm text-gray-600'>Ticket Promedio</p>
-                  </div>
-                </Card>
-                <Card className='p-4'>
-                  <div className='text-center'>
-                    <p className='text-2xl font-bold text-purple-600'>
-                      {selectedCliente.analisis?.frecuencia_compra}
-                    </p>
-                    <p className='text-sm text-gray-600'>Frecuencia Compra</p>
-                  </div>
-                </Card>
-                <Card className='p-4'>
-                  <div className='text-center'>
-                    <p className='text-2xl font-bold text-orange-600'>
-                      {formatNumber(
-                        selectedCliente.analisis?.potencial_expansion
-                      )}
-                      %
-                    </p>
-                    <p className='text-sm text-gray-600'>Potencial Expansión</p>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Gráficos */}
-              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                <Card className='p-6'>
-                  <h3 className='text-lg font-semibold mb-4'>
-                    Evolución de Facturación
-                  </h3>
-                  <ResponsiveContainer width='100%' height={300}>
-                    <RechartsLineChart
-                      data={datosAnalisis.evolucionFacturacion}
-                    >
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='mes' />
-                      <YAxis />
-                      <Tooltip formatter={value => formatCurrency(value)} />
-                      <Legend />
-                      <Line
-                        type='monotone'
-                        dataKey='facturacion'
-                        stroke='#3B82F6'
-                        name='Facturación'
-                      />
-                    </RechartsLineChart>
-                  </ResponsiveContainer>
-                </Card>
-
-                <Card className='p-6'>
-                  <h3 className='text-lg font-semibold mb-4'>
-                    Distribución de Actividad
-                  </h3>
-                  <ResponsiveContainer width='100%' height={300}>
-                    <RechartsPieChart>
-                      <Pie
-                        data={datosAnalisis.distribucionActividad}
-                        cx='50%'
-                        cy='50%'
-                        labelLine={false}
-                        label={({ tipo, cantidad }) => `${tipo}: ${cantidad}`}
-                        outerRadius={80}
-                        fill='#8884d8'
-                        dataKey='cantidad'
-                      >
-                        {datosAnalisis.distribucionActividad.map(
-                          (entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          )
-                        )}
-                      </Pie>
-                      <Tooltip />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                </Card>
-              </div>
+          ) : error ? (
+            <div className='text-center py-8'>
+              <AlertTriangle className='h-12 w-12 text-red-500 mx-auto mb-4' />
+              <p className='text-red-600'>{error}</p>
             </div>
-          </Modal>
-        )}
-
-        {/* Modal de Documentos */}
-        {showDocuments && selectedCliente && (
-          <Modal
-            isOpen={showDocuments}
-            onClose={() => setShowDocuments(false)}
-            title={`Documentos de ${selectedCliente.razon_social}`}
-            size='lg'
-          >
-            <div className='space-y-4'>
-              <div className='flex justify-between items-center'>
-                <h3 className='text-lg font-semibold'>
-                  Documentos del Cliente
-                </h3>
-                <Button size='sm'>
-                  <Upload className='h-4 w-4 mr-2' />
-                  Subir Documento
-                </Button>
-              </div>
-
-              <div className='space-y-2'>
-                {documents.map(doc => (
-                  <div
-                    key={doc.id}
-                    className='flex items-center justify-between p-3 border rounded-lg'
-                  >
-                    <div className='flex items-center gap-3'>
-                      <div className='p-2 bg-blue-100 rounded'>
-                        <FileText className='h-5 w-5 text-blue-600' />
-                      </div>
-                      <div>
-                        <p className='font-medium'>{doc.nombre}</p>
-                        <p className='text-sm text-gray-600'>
-                          {formatDate(doc.fecha)} • {doc.tamaño}
-                        </p>
-                      </div>
-                    </div>
-                    <div className='flex gap-2'>
-                      <Button size='sm' variant='outline'>
-                        <Download className='h-4 w-4' />
-                      </Button>
-                      <Button size='sm' variant='outline'>
-                        <Eye className='h-4 w-4' />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Modal>
-        )}
-
-        {/* Export Data Modal */}
-        {showExportData && (
-          <ExportData
-            data={clientesFiltrados}
-            columns={exportColumns}
-            filename='clientes-mtz'
-            onClose={() => setShowExportData(false)}
-          />
-        )}
-
-        {/* Modal de Formulario de Cliente */}
-        {showModal && (
-          <Modal
-            isOpen={showModal}
-            onClose={() => {
-              setShowModal(false);
-              setEditingCliente(null);
-            }}
-            title={editingCliente ? 'Editar Cliente' : 'Nuevo Cliente'}
-            size='xl'
-          >
-            <ClienteForm
-              cliente={editingCliente}
-              onSubmit={
-                editingCliente ? handleActualizarCliente : handleCrearCliente
-              }
-              onCancel={() => {
-                setShowModal(false);
-                setEditingCliente(null);
+          ) : (
+            <TableComponent
+              data={clientesFiltrados}
+              columns={columns}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={key => {
+                if (sortBy === key) {
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                } else {
+                  setSortBy(key);
+                  setSortOrder('asc');
+                }
               }}
-              loading={false}
             />
-          </Modal>
-        )}
+          )}
+        </Card>
       </div>
+
+      {/* Modal de Cliente */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setSelectedCliente(null);
+        }}
+        title={selectedCliente ? 'Editar Cliente' : 'Nuevo Cliente'}
+      >
+        <ClienteForm
+          cliente={selectedCliente}
+          onSave={handleSaveCliente}
+          onCancel={() => {
+            setShowModal(false);
+            setSelectedCliente(null);
+          }}
+        />
+      </Modal>
     </>
+  );
+};
+
+// Componente de formulario de cliente
+const ClienteForm = ({ cliente, onSave, onCancel }) => {
+  const [formData, setFormData] = useState({
+    razon_social: cliente?.razon_social || '',
+    rut: cliente?.rut || '',
+    email: cliente?.email || '',
+    telefono: cliente?.telefono || '',
+    direccion: cliente?.direccion || '',
+    categoria: cliente?.categoria || 'Regular',
+    estado: cliente?.estado || 'Activo',
+    rubro: cliente?.rubro || '',
+    observaciones: cliente?.observaciones || '',
+  });
+
+  const handleSubmit = e => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className='space-y-4'>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            Razón Social
+          </label>
+          <Input
+            type='text'
+            value={formData.razon_social}
+            onChange={e =>
+              setFormData(prev => ({ ...prev, razon_social: e.target.value }))
+            }
+            required
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            RUT
+          </label>
+          <Input
+            type='text'
+            value={formData.rut}
+            onChange={e =>
+              setFormData(prev => ({ ...prev, rut: e.target.value }))
+            }
+            required
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            Email
+          </label>
+          <Input
+            type='email'
+            value={formData.email}
+            onChange={e =>
+              setFormData(prev => ({ ...prev, email: e.target.value }))
+            }
+            required
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            Teléfono
+          </label>
+          <Input
+            type='tel'
+            value={formData.telefono}
+            onChange={e =>
+              setFormData(prev => ({ ...prev, telefono: e.target.value }))
+            }
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            Categoría
+          </label>
+          <Select
+            value={formData.categoria}
+            onChange={e =>
+              setFormData(prev => ({ ...prev, categoria: e.target.value }))
+            }
+          >
+            <option value='Regular'>Regular</option>
+            <option value='Premium'>Premium</option>
+            <option value='VIP'>VIP</option>
+          </Select>
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            Estado
+          </label>
+          <Select
+            value={formData.estado}
+            onChange={e =>
+              setFormData(prev => ({ ...prev, estado: e.target.value }))
+            }
+          >
+            <option value='Activo'>Activo</option>
+            <option value='Inactivo'>Inactivo</option>
+            <option value='Pendiente'>Pendiente</option>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <label className='block text-sm font-medium text-gray-700 mb-2'>
+          Dirección
+        </label>
+        <Input
+          type='text'
+          value={formData.direccion}
+          onChange={e =>
+            setFormData(prev => ({ ...prev, direccion: e.target.value }))
+          }
+        />
+      </div>
+
+      <div>
+        <label className='block text-sm font-medium text-gray-700 mb-2'>
+          Rubro
+        </label>
+        <Input
+          type='text'
+          value={formData.rubro}
+          onChange={e =>
+            setFormData(prev => ({ ...prev, rubro: e.target.value }))
+          }
+        />
+      </div>
+
+      <div>
+        <label className='block text-sm font-medium text-gray-700 mb-2'>
+          Observaciones
+        </label>
+        <textarea
+          value={formData.observaciones}
+          onChange={e =>
+            setFormData(prev => ({ ...prev, observaciones: e.target.value }))
+          }
+          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          rows={3}
+        />
+      </div>
+
+      <div className='flex justify-end space-x-3 pt-4'>
+        <Button type='button' variant='outline' onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type='submit' variant='primary'>
+          {cliente ? 'Actualizar' : 'Crear'} Cliente
+        </Button>
+      </div>
+    </form>
   );
 };
 

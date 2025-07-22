@@ -1,5 +1,5 @@
 ﻿// =====================================================================
-// 🔐 HOOK DE AUTENTICACIÓN - SISTEMA MTZ v3.0
+// 🔐 HOOK DE AUTENTICACIÓN - SISTEMA MTZ v3.0 (SIN MODO DEMO)
 // =====================================================================
 
 import { useContext, useCallback } from 'react';
@@ -246,7 +246,7 @@ const useAuth = () => {
       }
 
       // Si el usuario es admin, tiene todos los permisos
-      if (role === 'admin') {
+      if (role === 'Administrador') {
         return true;
       }
 
@@ -309,81 +309,6 @@ const useAuth = () => {
     return sessionAge < sessionTimeout;
   }, [isAuthenticated, user]);
 
-  /**
-   * Actualizar perfil del usuario
-   * @param {Object} profileData - Datos del perfil a actualizar
-   * @returns {Promise<Object>} Resultado de la actualización
-   */
-  const updateProfile = useCallback(
-    async profileData => {
-      try {
-        if (!isAuthenticated || !user) {
-          return { success: false, error: 'Usuario no autenticado' };
-        }
-
-        console.log('🔄 Actualizando perfil del usuario...');
-
-        // Aquí se implementaría la lógica de actualización
-        // Por ahora, simulamos la actualización
-        console.log('✅ Perfil actualizado exitosamente');
-        return { success: true, data: profileData };
-      } catch (error) {
-        console.error('❌ Error actualizando perfil:', error);
-        return { success: false, error: error.message };
-      }
-    },
-    [isAuthenticated, user]
-  );
-
-  /**
-   * Actualizar contraseña del usuario
-   * @param {string} currentPassword - Contraseña actual
-   * @param {string} newPassword - Nueva contraseña
-   * @returns {Promise<Object>} Resultado de la actualización
-   */
-  const updatePassword = useCallback(
-    async (currentPassword, newPassword) => {
-      try {
-        if (!isAuthenticated || !user) {
-          return { success: false, error: 'Usuario no autenticado' };
-        }
-
-        console.log('🔄 Actualizando contraseña...');
-
-        // Aquí se implementaría la lógica de actualización de contraseña
-        // Por ahora, simulamos la actualización
-        console.log('✅ Contraseña actualizada exitosamente');
-        return { success: true };
-      } catch (error) {
-        console.error('❌ Error actualizando contraseña:', error);
-        return { success: false, error: error.message };
-      }
-    },
-    [isAuthenticated, user]
-  );
-
-  /**
-   * Refrescar datos del usuario
-   * @returns {Promise<Object>} Resultado del refresh
-   */
-  const refreshUser = useCallback(async () => {
-    try {
-      if (!isAuthenticated || !user) {
-        return { success: false, error: 'Usuario no autenticado' };
-      }
-
-      console.log('🔄 Refrescando datos del usuario...');
-
-      // Aquí se implementaría la lógica de refresh
-      // Por ahora, simulamos el refresh
-      console.log('✅ Datos del usuario refrescados');
-      return { success: true };
-    } catch (error) {
-      console.error('❌ Error refrescando usuario:', error);
-      return { success: false, error: error.message };
-    }
-  }, [isAuthenticated, user]);
-
   return {
     // Estado
     user,
@@ -407,11 +332,6 @@ const useAuth = () => {
     checkRole,
     getProfile,
     isSessionValid,
-
-    // Funciones de actualización
-    updateProfile,
-    updatePassword,
-    refreshUser,
   };
 };
 

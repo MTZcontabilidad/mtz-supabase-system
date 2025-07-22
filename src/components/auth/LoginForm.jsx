@@ -1,5 +1,5 @@
 // =====================================================================
-// 🔐 FORMULARIO DE LOGIN - SISTEMA MTZ v3.0
+// 🔐 FORMULARIO DE LOGIN - SISTEMA MTZ v3.0 (SIN MODO DEMO)
 // =====================================================================
 
 import React, { useState } from 'react';
@@ -53,13 +53,10 @@ const LoginForm = () => {
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: 'mtzcontabilidad@gmail.com',
-      password: 'Alohomora33.',
+      password: 'Alohomora33@',
       rememberMe: false,
     },
   });
-
-  // Observar valores para validación en tiempo real
-  const watchedValues = watch();
 
   /**
    * Manejar el envío del formulario
@@ -70,21 +67,6 @@ const LoginForm = () => {
       setLoginError('');
 
       console.log('🔄 Iniciando proceso de login...');
-
-      // Verificar credenciales demo
-      if (
-        data.email === 'mtzcontabilidad@gmail.com' &&
-        data.password === 'Alohomora33.'
-      ) {
-        console.log('✅ Login demo exitoso, redirigiendo...');
-
-        // Simular login exitoso con rol admin
-        setTimeout(() => {
-          navigate('/admin/usuarios?demo=true');
-        }, 1000);
-
-        return;
-      }
 
       const result = await login(data.email, data.password, {
         rememberMe: data.rememberMe,
@@ -270,22 +252,6 @@ const LoginForm = () => {
         {isSubmitting || loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
       </Button>
 
-      {/* Botón de acceso demo */}
-      <Button
-        type='button'
-        variant='secondary'
-        size='lg'
-        onClick={() => {
-          console.log('🔄 Accediendo en modo demo...');
-          setTimeout(() => {
-            window.location.href = '/admin/usuarios?demo=true';
-          }, 1000);
-        }}
-        className='w-full mt-4'
-      >
-        🚀 Acceso Demo (Sin Supabase)
-      </Button>
-
       {/* Información adicional */}
       <div className='text-center'>
         <p className='text-sm text-gray-600'>
@@ -309,13 +275,22 @@ const LoginForm = () => {
         </p>
       </div>
 
-      {/* Información demo */}
+      {/* Información de credenciales de prueba */}
       <div className='text-center mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200'>
         <p className='text-sm text-blue-700'>
-          <strong>💡 Credenciales Admin:</strong> Usa las credenciales
-          pre-llenadas o el botón &quot;Acceso Demo&quot; para probar la
-          aplicación con acceso completo.
+          <strong>💡 Credenciales de Prueba:</strong>
         </p>
+        <div className='mt-2 text-xs text-blue-600 space-y-1'>
+          <p>
+            <strong>Admin:</strong> mtzcontabilidad@gmail.com / Alohomora33@
+          </p>
+          <p>
+            <strong>Gerente:</strong> gerente@mtz.cl / password123
+          </p>
+          <p>
+            <strong>Analista:</strong> analista@mtz.cl / password123
+          </p>
+        </div>
       </div>
     </form>
   );

@@ -93,7 +93,7 @@ const CargaMasiva = ({
       const reader = new FileReader();
       reader.onload = e => {
         try {
-          const data = JSON.parse(e.target.result);
+          // const data = JSON.parse(e.target.result);
           setPreview(Array.isArray(data) ? data.slice(0, 5) : []);
         } catch (error) {
           console.error('Error parsing JSON:', error);
@@ -157,7 +157,7 @@ const CargaMasiva = ({
     if (files[0].type === 'text/csv' || files[0].name.endsWith('.csv')) {
       Papa.parse(files[0], {
         complete: async parseResults => {
-          const data = parseResults.data;
+          // const data = parseResults.data;
 
           for (let i = 0; i < data.length; i++) {
             const row = data[i];

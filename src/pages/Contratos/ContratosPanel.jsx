@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ContratosService } from '../../lib/dataService.js';
+import { dataService } from '../../lib/dataService.js';
 import { useToast } from '../../components/ui/Toast.jsx';
 import DataTable from '../../components/shared/DataTable.jsx';
 import ExportData from '../../components/shared/ExportData.jsx';
@@ -40,7 +40,7 @@ const ContratosPanel = () => {
       setLoading(true);
       console.log('🔄 Cargando contratos...');
 
-      const data = await ContratosService.getContratos();
+      const data = await dataService.getContratosData();
       setContratos(data || []);
       console.log('✅ Contratos cargados:', data?.length || 0);
     } catch (error) {
@@ -75,15 +75,12 @@ const ContratosPanel = () => {
 
       if (editingContrato) {
         // Actualizar
-        await ContratosService.actualizarContrato(
-          editingContrato.id,
-          contratoData
-        );
+        await dataService.actualizarContrato(editingContrato.id, contratoData);
         showToast('Contrato actualizado exitosamente', 'success');
         console.log('✅ Contrato actualizado');
       } else {
         // Crear nuevo
-        await ContratosService.crearContrato(contratoData);
+        await dataService.crearContrato(contratoData);
         showToast('Contrato creado exitosamente', 'success');
         console.log('✅ Contrato creado');
       }
@@ -135,7 +132,7 @@ const ContratosPanel = () => {
     }
 
     try {
-      await ContratosService.eliminarContrato(id);
+      await dataService.eliminarContrato(id);
       showToast('Contrato eliminado exitosamente', 'success');
       loadContratos();
     } catch (error) {

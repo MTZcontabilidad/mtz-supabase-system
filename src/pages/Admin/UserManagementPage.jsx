@@ -1,32 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users,
-  UserPlus,
   UserCheck,
   UserX,
   Shield,
   Building,
   Search,
-  Filter,
   RefreshCw,
   Edit,
-  Trash2,
   Eye,
   Plus,
-  Check,
-  X,
-  AlertTriangle,
-  TrendingUp,
-  Activity,
-  Calendar,
   Mail,
-  Phone,
-  MapPin,
-  Clock,
-  Star,
-  Zap,
-  Database,
-  BarChart3,
 } from 'lucide-react';
 import {
   PieChart,
@@ -48,16 +32,95 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx';
 import DataTable from '../../components/shared/DataTable.jsx';
 import ExportData from '../../components/shared/ExportData.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
-import { UsuariosService, ClientesService } from '../../lib/dataService.js';
+import { dataService } from '../../lib/dataService.js';
 import usePermissions from '../../hooks/usePermissions.js';
+import useAuth from '../../hooks/useAuth.js';
+
+// Datos de muestra para modo demo
+const DEMO_USUARIOS = [
+  {
+    id: 1,
+    email: 'admin@mtz.cl',
+    nombre_completo: 'Administrador MTZ',
+    cargo: 'Administrador General',
+    departamento: 'Administración',
+    telefono: '+56 9 1234 5678',
+    activo: true,
+    created_at: '2024-01-15T10:00:00Z',
+    updated_at: '2024-01-15T10:00:00Z',
+    roles: { nombre: 'Administrador' },
+    rol_id: 1,
+  },
+  {
+    id: 2,
+    email: 'gerente@mtz.cl',
+    nombre_completo: 'María González',
+    cargo: 'Gerente de Operaciones',
+    departamento: 'Operaciones',
+    telefono: '+56 9 2345 6789',
+    activo: true,
+    created_at: '2024-01-20T10:00:00Z',
+    updated_at: '2024-01-20T10:00:00Z',
+    roles: { nombre: 'Gerente' },
+    rol_id: 2,
+  },
+  {
+    id: 3,
+    email: 'analista@mtz.cl',
+    nombre_completo: 'Carlos Rodríguez',
+    cargo: 'Analista Senior',
+    departamento: 'Análisis',
+    telefono: '+56 9 3456 7890',
+    activo: true,
+    created_at: '2024-02-01T10:00:00Z',
+    updated_at: '2024-02-01T10:00:00Z',
+    roles: { nombre: 'Analista' },
+    rol_id: 3,
+  },
+  {
+    id: 4,
+    email: 'asistente@mtz.cl',
+    nombre_completo: 'Ana Silva',
+    cargo: 'Asistente Administrativo',
+    departamento: 'Administración',
+    telefono: '+56 9 4567 8901',
+    activo: false,
+    created_at: '2024-02-10T10:00:00Z',
+    updated_at: '2024-02-10T10:00:00Z',
+    roles: { nombre: 'Asistente' },
+    rol_id: 4,
+  },
+  {
+    id: 5,
+    email: 'consultor@mtz.cl',
+    nombre_completo: 'Pedro Martínez',
+    cargo: 'Consultor Tributario',
+    departamento: 'Consultoría',
+    telefono: '+56 9 5678 9012',
+    activo: true,
+    created_at: '2024-02-15T10:00:00Z',
+    updated_at: '2024-02-15T10:00:00Z',
+    roles: { nombre: 'Consultor' },
+    rol_id: 5,
+  },
+];
+
+const DEMO_ROLES = [
+  { id: 1, nombre: 'Administrador' },
+  { id: 2, nombre: 'Gerente' },
+  { id: 3, nombre: 'Analista' },
+  { id: 4, nombre: 'Asistente' },
+  { id: 5, nombre: 'Consultor' },
+];
 
 /**
  * UserManagementPage Component - VERSIÓN OPTIMIZADA Y FUNCIONAL
- * Gestión completa de usuarios con datos reales de Supabase
+ * Gestión completa de usuarios con datos reales de Supabase o datos de muestra en modo demo
  */
 const UserManagementPage = () => {
   const { isAdmin, hasPermission } = usePermissions();
   const { showToast } = useToast();
+  const { isDemoMode } = useAuth();
 
   // Estados principales
   const [usuarios, setUsuarios] = useState([]);
@@ -107,33 +170,60 @@ const UserManagementPage = () => {
   const loadUsuarios = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await UsuariosService.getUsuarios();
-      setUsuarios(data);
-      calcularEstadisticas(data);
+
+      if (isDemoMode) {
+        // Usar datos de muestra en modo demo
+        console.log('🎭 Cargando datos de muestra para modo demo');
+        setUsuarios(DEMO_USUARIOS);
+        calcularEstadisticas(DEMO_USUARIOS);
+      } else {
+        // Usar datos reales de Supabase
+        const data = await dataService.getUsuariosData();
+        setUsuarios(data);
+        calcularEstadisticas(data);
+      }
     } catch (error) {
       showToast('Error al cargar usuarios: ' + error.message, 'error');
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, [showToast, isDemoMode]);
 
   const loadRoles = useCallback(async () => {
     try {
-      const data = await UsuariosService.getRoles();
-      setRoles(data);
+      if (isDemoMode) {
+        // Usar roles de muestra en modo demo
+        setRoles(DEMO_ROLES);
+      } else {
+        // Usar roles reales de Supabase
+        const data = await dataService.getRolesData();
+        setRoles(data);
+      }
     } catch (error) {
       console.error('Error cargando roles:', error);
     }
-  }, []);
+  }, [isDemoMode]);
 
   const loadClientes = useCallback(async () => {
     try {
-      const data = await ClientesService.getClientes();
-      setClientes(data);
+      if (isDemoMode) {
+        // En modo demo, usar un número fijo de clientes
+        setClientes(
+          Array.from({ length: 25 }, (_, i) => ({
+            id: i + 1,
+            nombre: `Cliente Demo ${i + 1}`,
+            estado: 'activo',
+          }))
+        );
+      } else {
+        // Usar clientes reales de Supabase
+        const data = await dataService.getClientesData();
+        setClientes(data);
+      }
     } catch (error) {
       console.error('Error cargando clientes:', error);
     }
-  }, []);
+  }, [isDemoMode]);
 
   // Calcular estadísticas avanzadas
   const calcularEstadisticas = usuariosData => {
@@ -180,12 +270,35 @@ const UserManagementPage = () => {
     try {
       setSaving(true);
 
-      if (editingUser) {
-        await UsuariosService.actualizarUsuario(editingUser.id, formData);
-        showToast('Usuario actualizado exitosamente', 'success');
+      if (isDemoMode) {
+        // En modo demo, simular guardado
+        if (editingUser) {
+          const updatedUsuarios = usuarios.map(u =>
+            u.id === editingUser.id ? { ...u, ...formData } : u
+          );
+          setUsuarios(updatedUsuarios);
+          showToast('Usuario actualizado exitosamente (Demo)', 'success');
+        } else {
+          const newUser = {
+            id: Math.max(...usuarios.map(u => u.id)) + 1,
+            ...formData,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            roles: roles.find(r => r.id === parseInt(formData.rol_id)),
+          };
+          setUsuarios([...usuarios, newUser]);
+          showToast('Usuario creado exitosamente (Demo)', 'success');
+        }
       } else {
-        await UsuariosService.crearUsuario(formData);
-        showToast('Usuario creado exitosamente', 'success');
+        // Usar servicios reales
+        if (editingUser) {
+          await dataService.actualizarUsuario(editingUser.id, formData);
+          showToast('Usuario actualizado exitosamente', 'success');
+        } else {
+          await dataService.crearUsuario(formData);
+          showToast('Usuario creado exitosamente', 'success');
+        }
+        loadUsuarios();
       }
 
       setShowUserForm(false);
@@ -199,7 +312,6 @@ const UserManagementPage = () => {
         departamento: '',
         activo: true,
       });
-      loadUsuarios();
     } catch (error) {
       showToast('Error al guardar usuario: ' + error.message, 'error');
     } finally {
@@ -211,9 +323,15 @@ const UserManagementPage = () => {
     if (!window.confirm('¿Está seguro de eliminar este usuario?')) return;
 
     try {
-      // Nota: Implementar eliminación de usuario en el servicio si es necesario
-      showToast('Usuario eliminado exitosamente', 'success');
-      loadUsuarios();
+      if (isDemoMode) {
+        // En modo demo, simular eliminación
+        setUsuarios(usuarios.filter(u => u.id !== id));
+        showToast('Usuario eliminado exitosamente (Demo)', 'success');
+      } else {
+        // Nota: Implementar eliminación de usuario en el servicio si es necesario
+        showToast('Usuario eliminado exitosamente', 'success');
+        loadUsuarios();
+      }
     } catch (error) {
       showToast('Error al eliminar usuario: ' + error.message, 'error');
     }
@@ -235,11 +353,21 @@ const UserManagementPage = () => {
 
   const toggleUserStatus = async (userId, currentStatus) => {
     try {
-      await UsuariosService.actualizarUsuario(userId, {
-        activo: !currentStatus,
-      });
-      showToast('Estado del usuario actualizado', 'success');
-      loadUsuarios();
+      if (isDemoMode) {
+        // En modo demo, simular cambio de estado
+        setUsuarios(
+          usuarios.map(u =>
+            u.id === userId ? { ...u, activo: !currentStatus } : u
+          )
+        );
+        showToast('Estado del usuario actualizado (Demo)', 'success');
+      } else {
+        await dataService.actualizarUsuario(userId, {
+          activo: !currentStatus,
+        });
+        showToast('Estado del usuario actualizado', 'success');
+        loadUsuarios();
+      }
     } catch (error) {
       showToast('Error al cambiar estado: ' + error.message, 'error');
     }
@@ -248,8 +376,12 @@ const UserManagementPage = () => {
   const handleAsignarClientes = async () => {
     try {
       setSaving(true);
-      // Implementar lógica de asignación de clientes
-      showToast('Clientes asignados exitosamente', 'success');
+      if (isDemoMode) {
+        showToast('Clientes asignados exitosamente (Demo)', 'success');
+      } else {
+        // Implementar lógica de asignación de clientes
+        showToast('Clientes asignados exitosamente', 'success');
+      }
       setShowAssignClients(false);
       setSelectedClients([]);
     } catch (error) {
@@ -269,6 +401,8 @@ const UserManagementPage = () => {
         return 'info';
       case 'Asistente':
         return 'secondary';
+      case 'Consultor':
+        return 'default';
       default:
         return 'default';
     }
@@ -400,6 +534,11 @@ const UserManagementPage = () => {
           </h1>
           <p className='text-gray-600'>
             Administración completa del sistema de usuarios
+            {isDemoMode && (
+              <span className='ml-2 text-blue-600 font-medium'>
+                🎭 Modo Demo
+              </span>
+            )}
           </p>
         </div>
         <div className='flex gap-2'>
@@ -614,6 +753,11 @@ const UserManagementPage = () => {
           <div className='bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto'>
             <h3 className='text-lg font-medium text-gray-900 mb-4'>
               {editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
+              {isDemoMode && (
+                <span className='ml-2 text-sm text-blue-600 font-medium'>
+                  (Demo)
+                </span>
+              )}
             </h3>
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -741,6 +885,11 @@ const UserManagementPage = () => {
           <div className='bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto'>
             <h3 className='text-lg font-medium text-gray-900 mb-4'>
               Detalles del Usuario
+              {isDemoMode && (
+                <span className='ml-2 text-sm text-blue-600 font-medium'>
+                  (Demo)
+                </span>
+              )}
             </h3>
 
             <div className='space-y-4'>

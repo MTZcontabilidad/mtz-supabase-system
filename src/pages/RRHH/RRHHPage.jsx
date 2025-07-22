@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { RRHHService } from '../../lib/dataService.js';
+import { dataService } from '../../lib/dataService.js';
 import { useToast } from '../../components/ui/Toast.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -15,12 +15,10 @@ import {
   Edit,
   Trash2,
   Search,
-  Filter,
   DollarSign,
   Calendar,
   TrendingUp,
 } from 'lucide-react';
-
 const RRHHPage = () => {
   const { showToast } = useToast();
   const [empleados, setEmpleados] = useState([]);
@@ -94,7 +92,7 @@ const RRHHPage = () => {
   const loadEmpleados = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await RRHHService.getEmpleados(filters.empleados);
+      const data = await dataService.getRRHHData();
       setEmpleados(data);
     } catch (error) {
       showToast('Error al cargar empleados: ' + error.message, 'error');
@@ -106,7 +104,7 @@ const RRHHPage = () => {
   const loadNominas = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await RRHHService.getNominas(filters.nominas);
+      const data = await dataService.getNominasData();
       setNominas(data);
     } catch (error) {
       showToast('Error al cargar nóminas: ' + error.message, 'error');
@@ -117,7 +115,7 @@ const RRHHPage = () => {
 
   const loadEstadisticas = useCallback(async () => {
     try {
-      const stats = await RRHHService.getEstadisticasRRHH();
+      const stats = await dataService.getEstadisticasRRHH();
       setEstadisticas(stats);
     } catch (error) {
       console.error('Error cargando estadísticas:', error);
@@ -141,10 +139,10 @@ const RRHHPage = () => {
       setSaving(true);
 
       if (editingEmpleado) {
-        await RRHHService.actualizarEmpleado(editingEmpleado.id, formData);
+        await dataService.actualizarEmpleado(editingEmpleado.id, formData);
         showToast('Empleado actualizado exitosamente', 'success');
       } else {
-        await RRHHService.crearEmpleado(formData);
+        await dataService.crearEmpleado(formData);
         showToast('Empleado creado exitosamente', 'success');
       }
 
@@ -175,10 +173,10 @@ const RRHHPage = () => {
       setSaving(true);
 
       if (editingNomina) {
-        await RRHHService.actualizarNomina(editingNomina.id, nominaFormData);
+        await dataService.actualizarNomina(editingNomina.id, nominaFormData);
         showToast('Nómina actualizada exitosamente', 'success');
       } else {
-        await RRHHService.crearNomina(nominaFormData);
+        await dataService.crearNomina(nominaFormData);
         showToast('Nómina creada exitosamente', 'success');
       }
 
@@ -207,7 +205,7 @@ const RRHHPage = () => {
     if (!window.confirm('¿Está seguro de eliminar este empleado?')) return;
 
     try {
-      await RRHHService.eliminarEmpleado(id);
+      await dataService.eliminarEmpleado(id);
       showToast('Empleado eliminado exitosamente', 'success');
       loadEmpleados();
       loadEstadisticas();
@@ -220,7 +218,7 @@ const RRHHPage = () => {
     if (!window.confirm('¿Está seguro de eliminar esta nómina?')) return;
 
     try {
-      await RRHHService.eliminarNomina(id);
+      await dataService.eliminarNomina(id);
       showToast('Nómina eliminada exitosamente', 'success');
       loadNominas();
       loadEstadisticas();

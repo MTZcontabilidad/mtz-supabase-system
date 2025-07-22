@@ -1,20 +1,5 @@
 import { Link } from 'react-router-dom';
-import {
-  LineChart,
-  Users,
-  BarChart3,
-  Shield,
-  Zap,
-  TrendingUp,
-  CheckCircle,
-  ArrowRight,
-  Building2,
-  Calculator,
-  FileText,
-  Globe,
-  Phone,
-  Mail,
-} from 'lucide-react';
+import { LineChart, Users, BarChart3, Shield, Zap, TrendingUp, CheckCircle, ArrowRight, Building2, Calculator, Globe, Phone, Mail,  } from 'lucide-react';
 import Button from '../../components/ui/Button.jsx';
 
 const LandingPage = () => {

@@ -2,9 +2,16 @@ import { Navigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth.js';
 
 const PublicRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isDemoMode } = useAuth();
 
-  console.log('🌐 PublicRoute - usuario:', !!user, 'loading:', loading);
+  console.log(
+    '🌐 PublicRoute - usuario:',
+    !!user,
+    'loading:',
+    loading,
+    'demo:',
+    isDemoMode
+  );
 
   // Mostrar loading simple
   if (loading) {
@@ -13,6 +20,9 @@ const PublicRoute = ({ children }) => {
         <div className='text-center'>
           <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
           <p className='mt-4 text-gray-600'>Cargando...</p>
+          {isDemoMode && (
+            <p className='mt-2 text-sm text-blue-600'>🎭 Modo demo activo</p>
+          )}
         </div>
       </div>
     );
@@ -21,6 +31,12 @@ const PublicRoute = ({ children }) => {
   // Si hay usuario, redirigir al dashboard
   if (user) {
     console.log('✅ Usuario autenticado, redirigiendo al dashboard');
+
+    // Si estamos en modo demo, redirigir a la página de administración
+    if (isDemoMode) {
+      return <Navigate to='/admin/usuarios?demo=true' replace />;
+    }
+
     return <Navigate to='/dashboard' replace />;
   }
 

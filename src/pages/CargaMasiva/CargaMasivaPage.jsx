@@ -1,21 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Upload,
-  Download,
-  FileText,
-  ShoppingCart,
-  TrendingUp,
-  Users,
-  CheckCircle,
-  AlertCircle,
-  RefreshCw,
-  Eye,
-  Trash2,
-  Plus,
-  Calendar,
-  DollarSign,
-  Building,
-} from 'lucide-react';
+import { Download, ShoppingCart, TrendingUp, Users, RefreshCw, Plus, DollarSign,  } from 'lucide-react';
 import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Badge from '../../components/ui/Badge.jsx';

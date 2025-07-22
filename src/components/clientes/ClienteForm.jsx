@@ -1,4 +1,3 @@
-import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -123,7 +122,7 @@ const ClienteForm = ({
     },
   });
 
-  const watchedValues = watch();
+  // const watchedValues = watch();
 
   // Calcular validación en tiempo real
   const isFormValid = Object.keys(errors).length === 0;

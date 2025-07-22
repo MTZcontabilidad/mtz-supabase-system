@@ -1,188 +1,285 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
-  ShoppingCart,
+  TrendingUp,
   Plus,
   Search,
   Filter,
   Download,
-  Upload,
   Edit,
   Trash2,
   Eye,
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  DollarSign,
-  User,
+  RefreshCw,
   FileText,
+  DollarSign,
+  Calendar,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   Clock,
-  RefreshCw,
-  BarChart3,
-  PieChart,
-  LineChart,
-  Activity,
-  Target,
-  Award,
-  Shield,
-  Zap,
-  MoreHorizontal,
-  ChevronDown,
-  ChevronUp,
-  Filter as FilterIcon,
-  SortAsc,
-  SortDesc,
-  Grid,
-  Table as TableIcon,
+  User,
+  Receipt,
+  CreditCard,
+  Coins,
+  Banknote,
 } from 'lucide-react';
-import {
-  BarChart as RechartsBarChart,
-  Bar,
-  LineChart as RechartsLineChart,
-  Line,
-  PieChart as RechartsPieChart,
-  Pie,
-  AreaChart as RechartsAreaChart,
-  Area as RechartsArea,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Cell,
-  ComposedChart as RechartsComposedChart,
-  ScatterChart as RechartsScatterChart,
-  Scatter,
-} from 'recharts';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
 import Modal from '@/components/ui/Modal';
 import TableComponent from '@/components/ui/Table';
-import Select from '@/components/ui/Select';
-import VentaForm from '@/components/ventas/VentaForm';
-import { formatCurrency, formatDate, formatNumber } from '@/utils/helpers';
-import ExportData from '@/components/shared/ExportData';
-import GlobalSearch from '@/components/shared/GlobalSearch';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import {
+  ventasData,
+  formatCurrency,
+  formatDate,
+  getStatusColor,
+  getStatusLabel,
+} from '@/lib/sampleData';
 
 /**
- * Página de Gestión de Ventas Avanzada MTZ - VERSIÓN MEJORADA
- * Gestión completa de ventas con análisis avanzado, búsqueda inteligente
- * y sistema de facturación integrado
+ * Página de Gestión de Ventas MTZ - VERSIÓN MEJORADA
+ * Gestión completa de ventas con filtros, búsqueda y análisis
  */
 const VentasPage = () => {
-  // Estados locales para la UI
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [ventas, setVentas] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [editingVenta, setEditingVenta] = useState(null);
-  const [showExportData, setShowExportData] = useState(false);
-  const [viewMode, setViewMode] = useState('table'); // table, grid, kanban
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedVenta, setSelectedVenta] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterEstado, setFilterEstado] = useState('');
+  const [filterCategoria, setFilterCategoria] = useState('');
+  const [sortBy, setSortBy] = useState('fecha_emision');
+  const [sortOrder, setSortOrder] = useState('desc');
 
-  // Manejar creación de venta
-  const handleCrearVenta = async ventaData => {
+  // Cargar datos de ventas
+  const cargarVentas = useCallback(async () => {
     try {
-      // Aquí iría la lógica para crear la venta
-      // await crearVenta(ventaData); // useVentas.crearVenta
-      console.log('Crear Venta:', ventaData);
-      setShowModal(false);
-      setEditingVenta(null);
-    } catch (error) {
-      console.error('Error creando venta:', error);
-    }
-  };
+      setLoading(true);
+      setError(null);
+      console.log('🔄 Cargando ventas...');
 
-  // Manejar actualización de venta
-  const handleActualizarVenta = async ventaData => {
-    try {
-      // Aquí iría la lógica para actualizar la venta
-      // await actualizarVenta(editingVenta.id, ventaData); // useVentas.actualizarVenta
-      console.log('Actualizar Venta:', editingVenta.id, ventaData);
-      setShowModal(false);
-      setEditingVenta(null);
-    } catch (error) {
-      console.error('Error actualizando venta:', error);
+      // Simular carga de datos (en producción usaría un servicio real)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      setVentas(ventasData);
+    } catch (err) {
+      console.error('❌ Error cargando ventas:', err);
+      setError('Error al cargar las ventas');
+    } finally {
+      setLoading(false);
     }
+  }, []);
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    cargarVentas();
+  }, [cargarVentas]);
+
+  // Filtrar y ordenar ventas
+  const ventasFiltradas = ventas
+    .filter(venta => {
+      const matchesSearch =
+        venta.numero_factura.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        venta.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        venta.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesEstado = !filterEstado || venta.estado === filterEstado;
+      const matchesCategoria =
+        !filterCategoria || venta.categoria === filterCategoria;
+
+      return matchesSearch && matchesEstado && matchesCategoria;
+    })
+    .sort((a, b) => {
+      const aValue = a[sortBy];
+      const bValue = b[sortBy];
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+  // Manejar edición de venta
+  const handleEditVenta = venta => {
+    setSelectedVenta(venta);
+    setShowModal(true);
   };
 
   // Manejar eliminación de venta
-  const handleEliminarVenta = async ventaId => {
+  const handleDeleteVenta = async ventaId => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta venta?')) {
       try {
-        // Aquí iría la lógica para eliminar la venta
-        // await eliminarVenta(ventaId); // useVentas.eliminarVenta
-        console.log('Eliminar Venta:', ventaId);
+        console.log('🗑️ Eliminando venta:', ventaId);
+        // En producción aquí se llamaría a la API
+        setVentas(prev => prev.filter(v => v.id !== ventaId));
       } catch (error) {
-        console.error('Error eliminando venta:', error);
+        console.error('❌ Error eliminando venta:', error);
       }
     }
   };
 
-  // Manejar ordenamiento
-  const handleSort = key => {
-    // Aquí iría la lógica para manejar el ordenamiento
-    console.log('Ordenar por:', key);
+  // Manejar guardar cambios
+  const handleSaveVenta = async ventaData => {
+    try {
+      if (selectedVenta) {
+        // Actualizar venta existente
+        setVentas(prev =>
+          prev.map(v =>
+            v.id === selectedVenta.id ? { ...v, ...ventaData } : v
+          )
+        );
+      } else {
+        // Crear nueva venta
+        const newVenta = {
+          id: Date.now(),
+          ...ventaData,
+          fecha_emision: new Date().toISOString().split('T')[0],
+          fecha_vencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0],
+        };
+        setVentas(prev => [...prev, newVenta]);
+      }
+      setShowModal(false);
+      setSelectedVenta(null);
+    } catch (error) {
+      console.error('❌ Error guardando venta:', error);
+    }
   };
 
-  // Columnas para la tabla
+  // Columnas de la tabla
   const columns = [
     {
-      key: 'fecha_emision',
-      label: 'Fecha',
-      render: value => formatDate(value),
-      sortable: true,
-    },
-    {
-      key: 'cliente',
-      label: 'Cliente',
-      sortable: true,
-    },
-    {
       key: 'numero_factura',
-      label: 'N° Factura',
+      label: 'Factura',
       sortable: true,
+      render: (value, venta) => (
+        <div className='flex items-center space-x-3'>
+          <div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
+            <Receipt className='h-4 w-4 text-blue-600' />
+          </div>
+          <div>
+            <p className='font-medium text-gray-900'>{value}</p>
+            <p className='text-sm text-gray-500'>{venta.cliente}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'fecha_emision',
+      label: 'Fecha Emisión',
+      sortable: true,
+      render: value => (
+        <div className='flex items-center text-sm text-gray-500'>
+          <Calendar className='h-3 w-3 mr-1' />
+          {formatDate(value)}
+        </div>
+      ),
+    },
+    {
+      key: 'categoria',
+      label: 'Categoría',
+      sortable: true,
+      render: value => (
+        <Badge
+          variant={
+            value === 'Contabilidad'
+              ? 'info'
+              : value === 'Tributario'
+                ? 'warning'
+                : 'success'
+          }
+        >
+          {value}
+        </Badge>
+      ),
     },
     {
       key: 'monto_total',
-      label: 'Total',
-      render: value => formatCurrency(value),
+      label: 'Monto Total',
       sortable: true,
+      render: value => formatCurrency(value),
     },
     {
       key: 'estado',
       label: 'Estado',
-      render: (value, venta) => (
-        <Badge variant={venta?.estado_display?.color || 'default'}>
-          {venta?.estado_display?.label || value}
-        </Badge>
-      ),
       sortable: true,
+      render: value => (
+        <Badge variant={getStatusColor(value)}>{getStatusLabel(value)}</Badge>
+      ),
+    },
+    {
+      key: 'forma_pago',
+      label: 'Forma de Pago',
+      sortable: true,
+      render: value => (
+        <div className='flex items-center text-sm'>
+          {value === 'Transferencia' ? (
+            <Banknote className='h-3 w-3 mr-1 text-green-500' />
+          ) : value === 'Efectivo' ? (
+            <Coins className='h-3 w-3 mr-1 text-green-500' />
+          ) : (
+            <CreditCard className='h-3 w-3 mr-1 text-blue-500' />
+          )}
+          <span className='text-gray-600'>{value}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'dias_vencimiento',
+      label: 'Vencimiento',
+      sortable: true,
+      render: value => {
+        if (value < 0) {
+          return (
+            <div className='flex items-center text-sm text-red-600'>
+              <AlertTriangle className='h-3 w-3 mr-1' />
+              Vencida
+            </div>
+          );
+        } else if (value <= 7) {
+          return (
+            <div className='flex items-center text-sm text-yellow-600'>
+              <Clock className='h-3 w-3 mr-1' />
+              {value} días
+            </div>
+          );
+        } else {
+          return (
+            <div className='flex items-center text-sm text-green-600'>
+              <CheckCircle className='h-3 w-3 mr-1' />
+              {value} días
+            </div>
+          );
+        }
+      },
     },
     {
       key: 'actions',
       label: 'Acciones',
       render: (_, venta) => (
-        <div className='flex gap-2'>
-          {/* Aquí irían las acciones de actualización/eliminación */}
+        <div className='flex items-center space-x-2'>
           <Button
             size='sm'
-            variant='outline'
-            onClick={() => {
-              setEditingVenta(venta);
-              setShowModal(true);
-            }}
+            variant='ghost'
+            onClick={() => handleEditVenta(venta)}
+          >
+            <Eye className='h-4 w-4' />
+          </Button>
+          <Button
+            size='sm'
+            variant='ghost'
+            onClick={() => handleEditVenta(venta)}
           >
             <Edit className='h-4 w-4' />
           </Button>
           <Button
             size='sm'
-            variant='destructive'
-            onClick={() => handleEliminarVenta(venta.id)}
+            variant='ghost'
+            onClick={() => handleDeleteVenta(venta.id)}
           >
             <Trash2 className='h-4 w-4' />
           </Button>
@@ -191,528 +288,442 @@ const VentasPage = () => {
     },
   ];
 
-  // Datos para exportar
-  const exportColumns = [
-    { key: 'fecha_emision', label: 'Fecha' },
-    { key: 'cliente', label: 'Cliente' },
-    { key: 'numero_factura', label: 'N° Factura' },
-    { key: 'descripcion', label: 'Descripción' },
-    { key: 'monto_total', label: 'Total' },
-    { key: 'estado', label: 'Estado' },
-  ];
-
-  // Placeholder para datos de ventas
-  const ventas = [
-    {
-      id: 1,
-      fecha_emision: '2023-10-26',
-      cliente: 'Cliente A',
-      numero_factura: 'F001',
-      descripcion: 'Venta de productos varios',
-      monto_total: 1200.5,
-      estado: 'pagado',
-      estado_display: { label: 'Pagado', color: 'green' },
-    },
-    {
-      id: 2,
-      fecha_emision: '2023-10-25',
-      cliente: 'Cliente B',
-      numero_factura: 'F002',
-      descripcion: 'Venta de equipos de oficina',
-      monto_total: 800.0,
-      estado: 'pendiente',
-      estado_display: { label: 'Pendiente', color: 'yellow' },
-    },
-    {
-      id: 3,
-      fecha_emision: '2023-10-24',
-      cliente: 'Cliente A',
-      numero_factura: 'F003',
-      descripcion: 'Venta de software',
-      monto_total: 1500.75,
-      estado: 'vencido',
-      estado_display: { label: 'Vencido', color: 'red' },
-    },
-  ];
-
-  const ventasFiltradas = ventas.filter(venta => {
-    const matchesSearch =
-      venta.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      venta.numero_factura.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      venta.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesDate =
-      filters.fecha_desde &&
-      new Date(venta.fecha_emision) >= new Date(filters.fecha_desde);
-    const matchesDateHasta =
-      filters.fecha_hasta &&
-      new Date(venta.fecha_emision) <= new Date(filters.fecha_hasta);
-    const matchesCliente = filters.cliente
-      ? venta.cliente.toLowerCase().includes(filters.cliente.toLowerCase())
-      : true;
-    const matchesEstado = filters.estado
-      ? venta.estado === filters.estado
-      : true;
-    const matchesMontoMin = filters.monto_min
-      ? venta.monto_total >= parseFloat(filters.monto_min)
-      : true;
-    const matchesMontoMax = filters.monto_max
-      ? venta.monto_total <= parseFloat(filters.monto_max)
-      : true;
-
-    return (
-      matchesSearch &&
-      matchesDate &&
-      matchesDateHasta &&
-      matchesCliente &&
-      matchesEstado &&
-      matchesMontoMin &&
-      matchesMontoMax
-    );
-  });
-
-  const stats = {
-    totalVentas: ventasFiltradas.length,
-    totalMonto: ventasFiltradas.reduce(
-      (sum, venta) => sum + venta.monto_total,
-      0
-    ),
-    ticketPromedio:
-      ventasFiltradas.length > 0
-        ? ventasFiltradas.reduce((sum, venta) => sum + venta.monto_total, 0) /
-          ventasFiltradas.length
-        : 0,
-    ventasPagadas: ventasFiltradas.filter(venta => venta.estado === 'pagado')
-      .length,
+  // Estadísticas
+  const estadisticas = {
+    total: ventas.length,
+    pagadas: ventas.filter(v => v.estado === 'Pagada').length,
+    pendientes: ventas.filter(v => v.estado === 'Pendiente').length,
+    vencidas: ventas.filter(v => v.estado === 'Vencida').length,
+    totalFacturado: ventas.reduce((sum, v) => sum + v.monto_total, 0),
+    totalCobrado: ventas
+      .filter(v => v.estado === 'Pagada')
+      .reduce((sum, v) => sum + v.monto_total, 0),
   };
-
-  const loading = false; // Placeholder
-  const error = null; // Placeholder
-  const filters = {
-    fecha_desde: '',
-    fecha_hasta: '',
-    cliente: '',
-    estado: '',
-    monto_min: '',
-    monto_max: '',
-  };
-  const sortConfig = { key: 'fecha_emision', direction: 'desc' };
-  const searchTerm = '';
-  const selectedVenta = null;
-
-  // Placeholder para calcularTotales
-  const calcularTotales = () => {
-    console.log('Calcular Totales');
-  };
-
-  // Placeholder para setFilters
-  const setFilters = updater => {
-    console.log('Set Filters:', updater);
-  };
-
-  // Placeholder para setSortConfig
-  const setSortConfig = updater => {
-    console.log('Set Sort Config:', updater);
-  };
-
-  // Placeholder para setSearchTerm
-  const setSearchTerm = value => {
-    console.log('Set Search Term:', value);
-  };
-
-  // Placeholder para setSelectedVenta
-  const setSelectedVenta = value => {
-    console.log('Set Selected Venta:', value);
-  };
-
-  // Placeholder para clearError
-  const clearError = () => {
-    console.log('Clear Error');
-  };
-
-  // Placeholder para canView, canCreate, canUpdate, canDelete
-  const canView = true;
-  const canCreate = true;
-  const canUpdate = true;
-  const canDelete = true;
-
-  if (loading && ventas.length === 0) {
-    return (
-      <div className='flex items-center justify-center h-64'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
-        <span className='ml-3 text-lg'>Cargando ventas...</span>
-      </div>
-    );
-  }
-
-  if (error && ventas.length === 0) {
-    return (
-      <div className='flex items-center justify-center h-64'>
-        <div className='text-center'>
-          <h2 className='text-2xl font-bold text-red-600 mb-4'>
-            Error al cargar ventas
-          </h2>
-          <p className='text-gray-600 mb-4'>{error}</p>
-          <Button
-            onClick={() => {
-              // Placeholder para cargarVentas
-              console.log('Cargar Ventas');
-            }}
-          >
-            <RefreshCw className='h-4 w-4 mr-2' />
-            Reintentar
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
       <Helmet>
-        <title>Gestión de Ventas - MTZ Ouroborus AI v3.0</title>
-        <meta
-          name='description'
-          content='Administra y analiza las ventas con herramientas avanzadas de gestión y análisis'
-        />
-        <meta
-          name='keywords'
-          content='ventas, facturación, análisis, gestión, MTZ'
-        />
+        <title>Ventas - MTZ Consultores Tributarios</title>
+        <meta name='description' content='Gestión de ventas MTZ' />
       </Helmet>
 
       <div className='space-y-6'>
         {/* Header */}
-        <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4'>
+        <div className='flex justify-between items-center'>
           <div>
-            <h1 className='text-3xl font-bold text-gray-900 flex items-center gap-2'>
-              <ShoppingCart className='h-8 w-8 text-blue-600' />
+            <h1 className='text-2xl font-bold text-gray-900'>
               Gestión de Ventas
-              <Badge variant='outline' className='ml-2'>
-                v3.0 Avanzado
-              </Badge>
             </h1>
-            <p className='text-gray-600 mt-1'>
-              Análisis avanzado y gestión integral de ventas
+            <p className='text-gray-600'>
+              Administra y gestiona todas las ventas del sistema
             </p>
           </div>
-
-          <div className='flex gap-2'>
-            <Button
-              onClick={() => {
-                // Placeholder para cargarVentas
-                console.log('Cargar Ventas');
-              }}
-              disabled={loading}
-            >
-              <RefreshCw
-                className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`}
-              />
+          <div className='flex items-center space-x-3'>
+            <Button onClick={cargarVentas} variant='outline'>
+              <RefreshCw className='h-4 w-4 mr-2' />
               Actualizar
             </Button>
-            <Button variant='outline' onClick={() => setShowExportData(true)}>
-              <Download className='h-4 w-4 mr-2' />
-              Exportar
+            <Button onClick={() => setShowModal(true)} variant='primary'>
+              <Plus className='h-4 w-4 mr-2' />
+              Nueva Venta
             </Button>
-            {canCreate && (
-              <Button onClick={() => setShowModal(true)}>
-                <Plus className='h-4 w-4 mr-2' />
-                Nueva Venta
-              </Button>
-            )}
           </div>
         </div>
 
-        {/* KPIs */}
-        {stats && (
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-            <Card className='p-6'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <p className='text-sm font-medium text-gray-600'>
-                    Total Ventas
-                  </p>
-                  <p className='text-2xl font-bold text-gray-900'>
-                    {formatNumber(stats.totalVentas)}
-                  </p>
-                </div>
-                <div className='p-3 bg-blue-100 rounded-full'>
-                  <ShoppingCart className='h-6 w-6 text-blue-600' />
-                </div>
+        {/* Estadísticas */}
+        <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6'>
+          <Card>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-gray-600'>
+                  Total Ventas
+                </p>
+                <p className='text-2xl font-bold text-gray-900'>
+                  {estadisticas.total}
+                </p>
               </div>
-            </Card>
+              <div className='p-3 bg-blue-100 rounded-lg'>
+                <TrendingUp className='h-6 w-6 text-blue-600' />
+              </div>
+            </div>
+          </Card>
 
-            <Card className='p-6'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <p className='text-sm font-medium text-gray-600'>
-                    Total Facturado
-                  </p>
-                  <p className='text-2xl font-bold text-gray-900'>
-                    {formatCurrency(stats.totalMonto)}
-                  </p>
-                </div>
-                <div className='p-3 bg-green-100 rounded-full'>
-                  <DollarSign className='h-6 w-6 text-green-600' />
-                </div>
+          <Card>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-gray-600'>Pagadas</p>
+                <p className='text-2xl font-bold text-gray-900'>
+                  {estadisticas.pagadas}
+                </p>
               </div>
-            </Card>
+              <div className='p-3 bg-green-100 rounded-lg'>
+                <CheckCircle className='h-6 w-6 text-green-600' />
+              </div>
+            </div>
+          </Card>
 
-            <Card className='p-6'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <p className='text-sm font-medium text-gray-600'>
-                    Ticket Promedio
-                  </p>
-                  <p className='text-2xl font-bold text-gray-900'>
-                    {formatCurrency(stats.ticketPromedio)}
-                  </p>
-                </div>
-                <div className='p-3 bg-yellow-100 rounded-full'>
-                  <Target className='h-6 w-6 text-yellow-600' />
-                </div>
+          <Card>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-gray-600'>Pendientes</p>
+                <p className='text-2xl font-bold text-gray-900'>
+                  {estadisticas.pendientes}
+                </p>
               </div>
-            </Card>
+              <div className='p-3 bg-yellow-100 rounded-lg'>
+                <Clock className='h-6 w-6 text-yellow-600' />
+              </div>
+            </div>
+          </Card>
 
-            <Card className='p-6'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <p className='text-sm font-medium text-gray-600'>
-                    Ventas Pagadas
-                  </p>
-                  <p className='text-2xl font-bold text-gray-900'>
-                    {formatNumber(stats.ventasPagadas)}
-                  </p>
-                </div>
-                <div className='p-3 bg-green-100 rounded-full'>
-                  <CheckCircle className='h-6 w-6 text-green-600' />
-                </div>
+          <Card>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-gray-600'>Vencidas</p>
+                <p className='text-2xl font-bold text-gray-900'>
+                  {estadisticas.vencidas}
+                </p>
               </div>
-            </Card>
-          </div>
-        )}
+              <div className='p-3 bg-red-100 rounded-lg'>
+                <AlertTriangle className='h-6 w-6 text-red-600' />
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-gray-600'>
+                  Total Facturado
+                </p>
+                <p className='text-2xl font-bold text-gray-900'>
+                  {formatCurrency(estadisticas.totalFacturado)}
+                </p>
+              </div>
+              <div className='p-3 bg-purple-100 rounded-lg'>
+                <DollarSign className='h-6 w-6 text-purple-600' />
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-gray-600'>
+                  Total Cobrado
+                </p>
+                <p className='text-2xl font-bold text-gray-900'>
+                  {formatCurrency(estadisticas.totalCobrado)}
+                </p>
+              </div>
+              <div className='p-3 bg-green-100 rounded-lg'>
+                <CheckCircle className='h-6 w-6 text-green-600' />
+              </div>
+            </div>
+          </Card>
+        </div>
 
         {/* Filtros y Búsqueda */}
-        <Card className='p-4'>
-          <div className='flex flex-col lg:flex-row gap-4'>
-            <div className='flex-1'>
-              <GlobalSearch
-                value={searchTerm}
-                onChange={setSearchTerm}
-                placeholder='Buscar por cliente, factura, descripción...'
-              />
+        <Card>
+          <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Buscar
+              </label>
+              <div className='relative'>
+                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
+                <Input
+                  type='text'
+                  placeholder='Buscar por factura, cliente...'
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className='pl-10'
+                />
+              </div>
             </div>
 
-            <div className='flex gap-2'>
-              <Button
-                variant='outline'
-                onClick={() => setShowFilters(!showFilters)}
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Estado
+              </label>
+              <Select
+                value={filterEstado}
+                onChange={e => setFilterEstado(e.target.value)}
               >
-                <FilterIcon className='h-4 w-4 mr-2' />
-                Filtros
-                {showFilters ? (
-                  <ChevronUp className='h-4 w-4 ml-2' />
-                ) : (
-                  <ChevronDown className='h-4 w-4 ml-2' />
-                )}
-              </Button>
+                <option value=''>Todos los estados</option>
+                <option value='Pagada'>Pagada</option>
+                <option value='Pendiente'>Pendiente</option>
+                <option value='Vencida'>Vencida</option>
+              </Select>
+            </div>
 
-              <div className='flex gap-1'>
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'outline'}
-                  size='sm'
-                  onClick={() => setViewMode('table')}
-                >
-                  <TableIcon className='h-4 w-4' />
-                </Button>
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'outline'}
-                  size='sm'
-                  onClick={() => setViewMode('grid')}
-                >
-                  <Grid className='h-4 w-4' />
-                </Button>
-              </div>
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Categoría
+              </label>
+              <Select
+                value={filterCategoria}
+                onChange={e => setFilterCategoria(e.target.value)}
+              >
+                <option value=''>Todas las categorías</option>
+                <option value='Contabilidad'>Contabilidad</option>
+                <option value='Tributario'>Tributario</option>
+                <option value='Asesoría'>Asesoría</option>
+                <option value='Auditoría'>Auditoría</option>
+              </Select>
+            </div>
+
+            <div className='flex items-end'>
+              <Button variant='outline' className='w-full'>
+                <Filter className='h-4 w-4 mr-2' />
+                Aplicar Filtros
+              </Button>
             </div>
           </div>
-
-          {/* Filtros expandibles */}
-          {showFilters && (
-            <div className='mt-4 pt-4 border-t border-gray-200'>
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                <Input
-                  type='date'
-                  label='Fecha Desde'
-                  value={filters.fecha_desde}
-                  onChange={e =>
-                    setFilters(prev => ({
-                      ...prev,
-                      fecha_desde: e.target.value,
-                    }))
-                  }
-                />
-                <Input
-                  type='date'
-                  label='Fecha Hasta'
-                  value={filters.fecha_hasta}
-                  onChange={e =>
-                    setFilters(prev => ({
-                      ...prev,
-                      fecha_hasta: e.target.value,
-                    }))
-                  }
-                />
-                <Input
-                  label='Cliente'
-                  value={filters.cliente}
-                  onChange={e =>
-                    setFilters(prev => ({ ...prev, cliente: e.target.value }))
-                  }
-                />
-                <Select
-                  label='Estado'
-                  value={filters.estado}
-                  onChange={e =>
-                    setFilters(prev => ({ ...prev, estado: e.target.value }))
-                  }
-                >
-                  <option value=''>Todos los estados</option>
-                  <option value='pendiente'>Pendiente</option>
-                  <option value='pagado'>Pagado</option>
-                  <option value='vencido'>Vencido</option>
-                  <option value='cancelado'>Cancelado</option>
-                </Select>
-                <Input
-                  label='Monto Mínimo'
-                  type='number'
-                  value={filters.monto_min}
-                  onChange={e =>
-                    setFilters(prev => ({ ...prev, monto_min: e.target.value }))
-                  }
-                />
-                <Input
-                  label='Monto Máximo'
-                  type='number'
-                  value={filters.monto_max}
-                  onChange={e =>
-                    setFilters(prev => ({ ...prev, monto_max: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-          )}
         </Card>
 
         {/* Tabla de Ventas */}
-        <Card className='p-6'>
-          <div className='flex justify-between items-center mb-6'>
-            <h2 className='text-xl font-semibold'>
-              Ventas ({formatNumber(ventasFiltradas.length)})
-            </h2>
-            <div className='flex gap-2'>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setShowAnalytics(true)}
-              >
-                <BarChart3 className='h-4 w-4 mr-2' />
-                Análisis
-              </Button>
-            </div>
+        <Card>
+          <div className='flex justify-between items-center mb-4'>
+            <h3 className='text-lg font-semibold text-gray-900'>
+              Lista de Ventas ({ventasFiltradas.length})
+            </h3>
+            <Button variant='outline'>
+              <Download className='h-4 w-4 mr-2' />
+              Exportar
+            </Button>
           </div>
 
-          {viewMode === 'table' ? (
+          {loading ? (
+            <div className='flex justify-center py-8'>
+              <LoadingSpinner />
+            </div>
+          ) : error ? (
+            <div className='text-center py-8'>
+              <AlertTriangle className='h-12 w-12 text-red-500 mx-auto mb-4' />
+              <p className='text-red-600'>{error}</p>
+            </div>
+          ) : (
             <TableComponent
               data={ventasFiltradas}
               columns={columns}
-              sortConfig={sortConfig}
-              onSort={handleSort}
-              loading={loading}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={key => {
+                if (sortBy === key) {
+                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                } else {
+                  setSortBy(key);
+                  setSortOrder('asc');
+                }
+              }}
             />
-          ) : (
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-              {ventasFiltradas.map(venta => (
-                <Card key={venta.id} className='p-4'>
-                  <div className='flex justify-between items-start mb-3'>
-                    <div>
-                      <h3 className='font-semibold'>{venta.cliente}</h3>
-                      <p className='text-sm text-gray-600'>
-                        {venta.numero_factura}
-                      </p>
-                    </div>
-                    <Badge variant={venta.estado_display?.color || 'default'}>
-                      {venta.estado_display?.label || venta.estado}
-                    </Badge>
-                  </div>
-                  <p className='text-sm text-gray-600 mb-3'>
-                    {venta.descripcion}
-                  </p>
-                  <div className='flex justify-between items-center'>
-                    <span className='font-semibold'>
-                      {formatCurrency(venta.monto_total)}
-                    </span>
-                    <div className='flex gap-1'>
-                      {/* Aquí irían las acciones de actualización/eliminación */}
-                      <Button
-                        size='sm'
-                        variant='outline'
-                        onClick={() => {
-                          setEditingVenta(venta);
-                          setShowModal(true);
-                        }}
-                      >
-                        <Edit className='h-4 w-4' />
-                      </Button>
-                      <Button
-                        size='sm'
-                        variant='destructive'
-                        onClick={() => handleEliminarVenta(venta.id)}
-                      >
-                        <Trash2 className='h-4 w-4' />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
           )}
         </Card>
-
-        {/* Export Data Modal */}
-        {showExportData && (
-          <ExportData
-            data={ventasFiltradas}
-            columns={exportColumns}
-            filename='ventas-mtz'
-            onClose={() => setShowExportData(false)}
-          />
-        )}
-
-        {/* Modal de Formulario de Venta */}
-        {showModal && (
-          <Modal
-            isOpen={showModal}
-            onClose={() => {
-              setShowModal(false);
-              setEditingVenta(null);
-            }}
-            title={editingVenta ? 'Editar Venta' : 'Nueva Venta'}
-            size='xl'
-          >
-            <VentaForm
-              venta={editingVenta}
-              onSubmit={editingVenta ? handleActualizarVenta : handleCrearVenta}
-              onCancel={() => {
-                setShowModal(false);
-                setEditingVenta(null);
-              }}
-              loading={loading}
-              calcularTotales={calcularTotales}
-            />
-          </Modal>
-        )}
       </div>
+
+      {/* Modal de Venta */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setSelectedVenta(null);
+        }}
+        title={selectedVenta ? 'Editar Venta' : 'Nueva Venta'}
+      >
+        <VentaForm
+          venta={selectedVenta}
+          onSave={handleSaveVenta}
+          onCancel={() => {
+            setShowModal(false);
+            setSelectedVenta(null);
+          }}
+        />
+      </Modal>
     </>
+  );
+};
+
+// Componente de formulario de venta
+const VentaForm = ({ venta, onSave, onCancel }) => {
+  const [formData, setFormData] = useState({
+    numero_factura: venta?.numero_factura || '',
+    cliente: venta?.cliente || '',
+    descripcion: venta?.descripcion || '',
+    monto_subtotal: venta?.monto_subtotal || 0,
+    monto_iva: venta?.monto_iva || 0,
+    monto_total: venta?.monto_total || 0,
+    estado: venta?.estado || 'Pendiente',
+    forma_pago: venta?.forma_pago || 'Transferencia',
+    categoria: venta?.categoria || 'Contabilidad',
+  });
+
+  const handleSubmit = e => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  const calcularTotal = () => {
+    const subtotal = parseFloat(formData.monto_subtotal) || 0;
+    const iva = subtotal * 0.19; // 19% IVA
+    const total = subtotal + iva;
+
+    setFormData(prev => ({
+      ...prev,
+      monto_iva: iva,
+      monto_total: total,
+    }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className='space-y-4'>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            Número de Factura
+          </label>
+          <Input
+            type='text'
+            value={formData.numero_factura}
+            onChange={e =>
+              setFormData(prev => ({ ...prev, numero_factura: e.target.value }))
+            }
+            required
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            Cliente
+          </label>
+          <Input
+            type='text'
+            value={formData.cliente}
+            onChange={e =>
+              setFormData(prev => ({ ...prev, cliente: e.target.value }))
+            }
+            required
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            Categoría
+          </label>
+          <Select
+            value={formData.categoria}
+            onChange={e =>
+              setFormData(prev => ({ ...prev, categoria: e.target.value }))
+            }
+          >
+            <option value='Contabilidad'>Contabilidad</option>
+            <option value='Tributario'>Tributario</option>
+            <option value='Asesoría'>Asesoría</option>
+            <option value='Auditoría'>Auditoría</option>
+          </Select>
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            Estado
+          </label>
+          <Select
+            value={formData.estado}
+            onChange={e =>
+              setFormData(prev => ({ ...prev, estado: e.target.value }))
+            }
+          >
+            <option value='Pendiente'>Pendiente</option>
+            <option value='Pagada'>Pagada</option>
+            <option value='Vencida'>Vencida</option>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <label className='block text-sm font-medium text-gray-700 mb-2'>
+          Descripción
+        </label>
+        <textarea
+          value={formData.descripcion}
+          onChange={e =>
+            setFormData(prev => ({ ...prev, descripcion: e.target.value }))
+          }
+          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          rows={3}
+          required
+        />
+      </div>
+
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            Subtotal
+          </label>
+          <Input
+            type='number'
+            value={formData.monto_subtotal}
+            onChange={e => {
+              setFormData(prev => ({
+                ...prev,
+                monto_subtotal: parseFloat(e.target.value) || 0,
+              }));
+              setTimeout(calcularTotal, 100);
+            }}
+            required
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            IVA (19%)
+          </label>
+          <Input
+            type='number'
+            value={formData.monto_iva}
+            readOnly
+            className='bg-gray-50'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-2'>
+            Total
+          </label>
+          <Input
+            type='number'
+            value={formData.monto_total}
+            readOnly
+            className='bg-gray-50 font-bold'
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className='block text-sm font-medium text-gray-700 mb-2'>
+          Forma de Pago
+        </label>
+        <Select
+          value={formData.forma_pago}
+          onChange={e =>
+            setFormData(prev => ({ ...prev, forma_pago: e.target.value }))
+          }
+        >
+          <option value='Transferencia'>Transferencia</option>
+          <option value='Efectivo'>Efectivo</option>
+          <option value='Cheque'>Cheque</option>
+        </Select>
+      </div>
+
+      <div className='flex justify-end space-x-3 pt-4'>
+        <Button type='button' variant='outline' onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type='submit' variant='primary'>
+          {venta ? 'Actualizar' : 'Crear'} Venta
+        </Button>
+      </div>
+    </form>
   );
 };
 
