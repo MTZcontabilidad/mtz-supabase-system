@@ -38,19 +38,40 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       console.log('🔄 Intentando login con email:', email);
 
-      // Verificar credenciales de demo
-      if (
-        email === 'mtzcontabilidad@gmail.com' &&
-        password === 'Alohomora33.'
-      ) {
-        console.log('✅ Login demo exitoso para:', email);
+      // Verificar credenciales de prueba
+      const testCredentials = {
+        'admin@mtz.com': {
+          password: 'admin123',
+          role: 'Administrador',
+          nombre: 'Administrador',
+        },
+        'gerente@mtz.com': {
+          password: 'gerente123',
+          role: 'Gerente',
+          nombre: 'Gerente',
+        },
+        'vendedor@mtz.com': {
+          password: 'vendedor123',
+          role: 'Vendedor',
+          nombre: 'Vendedor',
+        },
+        'cliente@mtz.com': {
+          password: 'cliente123',
+          role: 'Cliente',
+          nombre: 'Cliente',
+        },
+      };
 
-        // Crear usuario demo
+      const testUser = testCredentials[email];
+      if (testUser && testUser.password === password) {
+        console.log('✅ Login de prueba exitoso para:', email);
+
+        // Crear usuario de prueba
         const demoUser = {
-          id: 'demo-admin-id',
+          id: `test-${email.split('@')[0]}-id`,
           email: email,
           user_metadata: {
-            nombre: 'Administrador',
+            nombre: testUser.nombre,
             apellido: 'MTZ',
           },
           created_at: new Date().toISOString(),
@@ -59,31 +80,38 @@ export const AuthProvider = ({ children }) => {
 
         setUser(demoUser);
 
-        // Crear perfil demo
+        // Crear perfil de prueba
         const demoProfile = {
-          id: 'demo-admin-id',
+          id: `test-${email.split('@')[0]}-id`,
           email: email,
-          nombre_completo: 'Administrador MTZ',
-          rol_id: 1,
+          nombre_completo: `${testUser.nombre} MTZ`,
+          rol_id:
+            testUser.role === 'Administrador'
+              ? 1
+              : testUser.role === 'Gerente'
+              ? 2
+              : testUser.role === 'Vendedor'
+              ? 3
+              : 4,
           activo: true,
           telefono: '+56 9 1234 5678',
-          cargo: 'Administrador General',
+          cargo: testUser.nombre,
           departamento: 'Administración',
         };
 
         setUserProfile(demoProfile);
-        setRole('Administrador');
+        setRole(testUser.role);
         setPermissions({});
 
-        // Guardar sesión demo en localStorage
+        // Guardar sesión de prueba en localStorage
         const demoSession = {
           user: demoUser,
           profile: demoProfile,
-          role: 'Administrador',
+          role: testUser.role,
           permissions: {},
           email: email,
         };
-        localStorage.setItem('mtz-demo-session', JSON.stringify(demoSession));
+        localStorage.setItem('mtz-test-session', JSON.stringify(demoSession));
 
         return { success: true, data: { user: demoUser } };
       }
@@ -151,8 +179,9 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       console.log('🔄 Cerrando sesión...');
 
-      // Limpiar sesión demo si existe
+      // Limpiar sesiones de prueba si existen
       localStorage.removeItem('mtz-demo-session');
+      localStorage.removeItem('mtz-test-session');
 
       await supabase.auth.signOut();
       setUser(null);
@@ -175,9 +204,9 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('🔄 Cargando perfil de usuario...');
 
-      // Si es usuario demo, no cargar desde Supabase
-      if (authUser.id === 'demo-admin-id') {
-        console.log('✅ Usuario demo detectado, usando perfil local');
+      // Si es usuario de prueba, no cargar desde Supabase
+      if (authUser.id.startsWith('test-')) {
+        console.log('✅ Usuario de prueba detectado, usando perfil local');
         return;
       }
 
@@ -270,15 +299,15 @@ export const AuthProvider = ({ children }) => {
       try {
         console.log('🔄 Inicializando autenticación...');
 
-        // Verificar si hay sesión demo en localStorage
-        const demoSession = localStorage.getItem('mtz-demo-session');
-        if (demoSession) {
-          const demoData = JSON.parse(demoSession);
-          console.log('✅ Sesión demo encontrada:', demoData.email);
-          setUser(demoData.user);
-          setUserProfile(demoData.profile);
-          setRole(demoData.role);
-          setPermissions(demoData.permissions || {});
+        // Verificar si hay sesión de prueba en localStorage
+        const testSession = localStorage.getItem('mtz-test-session');
+        if (testSession) {
+          const testData = JSON.parse(testSession);
+          console.log('✅ Sesión de prueba encontrada:', testData.email);
+          setUser(testData.user);
+          setUserProfile(testData.profile);
+          setRole(testData.role);
+          setPermissions(testData.permissions || {});
           setLoading(false);
           return;
         }
