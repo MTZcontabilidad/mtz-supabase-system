@@ -19,7 +19,15 @@ import {
 import { supabase } from '@/lib/supabase.js';
 import Button from '@/components/ui/Button.jsx';
 import Input from '@/components/ui/Input.jsx';
-import { MTZ_CONFIG } from '@/lib/config.js';
+// Configuración del sistema
+const MTZ_CONFIG = {
+  validation: {
+    email: {
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      message: 'Formato de email inválido',
+    },
+  },
+};
 
 // Esquema de validación para envío de email
 const emailSchema = z.object({
@@ -251,7 +259,11 @@ const PasswordResetForm = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete='new-password'
                 placeholder='••••••••'
-                className={`pl-10 pr-10 ${passwordForm.formState.errors.newPassword ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                className={`pl-10 pr-10 ${
+                  passwordForm.formState.errors.newPassword
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                    : ''
+                }`}
                 {...passwordForm.register('newPassword', {
                   onChange: handleFieldChange,
                 })}
@@ -295,7 +307,11 @@ const PasswordResetForm = () => {
                 type={showConfirmPassword ? 'text' : 'password'}
                 autoComplete='new-password'
                 placeholder='••••••••'
-                className={`pl-10 pr-10 ${passwordForm.formState.errors.confirmPassword ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                className={`pl-10 pr-10 ${
+                  passwordForm.formState.errors.confirmPassword
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                    : ''
+                }`}
                 {...passwordForm.register('confirmPassword', {
                   onChange: handleFieldChange,
                 })}
@@ -411,7 +427,11 @@ const PasswordResetForm = () => {
               type='email'
               autoComplete='email'
               placeholder='tu@email.com'
-              className={`pl-10 ${emailForm.formState.errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+              className={`pl-10 ${
+                emailForm.formState.errors.email
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                  : ''
+              }`}
               {...emailForm.register('email', {
                 onChange: handleFieldChange,
               })}

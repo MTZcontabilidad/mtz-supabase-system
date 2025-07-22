@@ -11,7 +11,20 @@ import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import useAuth from '@/hooks/useAuth.js';
 import Button from '@/components/ui/Button.jsx';
 import Input from '@/components/ui/Input.jsx';
-import { MTZ_CONFIG } from '@/lib/config.js';
+// Configuración del sistema
+const MTZ_CONFIG = {
+  validation: {
+    email: {
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      message: 'Formato de email inválido',
+    },
+  },
+  security: {
+    password: {
+      minLength: 6,
+    },
+  },
+};
 
 // Esquema de validación con Zod
 const loginSchema = z.object({
@@ -139,7 +152,11 @@ const LoginForm = () => {
             type='email'
             autoComplete='email'
             placeholder='tu@email.com'
-            className={`pl-10 ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+            className={`pl-10 ${
+              errors.email
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                : ''
+            }`}
             {...register('email', {
               onChange: handleFieldChange,
             })}
@@ -172,7 +189,11 @@ const LoginForm = () => {
             type={showPassword ? 'text' : 'password'}
             autoComplete='current-password'
             placeholder='••••••••'
-            className={`pl-10 pr-10 ${errors.password ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+            className={`pl-10 pr-10 ${
+              errors.password
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                : ''
+            }`}
             {...register('password', {
               onChange: handleFieldChange,
             })}

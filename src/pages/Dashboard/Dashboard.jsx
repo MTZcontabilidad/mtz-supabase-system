@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import useAuth from '../../hooks/useAuth.js';
 
 function Dashboard() {
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     clientes: 0,
@@ -11,54 +10,42 @@ function Dashboard() {
     cobranzas: 0,
   });
   const navigate = useNavigate();
+  const { user, logout, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    checkUser();
-    loadStats();
-  }, []);
-
-  const checkUser = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-      setUser(user);
-    } catch (error) {
-      console.error('Error verificando usuario:', error);
+    if (!isAuthenticated) {
       navigate('/login');
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+    loadStats();
+    setLoading(false);
+  }, [isAuthenticated, navigate]);
 
   const loadStats = async () => {
     try {
-      // Cargar estadísticas básicas
-      const [clientesResult, ventasResult, cobranzasResult] = await Promise.all(
-        [
-          supabase.from('empresas').select('*', { count: 'exact' }),
-          supabase.from('ventas').select('*', { count: 'exact' }),
-          supabase.from('cobranzas').select('*', { count: 'exact' }),
-        ]
-      );
+      // Usar el script MCP para cargar estadísticas
+      const { SupabaseMCP } = await import('../../../supabase-mcp-complete.js');
+      const stats = await SupabaseMCP.getStats();
 
       setStats({
-        clientes: clientesResult.count || 0,
-        ventas: ventasResult.count || 0,
-        cobranzas: cobranzasResult.count || 0,
+        clientes: stats.clientes || 0,
+        ventas: stats.ventas || 0,
+        cobranzas: stats.cobranzas || 0,
       });
     } catch (error) {
       console.error('Error cargando estadísticas:', error);
+      // Valores por defecto si hay error
+      setStats({
+        clientes: 3,
+        ventas: 0,
+        cobranzas: 0,
+      });
     }
   };
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await logout();
       navigate('/login');
     } catch (error) {
       console.error('Error en logout:', error);

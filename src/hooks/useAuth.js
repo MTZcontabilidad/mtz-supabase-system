@@ -4,8 +4,32 @@
 
 import { useContext, useCallback } from 'react';
 import { AuthContext } from '@/contexts/AuthContext.jsx';
-import { MTZ_CONFIG } from '@/lib/config.js';
 import { handleError } from '@/utils/helpers.js';
+
+// Configuración del sistema
+const MTZ_CONFIG = {
+  validation: {
+    email: {
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      message: 'Formato de email inválido',
+    },
+  },
+  security: {
+    password: {
+      minLength: 6,
+      requireUppercase: false,
+      requireLowercase: false,
+      requireNumbers: false,
+      requireSpecialChars: false,
+    },
+    session: {
+      timeout: 24 * 60 * 60 * 1000, // 24 horas
+    },
+  },
+  analytics: {
+    enabled: false,
+  },
+};
 
 /**
  * Hook personalizado para manejar la autenticación

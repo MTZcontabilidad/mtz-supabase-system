@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import useAuth from '../../hooks/useAuth.js';
 
 function Login() {
-  const [email, setEmail] = useState('mtzcontabilidad@gmail.com');
-  const [password, setPassword] = useState('Alohomora33@');
+  const [email, setEmail] = useState('admin@mtz.com');
+  const [password, setPassword] = useState('admin123');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async e => {
     e.preventDefault();
@@ -15,19 +16,13 @@ function Login() {
     setError('');
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const result = await login(email, password);
 
-      if (error) {
-        setError(error.message);
-        return;
-      }
-
-      if (data.user) {
-        console.log('✅ Login exitoso:', data.user.email);
+      if (result.success) {
+        console.log('✅ Login exitoso:', email);
         navigate('/dashboard');
+      } else {
+        setError(result.error);
       }
     } catch (err) {
       console.error('Error en login:', err);
@@ -105,9 +100,10 @@ function Login() {
             Credenciales de Prueba:
           </h3>
           <div className='mt-2 text-sm text-blue-700'>
-            <p>Admin: mtzcontabilidad@gmail.com / Alohomora33@</p>
-            <p>Gerente: gerente@mtz.cl / password123</p>
-            <p>Analista: analista@mtz.cl / password123</p>
+            <p>Administrador: admin@mtz.com / admin123</p>
+            <p>Gerente: gerente@mtz.com / gerente123</p>
+            <p>Vendedor: vendedor@mtz.com / vendedor123</p>
+            <p>Cliente: cliente@mtz.com / cliente123</p>
           </div>
         </div>
       </div>

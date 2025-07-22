@@ -19,7 +19,20 @@ import {
 import useAuth from '@/hooks/useAuth.js';
 import Button from '@/components/ui/Button.jsx';
 import Input from '@/components/ui/Input.jsx';
-import { MTZ_CONFIG } from '@/lib/config.js';
+// Configuración del sistema
+const MTZ_CONFIG = {
+  validation: {
+    email: {
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      message: 'Formato de email inválido',
+    },
+  },
+  security: {
+    password: {
+      minLength: 6,
+    },
+  },
+};
 
 // Esquema de validación con Zod
 const registerSchema = z
@@ -183,7 +196,11 @@ const RegisterForm = () => {
             type='text'
             autoComplete='name'
             placeholder='Tu nombre completo'
-            className={`pl-10 ${errors.fullName ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+            className={`pl-10 ${
+              errors.fullName
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                : ''
+            }`}
             {...register('fullName', {
               onChange: handleFieldChange,
             })}
@@ -216,7 +233,11 @@ const RegisterForm = () => {
             type='email'
             autoComplete='email'
             placeholder='tu@email.com'
-            className={`pl-10 ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+            className={`pl-10 ${
+              errors.email
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                : ''
+            }`}
             {...register('email', {
               onChange: handleFieldChange,
             })}
@@ -249,7 +270,11 @@ const RegisterForm = () => {
             type={showPassword ? 'text' : 'password'}
             autoComplete='new-password'
             placeholder='••••••••'
-            className={`pl-10 pr-10 ${errors.password ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+            className={`pl-10 pr-10 ${
+              errors.password
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                : ''
+            }`}
             {...register('password', {
               onChange: handleFieldChange,
             })}
@@ -322,7 +347,11 @@ const RegisterForm = () => {
             type={showConfirmPassword ? 'text' : 'password'}
             autoComplete='new-password'
             placeholder='••••••••'
-            className={`pl-10 pr-10 ${errors.confirmPassword ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+            className={`pl-10 pr-10 ${
+              errors.confirmPassword
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                : ''
+            }`}
             {...register('confirmPassword', {
               onChange: handleFieldChange,
             })}

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 function ClientesPage() {
@@ -13,19 +12,19 @@ function ClientesPage() {
 
   const loadClientes = async () => {
     try {
-      const { data, error } = await supabase
-        .from('empresas')
-        .select('*')
-        .order('id', { ascending: true });
+      // Usar el script MCP para cargar clientes
+      const { SupabaseMCP } = await import('../../../supabase-mcp-complete.js');
+      const result = await SupabaseMCP.queryTable('clientes', 50);
 
-      if (error) {
-        console.error('Error cargando clientes:', error);
-        return;
+      if (result.success) {
+        setClientes(result.data || []);
+      } else {
+        console.error('Error cargando clientes:', result.error);
+        setClientes([]);
       }
-
-      setClientes(data || []);
     } catch (error) {
       console.error('Error:', error);
+      setClientes([]);
     } finally {
       setLoading(false);
     }
@@ -82,7 +81,10 @@ function ClientesPage() {
                       RUC
                     </th>
                     <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                      Estado
+                      Email
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                      Teléfono
                     </th>
                   </tr>
                 </thead>
@@ -97,6 +99,12 @@ function ClientesPage() {
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
                         {cliente.ruc}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+                        {cliente.email}
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+                        {cliente.telefono}
                       </td>
                       <td className='px-6 py-4 whitespace-nowrap'>
                         <span

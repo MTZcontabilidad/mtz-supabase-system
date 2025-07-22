@@ -1,17 +1,13 @@
 ﻿import React from 'react';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext.jsx';
 import Login from './pages/Auth/Login';
 import Dashboard from './pages/Dashboard/Dashboard';
 import ClientesPage from './pages/Clientes/ClientesPage';
 
 function App() {
   return (
-    <Router>
+    <AuthProvider>
       <div className='App'>
         <Routes>
           <Route path='/login' element={<Login />} />
@@ -20,7 +16,7 @@ function App() {
           <Route path='/' element={<Navigate to='/login' replace />} />
         </Routes>
       </div>
-    </Router>
+    </AuthProvider>
   );
 }
 

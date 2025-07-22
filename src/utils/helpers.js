@@ -2,7 +2,13 @@
 // 🛠️ UTILIDADES GLOBALES - SISTEMA MTZ v3.0
 // =====================================================================
 
-import { MTZ_CONFIG } from '@/lib/config.js';
+// Configuración del sistema
+const MTZ_CONFIG = {
+  app: {
+    name: 'MTZ Sistema',
+    version: '3.0.0',
+  },
+};
 
 // =====================================================================
 // 📅 FUNCIONES DE FECHA
@@ -176,7 +182,9 @@ export const validateFile = (file, maxSize = MTZ_CONFIG.files.maxSize) => {
   if (file.size > maxSize) {
     return {
       isValid: false,
-      error: `El archivo es demasiado grande. Máximo ${formatFileSize(maxSize)}`,
+      error: `El archivo es demasiado grande. Máximo ${formatFileSize(
+        maxSize
+      )}`,
     };
   }
 
