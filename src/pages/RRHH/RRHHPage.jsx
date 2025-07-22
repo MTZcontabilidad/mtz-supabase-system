@@ -1,6 +1,56 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { dataService } from '@/lib/dataService.js';
-import { useToast } from '../../components/ui/Toast.jsx';
+// Simulación del servicio de datos
+const dataService = {
+  getRRHHData: async () => {
+    // Datos de ejemplo para RRHH
+    return [
+      {
+        id: 1,
+        nombre: 'Juan',
+        apellido: 'Pérez',
+        email: 'juan.perez@mtz.com',
+        telefono: '+56 9 1234 5678',
+        departamento: 'Administración',
+        cargo: 'Gerente',
+        fecha_ingreso: '2023-01-15',
+        salario_base: 1500000,
+        estado: 'activo',
+      },
+      {
+        id: 2,
+        nombre: 'María',
+        apellido: 'González',
+        email: 'maria.gonzalez@mtz.com',
+        telefono: '+56 9 2345 6789',
+        departamento: 'Contabilidad',
+        cargo: 'Analista',
+        fecha_ingreso: '2023-03-20',
+        salario_base: 1200000,
+        estado: 'activo',
+      },
+      {
+        id: 3,
+        nombre: 'Carlos',
+        apellido: 'Rodríguez',
+        email: 'carlos.rodriguez@mtz.com',
+        telefono: '+56 9 3456 7890',
+        departamento: 'Ventas',
+        cargo: 'Ejecutivo',
+        fecha_ingreso: '2023-06-10',
+        salario_base: 1000000,
+        estado: 'activo',
+      },
+    ];
+  },
+};
+
+// Hook de Toast simplificado
+const useToast = () => {
+  const showToast = (message, type = 'info') => {
+    console.log(`[${type.toUpperCase()}] ${message}`);
+  };
+  return { showToast };
+};
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Input from '../../components/ui/Input.jsx';

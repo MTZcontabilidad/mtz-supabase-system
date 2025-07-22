@@ -161,27 +161,39 @@ function Dashboard() {
           <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
             <button
               onClick={() => navigate('/clientes')}
-              className='bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700'
+              className='bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700 transition-colors'
             >
-              Gestionar Clientes
+              <div className='text-center'>
+                <div className='text-2xl mb-1'>👥</div>
+                <div className='text-sm font-medium'>Clientes</div>
+              </div>
             </button>
             <button
               onClick={() => navigate('/ventas')}
-              className='bg-green-600 text-white p-4 rounded-lg hover:bg-green-700'
+              className='bg-green-600 text-white p-4 rounded-lg hover:bg-green-700 transition-colors'
             >
-              Gestionar Ventas
-            </button>
-            <button
-              onClick={() => navigate('/cobranzas')}
-              className='bg-yellow-600 text-white p-4 rounded-lg hover:bg-yellow-700'
-            >
-              Gestionar Cobranzas
+              <div className='text-center'>
+                <div className='text-2xl mb-1'>📈</div>
+                <div className='text-sm font-medium'>Ventas</div>
+              </div>
             </button>
             <button
               onClick={() => navigate('/rrhh')}
-              className='bg-purple-600 text-white p-4 rounded-lg hover:bg-purple-700'
+              className='bg-purple-600 text-white p-4 rounded-lg hover:bg-purple-700 transition-colors'
             >
-              Gestionar RRHH
+              <div className='text-center'>
+                <div className='text-2xl mb-1'>👨‍💼</div>
+                <div className='text-sm font-medium'>RRHH</div>
+              </div>
+            </button>
+            <button
+              onClick={() => navigate('/iva')}
+              className='bg-orange-600 text-white p-4 rounded-lg hover:bg-orange-700 transition-colors'
+            >
+              <div className='text-center'>
+                <div className='text-2xl mb-1'>🧮</div>
+                <div className='text-sm font-medium'>IVA</div>
+              </div>
             </button>
           </div>
         </div>
