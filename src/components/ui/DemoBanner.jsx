@@ -1,8 +1,8 @@
+import React, { useState, useCallback, useEffect } from 'react';
 // =====================================================================
 // 🎭 BANNER DE MODO DEMO - SISTEMA MTZ v3.0
 // =====================================================================
 
-import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import useAuth from '@/hooks/useAuth.js';
 

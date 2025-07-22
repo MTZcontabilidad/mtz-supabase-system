@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/utils/helpers.js';
 

@@ -1,8 +1,26 @@
+import React, { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LineChart, Users, BarChart3, Shield, Zap, TrendingUp, CheckCircle, ArrowRight, Building2, Calculator, Globe, Phone, Mail,  } from 'lucide-react';
+import {
+  LineChart,
+  Users,
+  BarChart3,
+  Shield,
+  Zap,
+  TrendingUp,
+  CheckCircle,
+  ArrowRight,
+  Building2,
+  Calculator,
+  Globe,
+  Phone,
+  Mail,
+} from 'lucide-react';
 import Button from '../../components/ui/Button.jsx';
+import { supabase } from '../../lib/supabase.js';
 
 const LandingPage = () => {
+  const [clientesCount, setClientesCount] = useState(null);
+  const [facturacionTotal, setFacturacionTotal] = useState(null);
   const features = [
     {
       icon: Users,
@@ -41,9 +59,43 @@ const LandingPage = () => {
     },
   ];
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      // Obtener número de clientes
+      const { count: clientes, error: clientesError } = await supabase
+        .from('empresas')
+        .select('*', { count: 'exact', head: true });
+      setClientesCount(clientesError ? null : clientes);
+
+      // Obtener facturación total
+      const { data: ventas, error: ventasError } = await supabase
+        .from('ventas')
+        .select('monto_total');
+      if (!ventasError && ventas) {
+        const total = ventas.reduce(
+          (sum, v) => sum + (parseFloat(v.monto_total) || 0),
+          0
+        );
+        setFacturacionTotal(total);
+      } else {
+        setFacturacionTotal(null);
+      }
+    };
+    fetchStats();
+  }, []);
+
   const stats = [
-    { number: '135+', label: 'Clientes Activos' },
-    { number: '$89M+', label: 'Facturación Total' },
+    {
+      number: clientesCount !== null ? clientesCount : '...',
+      label: 'Clientes Activos',
+    },
+    {
+      number:
+        facturacionTotal !== null
+          ? `$${facturacionTotal.toLocaleString('es-CL')}`
+          : '...',
+      label: 'Facturación Total',
+    },
     { number: '15+', label: 'Años de Experiencia' },
     { number: '99.9%', label: 'Uptime del Sistema' },
   ];

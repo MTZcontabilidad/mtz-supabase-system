@@ -10,3 +10,12 @@ export { default as usePermissions } from './usePermissions.js';
 
 // Hook de roles de usuario
 export { default as useUserRole } from './useUserRole.js';
+
+// Hook de gestión de usuarios
+export { default as useUserManagement } from './useUserManagement.js';
+
+// Hook de gestión de contratos
+export { default as useContratos } from './useContratos.js';
+
+// Hook de gestión de cobranzas
+export { default as useCobranzas } from './useCobranzas.js';

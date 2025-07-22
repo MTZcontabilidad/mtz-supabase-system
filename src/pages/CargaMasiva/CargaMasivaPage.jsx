@@ -1,17 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { Download, ShoppingCart, TrendingUp, Users, RefreshCw, Plus, DollarSign,  } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import {
+  Download,
+  ShoppingCart,
+  TrendingUp,
+  Users,
+  RefreshCw,
+  Plus,
+  DollarSign,
+} from 'lucide-react';
 import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Badge from '../../components/ui/Badge.jsx';
 import Input from '../../components/ui/Input.jsx';
-import { Dialog,
+import {
+  Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
- } from '../../components/ui/Dialog.jsx';
+} from '../../components/ui/Dialog.jsx';
 import { supabase } from '../../lib/supabase.js';
-import { formatCurrency, formatDate  } from '../../utils/helpers.js';
+import { formatCurrency, formatDate } from '../../utils/helpers.js';
 
 /**
  * CargaMasivaPage Component
@@ -70,6 +79,11 @@ const CargaMasivaPage = () => {
     'Otros',
   ];
 
+  // NOTA IMPORTANTE:
+  // Esta página ya utiliza supabase para cargar y validar datos de clientes, ventas y compras.
+  // Asegúrate de que las tablas 'empresas', 'ventas' y 'compras' existen en Supabase y tienen los campos correctos.
+  // Si modificas la estructura de la base de datos, actualiza aquí los nombres de los campos.
+  // Si tienes dudas, consulta a un programador o revisa la documentación interna.
   // Cargar datos
   const cargarDatos = async () => {
     try {
@@ -876,9 +890,11 @@ const CargaMasivaPage = () => {
                         <td className='py-2 px-3 text-sm text-gray-900'>
                           {clientes.find(
                             c => c.id_cliente === parseInt(item.cliente_id)
-                          )?.nombre || clientes.find(
-                            c => c.id_cliente === parseInt(item.cliente_id)
-                          )?.razon_social || 'Cliente no encontrado'}
+                          )?.nombre ||
+                            clientes.find(
+                              c => c.id_cliente === parseInt(item.cliente_id)
+                            )?.razon_social ||
+                            'Cliente no encontrado'}
                         </td>
                         <td className='py-2 px-3 text-sm text-gray-900'>
                           {item.numero_factura}

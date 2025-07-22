@@ -1,3 +1,4 @@
+import React, { useState, useCallback, useEffect } from 'react';
 import ClientesEjemplo from '../../components/ejemplo/ClientesEjemplo.jsx';
 
 function EjemploPage() {
@@ -91,6 +92,11 @@ function EjemploPage() {
             </p>
           </div>
         </div>
+        {/* NOTA IMPORTANTE:
+        // Esta página es solo de ejemplo y demostración.
+        // Los datos pueden ser simulados o reales según el componente ClientesEjemplo.
+        // No afecta la base de datos principal ni la operación del sistema.
+        // Si tienes dudas, consulta a un programador o revisa la documentación interna. */}
       </div>
     </div>
   );

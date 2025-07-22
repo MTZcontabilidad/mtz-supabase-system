@@ -1,3 +1,4 @@
+import React, { useState, useCallback, useEffect } from 'react';
 // =====================================================================
 // 🐼 COMPONENTE LOGO MTZ - Reutilizable
 // Logo corporativo de MTZ Consultores Tributarios

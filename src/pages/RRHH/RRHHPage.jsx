@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { dataService } from '../../lib/dataService.js';
+import React, { useState, useCallback, useEffect } from 'react';
+import { dataService } from '@/lib/dataService.js';
 import { useToast } from '../../components/ui/Toast.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';

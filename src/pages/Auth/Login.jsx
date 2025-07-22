@@ -1,54 +1,118 @@
-﻿// =====================================================================
-// 🔐 PÁGINA DE LOGIN - SISTEMA MTZ v3.0
-// =====================================================================
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 
-import React, { useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
-import useAuth from '@/hooks/useAuth.js';
-import AuthLayout from '@/components/auth/AuthLayout.jsx';
-import LoginForm from '@/components/auth/LoginForm.jsx';
+function Login() {
+  const [email, setEmail] = useState('mtzcontabilidad@gmail.com');
+  const [password, setPassword] = useState('Alohomora33@');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-/**
- * Página de inicio de sesión
- * Maneja la autenticación y redirección de usuarios
- *
- * @returns {JSX.Element} Página de login
- */
-const Login = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const handleLogin = async e => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-  // Redirigir si ya está autenticado
-  useEffect(() => {
-    if (isAuthenticated && !loading) {
-      console.log('🔄 Usuario ya autenticado, redirigiendo...');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      if (data.user) {
+        console.log('✅ Login exitoso:', data.user.email);
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      console.error('Error en login:', err);
+      setError('Error de conexión. Verifica tu conexión a internet.');
+    } finally {
+      setLoading(false);
     }
-  }, [isAuthenticated, loading]);
-
-  // Mostrar loading mientras se verifica la autenticación
-  if (loading) {
-    return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600'></div>
-      </div>
-    );
-  }
-
-  // Redirigir si ya está autenticado
-  if (isAuthenticated) {
-    return <Navigate to='/dashboard' replace />;
-  }
+  };
 
   return (
-    <AuthLayout
-      title='Iniciar Sesión'
-      subtitle='Accede a tu cuenta de MTZ'
-      footerText='¿No tienes cuenta?'
-      footerLink='/register'
-      footerLinkText='Regístrate aquí'
-    >
-      <LoginForm />
-    </AuthLayout>
+    <div className='min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8'>
+      <div className='max-w-md w-full space-y-8'>
+        <div>
+          <h2 className='mt-6 text-center text-3xl font-extrabold text-gray-900'>
+            MTZ Sistema de Gestión
+          </h2>
+          <p className='mt-2 text-center text-sm text-gray-600'>
+            Inicia sesión en tu cuenta
+          </p>
+        </div>
+
+        <form className='mt-8 space-y-6' onSubmit={handleLogin}>
+          <div className='rounded-md shadow-sm -space-y-px'>
+            <div>
+              <label htmlFor='email' className='sr-only'>
+                Correo Electrónico
+              </label>
+              <input
+                id='email'
+                name='email'
+                type='email'
+                required
+                className='appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm'
+                placeholder='Correo Electrónico'
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor='password' className='sr-only'>
+                Contraseña
+              </label>
+              <input
+                id='password'
+                name='password'
+                type='password'
+                required
+                className='appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm'
+                placeholder='Contraseña'
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>
+              {error}
+            </div>
+          )}
+
+          <div>
+            <button
+              type='submit'
+              disabled={loading}
+              className='group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50'
+            >
+              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            </button>
+          </div>
+        </form>
+
+        <div className='mt-6 bg-blue-50 p-4 rounded-md'>
+          <h3 className='text-sm font-medium text-blue-800'>
+            Credenciales de Prueba:
+          </h3>
+          <div className='mt-2 text-sm text-blue-700'>
+            <p>Admin: mtzcontabilidad@gmail.com / Alohomora33@</p>
+            <p>Gerente: gerente@mtz.cl / password123</p>
+            <p>Analista: analista@mtz.cl / password123</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-};
+}
 
 export default Login;

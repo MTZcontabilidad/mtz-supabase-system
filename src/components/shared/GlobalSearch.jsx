@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+// NOTA: Este archivo sigue la guía de estilo MTZ v3.0. Mantener la estructura y los imports según la convención.
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Building, FileText, DollarSign, User, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase.js';

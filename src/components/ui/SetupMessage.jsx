@@ -1,3 +1,4 @@
+import React, { useState, useCallback, useEffect } from 'react';
 import { Database, CheckCircle } from 'lucide-react';
 const SetupMessage = ({ isSetupComplete = false }) => {
   if (isSetupComplete) {

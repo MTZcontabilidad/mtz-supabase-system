@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import useAuth from '@/hooks/useAuth.js';
 
-import { UsuariosService } from '@/lib/dataService';
+import { dataService } from '@/lib/dataService.js';
 import usePermissions from './usePermissions';
 
 /**
@@ -77,7 +77,7 @@ export const useUserManagement = () => {
       setError('');
       console.log('🔄 Cargando usuarios...');
 
-      const usuariosData = await UsuariosService.getUsuarios();
+      const usuariosData = await dataService.getUsuariosData();
 
       // Procesar datos de usuarios
       const usuariosProcesados = usuariosData.map(usuario => ({
@@ -112,7 +112,7 @@ export const useUserManagement = () => {
       setError('');
       console.log('🔄 Cargando roles...');
 
-      const rolesData = await UsuariosService.getRoles();
+      const rolesData = await dataService.getRolesData();
       setRoles(rolesData || []);
 
       console.log('✅ Roles cargados exitosamente');
@@ -137,7 +137,7 @@ export const useUserManagement = () => {
       setError('');
       console.log('🔄 Cargando clientes...');
 
-      const clientesData = await UsuariosService.getClientes();
+      const clientesData = await dataService.getClientesData();
       setClientes(clientesData || []);
 
       console.log('✅ Clientes cargados exitosamente');
@@ -162,7 +162,7 @@ export const useUserManagement = () => {
         setLoading(true);
         setError('');
 
-        const nuevoUsuario = await UsuariosService.crearUsuario({
+        const nuevoUsuario = await dataService.crearUsuario({
           ...usuarioData,
           fecha_creacion: new Date().toISOString(),
           usuario_creacion: user?.id,
@@ -196,7 +196,7 @@ export const useUserManagement = () => {
         setLoading(true);
         setError('');
 
-        const usuarioActualizado = await UsuariosService.actualizarUsuario(id, {
+        const usuarioActualizado = await dataService.actualizarUsuario(id, {
           ...usuarioData,
           fecha_modificacion: new Date().toISOString(),
           usuario_modificacion: user?.id,
@@ -234,7 +234,7 @@ export const useUserManagement = () => {
         setLoading(true);
         setError('');
 
-        await UsuariosService.eliminarUsuario(id);
+        await dataService.eliminarUsuario(id);
 
         setUsuarios(prev => prev.filter(usuario => usuario.id !== id));
         console.log('✅ Usuario eliminado exitosamente');
@@ -264,7 +264,7 @@ export const useUserManagement = () => {
         setLoading(true);
         setError('');
 
-        const usuarioActualizado = await UsuariosService.actualizarUsuario(id, {
+        const usuarioActualizado = await dataService.actualizarUsuario(id, {
           estado: nuevoEstado,
           fecha_modificacion: new Date().toISOString(),
           usuario_modificacion: user?.id,
@@ -302,7 +302,7 @@ export const useUserManagement = () => {
         setLoading(true);
         setError('');
 
-        await UsuariosService.asignarClientes(usuarioId, clienteIds);
+        await dataService.asignarClientes(usuarioId, clienteIds);
 
         console.log('✅ Clientes asignados exitosamente');
       } catch (error) {

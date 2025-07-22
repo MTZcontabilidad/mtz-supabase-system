@@ -1,3 +1,4 @@
+import React, { useState, useCallback, useEffect } from 'react';
 // =====================================================================
 // 🔐 LAYOUT DE AUTENTICACIÓN - SISTEMA MTZ v3.0
 // =====================================================================

@@ -37,6 +37,7 @@ import {
   getStatusColor,
   getStatusLabel,
 } from '@/lib/sampleData';
+import { supabase } from '@/lib/supabase';
 
 /**
  * Página de Gestión de Ventas MTZ - VERSIÓN MEJORADA
@@ -59,12 +60,15 @@ const VentasPage = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔄 Cargando ventas...');
+      console.log('🔄 Cargando ventas desde Supabase...');
 
-      // Simular carga de datos (en producción usaría un servicio real)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase
+        .from('ventas')
+        .select('*')
+        .order('fecha_emision', { ascending: false });
 
-      setVentas(ventasData);
+      if (error) throw error;
+      setVentas(data || []);
     } catch (err) {
       console.error('❌ Error cargando ventas:', err);
       setError('Error al cargar las ventas');

@@ -1,8 +1,8 @@
+import React, { useState, useCallback, useEffect } from 'react';
 // =====================================================================
 // 🔐 FORMULARIO DE RECUPERACIÓN DE CONTRASEÑA - SISTEMA MTZ v3.0
 // =====================================================================
 
-import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';

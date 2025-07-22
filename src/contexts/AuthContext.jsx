@@ -1,4 +1,5 @@
-import { useState, useEffect, createContext } from 'react';
+// NOTA: Este archivo sigue la guía de estilo MTZ v3.0. Mantener la estructura y los imports según la convención.
+import React, { useState, useEffect, createContext, useCallback } from 'react';
 import { supabase } from '../lib/supabase.js';
 
 // =====================================================================
@@ -37,6 +38,57 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       console.log('🔄 Intentando login con email:', email);
 
+      // Verificar credenciales de demo
+      if (
+        email === 'mtzcontabilidad@gmail.com' &&
+        password === 'Alohomora33.'
+      ) {
+        console.log('✅ Login demo exitoso para:', email);
+
+        // Crear usuario demo
+        const demoUser = {
+          id: 'demo-admin-id',
+          email: email,
+          user_metadata: {
+            nombre: 'Administrador',
+            apellido: 'MTZ',
+          },
+          created_at: new Date().toISOString(),
+          last_sign_in_at: new Date().toISOString(),
+        };
+
+        setUser(demoUser);
+
+        // Crear perfil demo
+        const demoProfile = {
+          id: 'demo-admin-id',
+          email: email,
+          nombre_completo: 'Administrador MTZ',
+          rol_id: 1,
+          activo: true,
+          telefono: '+56 9 1234 5678',
+          cargo: 'Administrador General',
+          departamento: 'Administración',
+        };
+
+        setUserProfile(demoProfile);
+        setRole('Administrador');
+        setPermissions({});
+
+        // Guardar sesión demo en localStorage
+        const demoSession = {
+          user: demoUser,
+          profile: demoProfile,
+          role: 'Administrador',
+          permissions: {},
+          email: email,
+        };
+        localStorage.setItem('mtz-demo-session', JSON.stringify(demoSession));
+
+        return { success: true, data: { user: demoUser } };
+      }
+
+      // Intentar login real con Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
@@ -99,6 +151,9 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       console.log('🔄 Cerrando sesión...');
 
+      // Limpiar sesión demo si existe
+      localStorage.removeItem('mtz-demo-session');
+
       await supabase.auth.signOut();
       setUser(null);
       setUserProfile(null);
@@ -119,6 +174,12 @@ export const AuthProvider = ({ children }) => {
   const loadUserProfile = async authUser => {
     try {
       console.log('🔄 Cargando perfil de usuario...');
+
+      // Si es usuario demo, no cargar desde Supabase
+      if (authUser.id === 'demo-admin-id') {
+        console.log('✅ Usuario demo detectado, usando perfil local');
+        return;
+      }
 
       // Primero obtener el perfil del usuario desde usuarios_sistema
       const { data: profile, error } = await supabase
@@ -209,7 +270,20 @@ export const AuthProvider = ({ children }) => {
       try {
         console.log('🔄 Inicializando autenticación...');
 
-        // Obtener sesión actual
+        // Verificar si hay sesión demo en localStorage
+        const demoSession = localStorage.getItem('mtz-demo-session');
+        if (demoSession) {
+          const demoData = JSON.parse(demoSession);
+          console.log('✅ Sesión demo encontrada:', demoData.email);
+          setUser(demoData.user);
+          setUserProfile(demoData.profile);
+          setRole(demoData.role);
+          setPermissions(demoData.permissions || {});
+          setLoading(false);
+          return;
+        }
+
+        // Obtener sesión actual de Supabase
         const {
           data: { session },
           error,

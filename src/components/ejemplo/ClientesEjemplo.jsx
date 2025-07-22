@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import mtzService from '../../lib/mtzService.js';
+import { dataService } from '@/lib/dataService.js';
 
 // Componente de ejemplo que muestra cómo usar el servicio MTZ en React
 function ClientesEjemplo() {
@@ -15,7 +15,7 @@ function ClientesEjemplo() {
   const cargarClientes = async () => {
     try {
       setLoading(true);
-      const data = await mtzService.getClientes();
+      const data = await dataService.getClientesData();
       setClientes(data);
       setError(null);
     } catch (err) {
@@ -35,7 +35,7 @@ function ClientesEjemplo() {
         activo: true,
       };
 
-      await mtzService.createCliente(clienteCompleto);
+      await dataService.crearCliente(clienteCompleto);
 
       // Limpiar formulario
       setNuevoCliente({ nombre: '', email: '' });
@@ -53,7 +53,7 @@ function ClientesEjemplo() {
   const eliminarCliente = async id => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este cliente?')) {
       try {
-        await mtzService.deleteCliente(id);
+        await dataService.eliminarCliente(id);
         await cargarClientes();
         alert('Cliente eliminado exitosamente!');
       } catch (err) {

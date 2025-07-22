@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useToast } from '../../components/ui/Toast.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -19,6 +19,7 @@ import {
   CheckCircle,
   Clock,
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 const IVAPage = () => {
   const [loading, setLoading] = useState(true);
@@ -32,76 +33,20 @@ const IVAPage = () => {
   const { showToast } = useToast();
 
   // Cargar datos de IVA
-  const cargarDatosIVA = async () => {
+  const cargarDatosIVA = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
-      console.log('🔄 Cargando datos de IVA...');
-
-      // Simular datos de IVA (en producción usaría un servicio real)
-      const data = {
-        declaraciones: [
-          {
-            id: 1,
-            periodo: '2024-01',
-            fecha_vencimiento: '2024-02-20',
-            fecha_declaracion: '2024-02-15',
-            iva_debitado: 15000000,
-            iva_creditado: 12000000,
-            iva_pagado: 3000000,
-            estado: 'Pagado',
-            tipo: 'Mensual',
-          },
-          {
-            id: 2,
-            periodo: '2024-02',
-            fecha_vencimiento: '2024-03-20',
-            fecha_declaracion: null,
-            iva_debitado: 18000000,
-            iva_creditado: 14000000,
-            iva_pagado: 0,
-            estado: 'Pendiente',
-            tipo: 'Mensual',
-          },
-          {
-            id: 3,
-            periodo: '2024-03',
-            fecha_vencimiento: '2024-04-20',
-            fecha_declaracion: null,
-            iva_debitado: 0,
-            iva_creditado: 0,
-            iva_pagado: 0,
-            estado: 'No Iniciado',
-            tipo: 'Mensual',
-          },
-        ],
-        resumen: {
-          total_declaraciones: 12,
-          declaraciones_pagadas: 10,
-          declaraciones_pendientes: 1,
-          declaraciones_vencidas: 1,
-          total_iva_pagado: 45000000,
-          total_iva_debitado: 180000000,
-          total_iva_creditado: 150000000,
-          saldo_actual: 30000000,
-        },
-        proximasFechas: [
-          {
-            periodo: '2024-02',
-            fecha_vencimiento: '2024-03-20',
-            dias_restantes: 5,
-            tipo: 'Declaración Mensual',
-          },
-          {
-            periodo: '2024-03',
-            fecha_vencimiento: '2024-04-20',
-            dias_restantes: 35,
-            tipo: 'Declaración Mensual',
-          },
-        ],
-      };
-
-      setIvaData(data);
+      // Consultar declaraciones de IVA desde Supabase
+      const { data: declaraciones, error: declaracionesError } = await supabase
+        .from('declaraciones_tributarias')
+        .select('*')
+        .eq('tipo', 'iva')
+        .order('periodo_ano', { ascending: false })
+        .order('periodo_mes', { ascending: false });
+      if (declaracionesError) throw declaracionesError;
+      setIvaData(prev => ({ ...prev, declaraciones: declaraciones || [] }));
+      // Puedes agregar más consultas para resumen y próximas fechas si tienes esas tablas/campos
       console.log('✅ Datos de IVA cargados exitosamente');
     } catch (error) {
       console.error('❌ Error cargando datos de IVA:', error);
@@ -110,11 +55,11 @@ const IVAPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
 
   useEffect(() => {
     cargarDatosIVA();
-  }, []);
+  }, [cargarDatosIVA]);
 
   // Función para formatear moneda
   const formatCurrency = amount => {

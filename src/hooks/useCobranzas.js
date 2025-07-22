@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { CobranzaService } from '@/lib/dataService';
+import { dataService } from '@/lib/dataService.js';
 import useAuth from './useAuth';
 import usePermissions from './usePermissions';
 
@@ -51,7 +51,7 @@ export const useCobranzas = () => {
       setError('');
       console.log('🔄 Cargando cobranzas...');
 
-      const cobranzasData = await CobranzaService.getCobranzas();
+      const cobranzasData = await dataService.getCobranzasData();
 
       // Procesar datos de cobranzas
       const cobranzasProcesadas = cobranzasData.map(cobranza => ({
@@ -84,7 +84,7 @@ export const useCobranzas = () => {
         setLoading(true);
         setError('');
 
-        const nuevaCobranza = await CobranzaService.crearCobranza({
+        const nuevaCobranza = await dataService.crearCobranza({
           ...cobranzaData,
           fecha_creacion: new Date().toISOString(),
           usuario_creacion: user?.id,
@@ -118,14 +118,11 @@ export const useCobranzas = () => {
         setLoading(true);
         setError('');
 
-        const cobranzaActualizada = await CobranzaService.actualizarCobranza(
-          id,
-          {
-            ...cobranzaData,
-            fecha_modificacion: new Date().toISOString(),
-            usuario_modificacion: user?.id,
-          }
-        );
+        const cobranzaActualizada = await dataService.actualizarCobranza(id, {
+          ...cobranzaData,
+          fecha_modificacion: new Date().toISOString(),
+          usuario_modificacion: user?.id,
+        });
 
         setCobranzas(prev =>
           prev.map(cobranza =>
@@ -159,7 +156,7 @@ export const useCobranzas = () => {
         setLoading(true);
         setError('');
 
-        await CobranzaService.eliminarCobranza(id);
+        await dataService.eliminarCobranza(id);
 
         setCobranzas(prev => prev.filter(cobranza => cobranza.id !== id));
         console.log('✅ Cobranza eliminada exitosamente');
@@ -187,14 +184,11 @@ export const useCobranzas = () => {
         setLoading(true);
         setError('');
 
-        const cobranzaActualizada = await CobranzaService.actualizarCobranza(
-          id,
-          {
-            estado: nuevoEstado,
-            fecha_modificacion: new Date().toISOString(),
-            usuario_modificacion: user?.id,
-          }
-        );
+        const cobranzaActualizada = await dataService.actualizarCobranza(id, {
+          estado: nuevoEstado,
+          fecha_modificacion: new Date().toISOString(),
+          usuario_modificacion: user?.id,
+        });
 
         setCobranzas(prev =>
           prev.map(cobranza =>

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import useAuth from '@/hooks/useAuth.js';
 
-import { ContratosService } from '@/lib/dataService';
+import { dataService } from '@/lib/dataService.js';
 import usePermissions from './usePermissions';
 
 /**
@@ -76,7 +76,7 @@ export const useContratos = () => {
       setError('');
       console.log('🔄 Cargando contratos...');
 
-      const contratosData = await ContratosService.getContratos();
+      const contratosData = await dataService.getContratosData();
 
       // Procesar datos de contratos
       const contratosProcesadas = contratosData.map(contrato => ({
@@ -113,7 +113,7 @@ export const useContratos = () => {
         setLoading(true);
         setError('');
 
-        const nuevoContrato = await ContratosService.crearContrato({
+        const nuevoContrato = await dataService.crearContrato({
           ...contratoData,
           fecha_creacion: new Date().toISOString(),
           usuario_creacion: user?.id,
@@ -147,14 +147,11 @@ export const useContratos = () => {
         setLoading(true);
         setError('');
 
-        const contratoActualizado = await ContratosService.actualizarContrato(
-          id,
-          {
-            ...contratoData,
-            fecha_modificacion: new Date().toISOString(),
-            usuario_modificacion: user?.id,
-          }
-        );
+        const contratoActualizado = await dataService.actualizarContrato(id, {
+          ...contratoData,
+          fecha_modificacion: new Date().toISOString(),
+          usuario_modificacion: user?.id,
+        });
 
         setContratos(prev =>
           prev.map(contrato =>
@@ -188,7 +185,7 @@ export const useContratos = () => {
         setLoading(true);
         setError('');
 
-        await ContratosService.eliminarContrato(id);
+        await dataService.eliminarContrato(id);
 
         setContratos(prev => prev.filter(contrato => contrato.id !== id));
         console.log('✅ Contrato eliminado exitosamente');
@@ -216,17 +213,14 @@ export const useContratos = () => {
         setLoading(true);
         setError('');
 
-        const contratoActualizado = await ContratosService.actualizarContrato(
-          id,
-          {
-            fecha_fin: nuevaFechaFin,
-            estado: 'renovado',
-            fecha_renovacion: new Date().toISOString(),
-            usuario_renovacion: user?.id,
-            fecha_modificacion: new Date().toISOString(),
-            usuario_modificacion: user?.id,
-          }
-        );
+        const contratoActualizado = await dataService.actualizarContrato(id, {
+          fecha_fin: nuevaFechaFin,
+          estado: 'renovado',
+          fecha_renovacion: new Date().toISOString(),
+          usuario_renovacion: user?.id,
+          fecha_modificacion: new Date().toISOString(),
+          usuario_modificacion: user?.id,
+        });
 
         setContratos(prev =>
           prev.map(contrato =>
