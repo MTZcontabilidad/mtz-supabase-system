@@ -5,7 +5,7 @@ import SimpleLogin from './components/auth/SimpleLogin';
 import Navigation from './components/layout/Navigation';
 import Dashboard from './pages/Dashboard/Dashboard';
 import ClientesPage from './pages/Clientes/ClientesPage';
-import VentasPage from './pages/Ventas/VentasPage';
+import VentasPageSimple from './pages/Ventas/VentasPageSimple';
 import RRHHPage from './pages/RRHH/RRHHPage';
 import IVAPage from './pages/IVA/IVAPage';
 
@@ -45,7 +45,7 @@ function App() {
             path='/ventas'
             element={
               <PageWithNavigation>
-                <VentasPage />
+                <VentasPageSimple />
               </PageWithNavigation>
             }
           />

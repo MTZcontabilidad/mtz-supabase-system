@@ -8,7 +8,7 @@ export { default as Select } from './Select.jsx';
 export { default as Textarea } from './Textarea.jsx';
 export { default as Card } from './Card.jsx';
 export { default as Badge } from './Badge.jsx';
-export { default as Modal } from './Modal.jsx';
+export { default as SimpleModal } from './SimpleModal.jsx';
 export { default as LoadingSpinner } from './LoadingSpinner.jsx';
 export { default as DemoBanner } from './DemoBanner.jsx';
 export {
@@ -23,18 +23,6 @@ export {
 // Componentes avanzados
 export { default as Table } from './Table.jsx';
 export { default as Progress } from './Progress.jsx';
-
-// Componentes Radix UI
-export {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-  DialogClose,
-} from './Dialog.jsx';
 
 export {
   ToastProvider,
