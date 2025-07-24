@@ -22,20 +22,29 @@ import {
   Banknote,
 } from 'lucide-react';
 import SimpleModal from '../../components/ui/SimpleModal';
+import dataService from '../../services/dataService.js';
 
 // Funciones de utilidad
 const formatCurrency = amount => {
+  const numAmount = parseFloat(amount) || 0;
   return new Intl.NumberFormat('es-CL', {
     style: 'currency',
     currency: 'CLP',
-  }).format(amount);
+  }).format(numAmount);
 };
 
 const formatDate = dateString => {
-  return new Date(dateString).toLocaleDateString('es-CL');
+  if (!dateString) return 'Sin fecha';
+  try {
+    return new Date(dateString).toLocaleDateString('es-CL');
+  } catch (error) {
+    return 'Fecha inválida';
+  }
 };
 
 const getStatusColor = status => {
+  if (!status) return 'bg-gray-100 text-gray-800';
+
   switch (status) {
     case 'Pagada':
       return 'bg-green-100 text-green-800';
@@ -69,59 +78,20 @@ const VentasPageSimple = () => {
       setError(null);
       console.log('🔄 Cargando ventas...');
 
-      // Datos de ejemplo para ventas
-      const ventasEjemplo = [
-        {
-          id: 1,
-          numero_factura: 'F001-2024',
-          cliente: 'Empresa ABC Ltda.',
-          descripcion: 'Servicios de contabilidad mensual',
-          monto_subtotal: 500000,
-          monto_iva: 95000,
-          monto_total: 595000,
-          estado: 'Pagada',
-          forma_pago: 'Transferencia',
-          categoria: 'Contabilidad',
-          fecha_emision: '2024-01-15',
-          fecha_vencimiento: '2024-02-15',
-          dias_vencimiento: 30,
-        },
-        {
-          id: 2,
-          numero_factura: 'F002-2024',
-          cliente: 'Comercial XYZ SpA',
-          descripcion: 'Declaración de IVA',
-          monto_subtotal: 300000,
-          monto_iva: 57000,
-          monto_total: 357000,
-          estado: 'Pendiente',
-          forma_pago: 'Efectivo',
-          categoria: 'Tributario',
-          fecha_emision: '2024-01-20',
-          fecha_vencimiento: '2024-02-20',
-          dias_vencimiento: 15,
-        },
-        {
-          id: 3,
-          numero_factura: 'F003-2024',
-          cliente: 'Servicios LTDA',
-          descripcion: 'Auditoría anual',
-          monto_subtotal: 800000,
-          monto_iva: 152000,
-          monto_total: 952000,
-          estado: 'Vencida',
-          forma_pago: 'Cheque',
-          categoria: 'Auditoría',
-          fecha_emision: '2024-01-10',
-          fecha_vencimiento: '2024-02-10',
-          dias_vencimiento: -5,
-        },
-      ];
-
+      const data = await dataService.getVentas();
+      setVentas(data);
+      console.log('✅ Ventas cargadas exitosamente:', data.length, 'registros');
+    } catch (error) {
+      console.error('Error cargando ventas:', error);
+      setError('Error al cargar ventas');
+      // Fallback a datos mock si no hay conexión
+      const ventasEjemplo = dataService.getDatosMock().ventas;
       setVentas(ventasEjemplo);
-    } catch (err) {
-      console.error('❌ Error cargando ventas:', err);
-      setError('Error al cargar las ventas');
+      console.log(
+        '✅ Usando datos mock para ventas:',
+        ventasEjemplo.length,
+        'registros'
+      );
     } finally {
       setLoading(false);
     }
@@ -134,13 +104,21 @@ const VentasPageSimple = () => {
 
   // Filtrar ventas
   const ventasFiltradas = ventas.filter(venta => {
+    // Verificar que venta y sus propiedades existan antes de acceder
+    if (!venta) return false;
+
+    const numeroFactura = venta.numero_factura || '';
+    const cliente = venta.cliente || '';
+    const descripcion = venta.descripcion || '';
+    const estado = venta.estado || '';
+    const categoria = venta.categoria || '';
+
     const matchesSearch =
-      venta.numero_factura.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      venta.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      venta.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesEstado = !filterEstado || venta.estado === filterEstado;
-    const matchesCategoria =
-      !filterCategoria || venta.categoria === filterCategoria;
+      numeroFactura.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      descripcion.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesEstado = !filterEstado || estado === filterEstado;
+    const matchesCategoria = !filterCategoria || categoria === filterCategoria;
 
     return matchesSearch && matchesEstado && matchesCategoria;
   });
@@ -148,13 +126,13 @@ const VentasPageSimple = () => {
   // Estadísticas
   const estadisticas = {
     total: ventas.length,
-    pagadas: ventas.filter(v => v.estado === 'Pagada').length,
-    pendientes: ventas.filter(v => v.estado === 'Pendiente').length,
-    vencidas: ventas.filter(v => v.estado === 'Vencida').length,
-    totalFacturado: ventas.reduce((sum, v) => sum + v.monto_total, 0),
+    pagadas: ventas.filter(v => v && v.estado === 'Pagada').length,
+    pendientes: ventas.filter(v => v && v.estado === 'Pendiente').length,
+    vencidas: ventas.filter(v => v && v.estado === 'Vencida').length,
+    totalFacturado: ventas.reduce((sum, v) => sum + (v?.monto_total || 0), 0),
     totalCobrado: ventas
-      .filter(v => v.estado === 'Pagada')
-      .reduce((sum, v) => sum + v.monto_total, 0),
+      .filter(v => v && v.estado === 'Pagada')
+      .reduce((sum, v) => sum + (v?.monto_total || 0), 0),
   };
 
   return (
@@ -439,7 +417,10 @@ const VentasPageSimple = () => {
               </thead>
               <tbody className='bg-white divide-y divide-gray-200'>
                 {ventasFiltradas.map(venta => (
-                  <tr key={venta.id} className='hover:bg-gray-50'>
+                  <tr
+                    key={venta?.id || Math.random()}
+                    className='hover:bg-gray-50'
+                  >
                     <td className='px-6 py-4 whitespace-nowrap'>
                       <div className='flex items-center'>
                         <div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
@@ -447,41 +428,43 @@ const VentasPageSimple = () => {
                         </div>
                         <div className='ml-3'>
                           <div className='text-sm font-medium text-gray-900'>
-                            {venta.numero_factura}
+                            {venta?.numero_factura || 'Sin número'}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap'>
                       <div className='text-sm text-gray-900'>
-                        {venta.cliente}
+                        {venta?.cliente || 'Sin cliente'}
                       </div>
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap'>
                       <div className='flex items-center text-sm text-gray-500'>
                         <Calendar className='h-3 w-3 mr-1' />
-                        {formatDate(venta.fecha_emision)}
+                        {venta?.fecha_emision
+                          ? formatDate(venta.fecha_emision)
+                          : 'Sin fecha'}
                       </div>
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap'>
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                          venta.categoria
+                          venta?.categoria
                         )}`}
                       >
-                        {venta.categoria}
+                        {venta?.categoria || 'Sin categoría'}
                       </span>
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-                      {formatCurrency(venta.monto_total)}
+                      {formatCurrency(venta?.monto_total || 0)}
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap'>
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                          venta.estado
+                          venta?.estado
                         )}`}
                       >
-                        {getStatusLabel(venta.estado)}
+                        {getStatusLabel(venta?.estado)}
                       </span>
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>

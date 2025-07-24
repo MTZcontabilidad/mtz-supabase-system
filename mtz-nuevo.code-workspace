@@ -1,0 +1,25 @@
+{
+    "extensions":  {
+                       "recommendations":  [
+                                               "bradlc.vscode-tailwindcss",
+                                               "esbenp.prettier-vscode",
+                                               "ms-vscode.vscode-json",
+                                               "ms-vscode.vscode-eslint",
+                                               "ms-vscode.vscode-typescript-next"
+                                           ]
+                   },
+    "folders":  [
+                    {
+                        "name":  "MTZ-NUEVO",
+                        "path":  "."
+                    }
+                ],
+    "settings":  {
+                     "sql.format.uppercase":  true,
+                     "sql.format.keywordCase":  "upper",
+                     "sql.format.enable":  true,
+                     "files.associations":  {
+                                                "*.sql":  "sql"
+                                            }
+                 }
+}

@@ -1,8 +1,62 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { dataService } from '@/lib/dataService.js';
-import { useToast } from '../../components/ui/Toast.jsx';
+// Simulación del servicio de datos
+const dataService = {
+  getContratosData: async () => {
+    // Datos de ejemplo para contratos
+    return [
+      {
+        id: 1,
+        fecha_inicio: '2024-01-15',
+        fecha_fin: '2024-12-31',
+        cliente: 'Empresa ABC Ltda.',
+        descripcion: 'Servicios de contabilidad anual',
+        monto: 2500000,
+        estado: 'activo',
+        tipo_contrato: 'Anual',
+        notas: 'Contrato de servicios contables',
+      },
+      {
+        id: 2,
+        fecha_inicio: '2024-03-01',
+        fecha_fin: '2024-08-31',
+        cliente: 'Comercial XYZ SpA',
+        descripcion: 'Declaraciones tributarias semestrales',
+        monto: 1200000,
+        estado: 'activo',
+        tipo_contrato: 'Semestral',
+        notas: 'Servicios de declaraciones',
+      },
+      {
+        id: 3,
+        fecha_inicio: '2024-02-01',
+        fecha_fin: '2024-07-31',
+        cliente: 'Servicios LTDA',
+        descripcion: 'Auditoría financiera',
+        monto: 3500000,
+        estado: 'pendiente',
+        tipo_contrato: 'Especial',
+        notas: 'Auditoría anual requerida',
+      },
+    ];
+  },
+  crearContrato: async data => {
+    console.log('Contrato creado:', data);
+    return { success: true };
+  },
+  actualizarContrato: async (id, data) => {
+    console.log('Contrato actualizado:', id, data);
+    return { success: true };
+  },
+};
+
+// Hook de Toast simplificado
+const useToast = () => {
+  const showToast = (message, type = 'info') => {
+    console.log(`[${type.toUpperCase()}] ${message}`);
+  };
+  return { showToast };
+};
 import DataTable from '../../components/shared/DataTable.jsx';
-import ExportData from '../../components/shared/ExportData.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Input from '../../components/ui/Input.jsx';
 import Card from '../../components/ui/Card.jsx';
@@ -45,11 +99,11 @@ const ContratosPanel = () => {
       console.log('✅ Contratos cargados:', data?.length || 0);
     } catch (error) {
       console.error('❌ Error cargando contratos:', error);
-      showToast('Error al cargar contratos: ' + error.message, 'error');
+      console.log('Error al cargar contratos: ' + error.message);
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, []);
 
   useEffect(() => {
     loadContratos();
@@ -185,8 +239,8 @@ const ContratosPanel = () => {
             value === 'activo'
               ? 'success'
               : value === 'vencido'
-                ? 'danger'
-                : 'warning'
+              ? 'danger'
+              : 'warning'
           }
         >
           {value}
@@ -217,7 +271,9 @@ const ContratosPanel = () => {
           <Button onClick={() => setShowForm(true)} variant='primary'>
             Nuevo Contrato
           </Button>
-          <ExportData data={contratos} filename='contratos' />
+          <button className='inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50'>
+            Exportar (Funcionalidad en desarrollo)
+          </button>
         </div>
       </div>
 

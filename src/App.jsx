@@ -1,23 +1,17 @@
-﻿import React from 'react';
+﻿
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import SimpleLogin from './components/auth/SimpleLogin';
-import Navigation from './components/layout/Navigation';
+import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard/Dashboard';
 import ClientesPage from './pages/Clientes/ClientesPage';
 import VentasPageSimple from './pages/Ventas/VentasPageSimple';
 import RRHHPage from './pages/RRHH/RRHHPage';
 import IVAPage from './pages/IVA/IVAPage';
-
-// Componente para páginas con navegación
-const PageWithNavigation = ({ children }) => (
-  <div>
-    <Navigation />
-    <div className='min-h-screen bg-gray-50'>
-      <div className='max-w-7xl mx-auto py-6 sm:px-6 lg:px-8'>{children}</div>
-    </div>
-  </div>
-);
+import ContratosPanel from './pages/Contratos/ContratosPanel';
+import CargaMasivaPageSimple from './pages/CargaMasiva/CargaMasivaPageSimple';
+import CobranzaPage from './pages/Cobranza/CobranzaPage';
+import ComprasPage from './pages/Compras/ComprasPage';
 
 function App() {
   return (
@@ -25,47 +19,34 @@ function App() {
       <div className='App'>
         <Routes>
           <Route path='/login' element={<SimpleLogin />} />
-          <Route
-            path='/dashboard'
-            element={
-              <PageWithNavigation>
-                <Dashboard />
-              </PageWithNavigation>
-            }
-          />
-          <Route
-            path='/clientes'
-            element={
-              <PageWithNavigation>
-                <ClientesPage />
-              </PageWithNavigation>
-            }
-          />
-          <Route
-            path='/ventas'
-            element={
-              <PageWithNavigation>
-                <VentasPageSimple />
-              </PageWithNavigation>
-            }
-          />
-          <Route
-            path='/rrhh'
-            element={
-              <PageWithNavigation>
-                <RRHHPage />
-              </PageWithNavigation>
-            }
-          />
-          <Route
-            path='/iva'
-            element={
-              <PageWithNavigation>
-                <IVAPage />
-              </PageWithNavigation>
-            }
-          />
-          <Route path='/' element={<Navigate to='/login' replace />} />
+          <Route path='/' element={<Layout />}>
+            <Route path='/dashboard' element={<Dashboard />} />
+            <Route path='/clientes' element={<ClientesPage />} />
+            <Route path='/ventas' element={<VentasPageSimple />} />
+            <Route path='/rrhh' element={<RRHHPage />} />
+            <Route path='/iva' element={<IVAPage />} />
+            <Route path='/contratos' element={<ContratosPanel />} />
+            <Route path='/carga-masiva' element={<CargaMasivaPageSimple />} />
+            <Route path='/cobranza' element={<CobranzaPage />} />
+            <Route path='/compras' element={<ComprasPage />} />
+            <Route
+              path='/reportes'
+              element={<div>Página de Reportes (En desarrollo)</div>}
+            />
+            <Route
+              path='/configuracion'
+              element={<div>Página de Configuración (En desarrollo)</div>}
+            />
+            <Route
+              path='/admin/usuarios'
+              element={<div>Página de Administración (En desarrollo)</div>}
+            />
+            <Route
+              path='/portal-clientes'
+              element={<div>Portal de Clientes (En desarrollo)</div>}
+            />
+          </Route>
+          <Route path='/' element={<Navigate to='/dashboard' replace />} />
         </Routes>
       </div>
     </AuthProvider>

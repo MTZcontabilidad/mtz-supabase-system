@@ -1,5 +1,12 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Download,  } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Search,
+  Download,
+} from 'lucide-react';
 import Table from '../ui/Table.jsx';
 import Button from '../ui/Button.jsx';
 import Input from '../ui/Input.jsx';
@@ -30,6 +37,7 @@ const DataTable = ({
   pageSize = 10,
   onRowClick,
   onExport,
+  emptyMessage = 'No hay datos disponibles',
   className = '',
   ...props
 }) => {
@@ -180,6 +188,7 @@ const DataTable = ({
         data={paginatedData}
         columns={tableColumns}
         loading={loading}
+        emptyMessage={emptyMessage}
         className='bg-white rounded-lg shadow'
       />
 

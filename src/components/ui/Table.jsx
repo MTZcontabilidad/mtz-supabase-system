@@ -18,6 +18,7 @@ const Table = ({
   loading = false,
   searchable = false,
   pagination = false,
+  emptyMessage = 'No hay datos para mostrar',
   className = '',
   ...props
 }) => {
@@ -35,7 +36,7 @@ const Table = ({
   if (!data.length) {
     return (
       <div className={cn('text-center py-8 text-gray-500', className)}>
-        <p>No hay datos para mostrar</p>
+        <p>{emptyMessage}</p>
       </div>
     );
   }

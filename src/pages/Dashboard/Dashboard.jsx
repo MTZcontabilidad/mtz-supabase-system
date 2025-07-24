@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth.js';
+import dataService from '../../services/dataService.js';
 
 function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -8,6 +9,9 @@ function Dashboard() {
     clientes: 0,
     ventas: 0,
     cobranzas: 0,
+    empleados: 0,
+    totalVentas: 0,
+    totalCobranzas: 0,
   });
   const navigate = useNavigate();
   const { user, logout, isAuthenticated } = useAuth();
@@ -23,22 +27,38 @@ function Dashboard() {
 
   const loadStats = async () => {
     try {
-      // Usar el script MCP para cargar estadísticas
-      const { SupabaseMCP } = await import('../../../supabase-mcp-complete.js');
-      const stats = await SupabaseMCP.getStats();
+      // Cargar datos reales de Supabase
+      const [clientes, ventas, cobranzas, empleados] = await Promise.all([
+        dataService.getClientes(),
+        dataService.getVentas(),
+        dataService.getCobranzas(),
+        dataService.getEmpleados(),
+      ]);
 
       setStats({
-        clientes: stats.clientes || 0,
-        ventas: stats.ventas || 0,
-        cobranzas: stats.cobranzas || 0,
+        clientes: clientes.length,
+        ventas: ventas.length,
+        cobranzas: cobranzas.length,
+        empleados: empleados.length,
+        totalVentas: ventas.reduce(
+          (sum, venta) => sum + (venta.monto_total || 0),
+          0
+        ),
+        totalCobranzas: cobranzas.reduce(
+          (sum, cobranza) => sum + (cobranza.monto_total || 0),
+          0
+        ),
       });
     } catch (error) {
       console.error('Error cargando estadísticas:', error);
       // Valores por defecto si hay error
       setStats({
-        clientes: 3,
+        clientes: 0,
         ventas: 0,
         cobranzas: 0,
+        empleados: 0,
+        totalVentas: 0,
+        totalCobranzas: 0,
       });
     }
   };
@@ -85,13 +105,13 @@ function Dashboard() {
       {/* Main Content */}
       <main className='max-w-7xl mx-auto py-6 sm:px-6 lg:px-8'>
         {/* Stats Grid */}
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
           <div className='bg-white overflow-hidden shadow rounded-lg'>
             <div className='p-5'>
               <div className='flex items-center'>
                 <div className='flex-shrink-0'>
                   <div className='w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center'>
-                    <span className='text-white font-bold'>C</span>
+                    <span className='text-white font-bold'>👥</span>
                   </div>
                 </div>
                 <div className='ml-5 w-0 flex-1'>
@@ -113,7 +133,7 @@ function Dashboard() {
               <div className='flex items-center'>
                 <div className='flex-shrink-0'>
                   <div className='w-8 h-8 bg-green-500 rounded-md flex items-center justify-center'>
-                    <span className='text-white font-bold'>V</span>
+                    <span className='text-white font-bold'>📊</span>
                   </div>
                 </div>
                 <div className='ml-5 w-0 flex-1'>
@@ -123,6 +143,9 @@ function Dashboard() {
                     </dt>
                     <dd className='text-lg font-medium text-gray-900'>
                       {stats.ventas}
+                    </dd>
+                    <dd className='text-sm text-gray-500'>
+                      ${stats.totalVentas.toLocaleString()}
                     </dd>
                   </dl>
                 </div>
@@ -135,7 +158,7 @@ function Dashboard() {
               <div className='flex items-center'>
                 <div className='flex-shrink-0'>
                   <div className='w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center'>
-                    <span className='text-white font-bold'>$</span>
+                    <span className='text-white font-bold'>💰</span>
                   </div>
                 </div>
                 <div className='ml-5 w-0 flex-1'>
@@ -145,6 +168,31 @@ function Dashboard() {
                     </dt>
                     <dd className='text-lg font-medium text-gray-900'>
                       {stats.cobranzas}
+                    </dd>
+                    <dd className='text-sm text-gray-500'>
+                      ${stats.totalCobranzas.toLocaleString()}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className='bg-white overflow-hidden shadow rounded-lg'>
+            <div className='p-5'>
+              <div className='flex items-center'>
+                <div className='flex-shrink-0'>
+                  <div className='w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center'>
+                    <span className='text-white font-bold'>👨‍💼</span>
+                  </div>
+                </div>
+                <div className='ml-5 w-0 flex-1'>
+                  <dl>
+                    <dt className='text-sm font-medium text-gray-500 truncate'>
+                      Total Empleados
+                    </dt>
+                    <dd className='text-lg font-medium text-gray-900'>
+                      {stats.empleados}
                     </dd>
                   </dl>
                 </div>

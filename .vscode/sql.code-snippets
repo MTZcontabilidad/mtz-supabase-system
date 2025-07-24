@@ -1,0 +1,43 @@
+{
+    "INSERT Query":  {
+                         "prefix":  "insert",
+                         "body":  [
+                                      "INSERT INTO  (",
+                                      "    ",
+                                      ") VALUES (",
+                                      "    ",
+                                      ");"
+                                  ],
+                         "description":  "Basic INSERT query"
+                     },
+    "CREATE TABLE":  {
+                         "prefix":  "table",
+                         "body":  [
+                                      "CREATE TABLE  (",
+                                      "    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),",
+                                      "    created_at TIMESTAMPTZ DEFAULT NOW(),",
+                                      "    updated_at TIMESTAMPTZ DEFAULT NOW()",
+                                      ");"
+                                  ],
+                         "description":  "Create table with common fields"
+                     },
+    "UPDATE Query":  {
+                         "prefix":  "update",
+                         "body":  [
+                                      "UPDATE ",
+                                      "SET ",
+                                      "WHERE ;"
+                                  ],
+                         "description":  "Basic UPDATE query"
+                     },
+    "SELECT Query":  {
+                         "prefix":  "select",
+                         "body":  [
+                                      "SELECT ",
+                                      "    ",
+                                      "FROM ",
+                                      "WHERE ;"
+                                  ],
+                         "description":  "Basic SELECT query"
+                     }
+}

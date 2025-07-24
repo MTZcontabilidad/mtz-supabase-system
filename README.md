@@ -181,7 +181,6 @@ Los permisos se manejan en formato JSONB en la tabla `roles`:
 ### Backend
 
 - **Supabase** como backend completo
-- **PostgreSQL** para base de datos
 - **Row Level Security (RLS)** para seguridad
 - **Supabase Auth** para autenticación
 

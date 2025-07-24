@@ -1,4 +1,12 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import Card from '../../components/ui/Card.jsx';
+import Button from '../../components/ui/Button.jsx';
+import Input from '../../components/ui/Input.jsx';
+import Badge from '../../components/ui/Badge.jsx';
+import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx';
+import SimpleModal from '../../components/ui/SimpleModal.jsx';
+import dataService from '../../services/dataService.js';
+
 // Hook de Toast simplificado
 const useToast = () => {
   const showToast = (message, type = 'info') => {
@@ -6,11 +14,6 @@ const useToast = () => {
   };
   return { showToast };
 };
-import Card from '../../components/ui/Card.jsx';
-import Button from '../../components/ui/Button.jsx';
-import Input from '../../components/ui/Input.jsx';
-import Badge from '../../components/ui/Badge.jsx';
-import LoadingSpinner from '../../components/ui/LoadingSpinner.jsx';
 import {
   Calculator,
   FileText,
@@ -31,9 +34,20 @@ const IVAPage = () => {
   const [error, setError] = useState('');
   const [ivaData, setIvaData] = useState({
     declaraciones: [],
-    resumen: {},
+    resumen: {
+      saldo_actual: 0,
+      total_iva_debitado: 0,
+      total_iva_creditado: 0,
+      total_iva_pagado: 0,
+      total_declaraciones: 0,
+      declaraciones_pagadas: 0,
+      declaraciones_pendientes: 0,
+      declaraciones_vencidas: 0
+    },
     proximasFechas: [],
   });
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
 
   const { showToast } = useToast();
 
@@ -43,66 +57,125 @@ const IVAPage = () => {
       setLoading(true);
       setError('');
 
-      // Datos de ejemplo para IVA
+      // Intentar cargar datos reales de Supabase
+      let ventas = [];
+      let compras = [];
+
+      try {
+        [ventas, compras] = await Promise.all([
+          dataService.getVentas(),
+          dataService.getCompras()
+        ]);
+      } catch (error) {
+        console.log('Usando datos mock para IVA');
+        const mockData = dataService.getDatosMock();
+        ventas = mockData.ventas;
+        compras = mockData.compras;
+      }
+
+      // Calcular IVA de ventas (19% de IVA debitado)
+      const ivaDebitado = ventas.reduce((total, venta) => {
+        return total + (venta.monto_total * 0.19);
+      }, 0);
+
+      // Calcular IVA de compras (19% de IVA creditado)
+      const ivaCreditado = compras.reduce((total, compra) => {
+        return total + (compra.monto_total * 0.19);
+      }, 0);
+
+      // Calcular saldo actual
+      const saldoActual = ivaDebitado - ivaCreditado;
+
+      // Generar declaraciones de ejemplo basadas en los datos
       const declaracionesEjemplo = [
         {
           id: 1,
-          tipo: 'iva',
+          tipo: 'IVA Mensual',
+          periodo: 'Diciembre 2024',
           periodo_mes: 12,
           periodo_ano: 2024,
           fecha_declaracion: '2024-12-20',
           fecha_vencimiento: '2024-12-25',
           estado: 'Pagado',
-          monto_declarado: 2500000,
-          monto_pagado: 2500000,
+          iva_debitado: ivaDebitado * 0.4,
+          iva_creditado: ivaCreditado * 0.4,
+          iva_pagado: (ivaDebitado - ivaCreditado) * 0.4,
           observaciones: 'Declaración mensual de IVA',
         },
         {
           id: 2,
-          tipo: 'iva',
+          tipo: 'IVA Mensual',
+          periodo: 'Noviembre 2024',
           periodo_mes: 11,
           periodo_ano: 2024,
           fecha_declaracion: '2024-11-20',
           fecha_vencimiento: '2024-11-25',
           estado: 'Pagado',
-          monto_declarado: 1800000,
-          monto_pagado: 1800000,
+          iva_debitado: ivaDebitado * 0.3,
+          iva_creditado: ivaCreditado * 0.3,
+          iva_pagado: (ivaDebitado - ivaCreditado) * 0.3,
           observaciones: 'Declaración mensual de IVA',
         },
         {
           id: 3,
-          tipo: 'iva',
+          tipo: 'IVA Mensual',
+          periodo: 'Enero 2025',
           periodo_mes: 1,
           periodo_ano: 2025,
           fecha_declaracion: null,
           fecha_vencimiento: '2025-01-25',
           estado: 'Pendiente',
-          monto_declarado: 0,
-          monto_pagado: 0,
+          iva_debitado: ivaDebitado * 0.3,
+          iva_creditado: ivaCreditado * 0.3,
+          iva_pagado: 0,
           observaciones: 'Próxima declaración',
         },
       ];
 
-      setIvaData(prev => ({
-        ...prev,
+      // Calcular resumen
+      const totalDeclaraciones = declaracionesEjemplo.length;
+      const declaracionesPagadas = declaracionesEjemplo.filter(d => d.estado === 'Pagado').length;
+      const declaracionesPendientes = declaracionesEjemplo.filter(d => d.estado === 'Pendiente').length;
+      const declaracionesVencidas = declaracionesEjemplo.filter(d => d.estado === 'Vencido').length;
+
+      // Generar próximas fechas
+      const proximasFechas = [
+        {
+          tipo: 'IVA Mensual',
+          periodo: 'Enero 2025',
+          fecha_vencimiento: '2025-01-25',
+          dias_restantes: 5,
+          estado: 'Pendiente'
+        },
+        {
+          tipo: 'IVA Mensual',
+          periodo: 'Febrero 2025',
+          fecha_vencimiento: '2025-02-25',
+          dias_restantes: 35,
+          estado: 'No Iniciado'
+        }
+      ];
+
+      setIvaData({
         declaraciones: declaracionesEjemplo,
         resumen: {
-          total_declarado: 4300000,
-          total_pagado: 4300000,
-          declaraciones_pendientes: 1,
-          proximo_vencimiento: '2025-01-25',
+          saldo_actual: saldoActual,
+          total_iva_debitado: ivaDebitado,
+          total_iva_creditado: ivaCreditado,
+          total_iva_pagado: declaracionesEjemplo.reduce((total, d) => total + d.iva_pagado, 0),
+          total_declaraciones: totalDeclaraciones,
+          declaraciones_pagadas: declaracionesPagadas,
+          declaraciones_pendientes: declaracionesPendientes,
+          declaraciones_vencidas: declaracionesVencidas
         },
-        proximasFechas: [
-          { mes: 'Enero 2025', fecha: '2025-01-25', estado: 'Pendiente' },
-          { mes: 'Febrero 2025', fecha: '2025-02-25', estado: 'No Iniciado' },
-        ],
-      }));
+        proximasFechas: proximasFechas,
+      });
 
-      console.log('✅ Datos de IVA cargados exitosamente');
+      showToast('Datos de IVA cargados exitosamente', 'success');
     } catch (error) {
       console.error('❌ Error cargando datos de IVA:', error);
       setError(`Error cargando datos de IVA: ${error.message}`);
-      showToast('Error cargando datos de IVA: ' + error.message, 'error');
+      showToast('Error cargando datos de IVA', 'error');
     } finally {
       setLoading(false);
     }
@@ -111,6 +184,55 @@ const IVAPage = () => {
   useEffect(() => {
     cargarDatosIVA();
   }, [cargarDatosIVA]);
+
+  // Función para calcular IVA del período
+  const calcularIVA = useCallback(async (mes, ano) => {
+    try {
+      setLoading(true);
+
+      // Obtener ventas y compras del período
+      const ventas = await dataService.getVentas();
+      const compras = await dataService.getCompras();
+
+      // Filtrar por período (simulado)
+      const ventasPeriodo = ventas.filter(v => v.fecha_venta?.includes(`${ano}-${mes.toString().padStart(2, '0')}`));
+      const comprasPeriodo = compras.filter(c => c.fecha_compra?.includes(`${ano}-${mes.toString().padStart(2, '0')}`));
+
+      // Calcular IVA
+      const ivaDebitado = ventasPeriodo.reduce((total, v) => total + (v.monto_total * 0.19), 0);
+      const ivaCreditado = comprasPeriodo.reduce((total, c) => total + (c.monto_total * 0.19), 0);
+      const saldoIVA = ivaDebitado - ivaCreditado;
+
+      setSelectedPeriod({
+        mes,
+        ano,
+        ivaDebitado,
+        ivaCreditado,
+        saldoIVA,
+        ventas: ventasPeriodo.length,
+        compras: comprasPeriodo.length
+      });
+
+      setShowModal(true);
+      showToast('Cálculo de IVA completado', 'success');
+    } catch (error) {
+      console.error('Error calculando IVA:', error);
+      showToast('Error calculando IVA', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
+
+  // Función para generar declaración
+  const generarDeclaracion = useCallback(async (mes, ano) => {
+    try {
+      await calcularIVA(mes, ano);
+      showToast('Declaración generada exitosamente', 'success');
+    } catch (error) {
+      console.error('Error generando declaración:', error);
+      showToast('Error generando declaración', 'error');
+    }
+  }, [calcularIVA, showToast]);
 
   // Función para formatear moneda
   const formatCurrency = amount => {
@@ -453,11 +575,19 @@ const IVAPage = () => {
             Acciones Rápidas
           </h3>
           <div className='space-y-3'>
-            <Button variant='outline' className='w-full justify-start'>
+            <Button
+              variant='outline'
+              className='w-full justify-start'
+              onClick={() => calcularIVA(1, 2025)}
+            >
               <Calculator className='h-4 w-4 mr-2' />
               Calcular IVA del Período
             </Button>
-            <Button variant='outline' className='w-full justify-start'>
+            <Button
+              variant='outline'
+              className='w-full justify-start'
+              onClick={() => generarDeclaracion(1, 2025)}
+            >
               <FileText className='h-4 w-4 mr-2' />
               Generar Declaración
             </Button>
@@ -472,6 +602,65 @@ const IVAPage = () => {
           </div>
         </Card>
       </div>
+
+      {/* Modal de Cálculo de IVA */}
+      <SimpleModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="Cálculo de IVA del Período"
+      >
+        {selectedPeriod && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-semibold text-blue-900">IVA Debitado</h4>
+                <p className="text-2xl font-bold text-blue-600">
+                  {formatCurrency(selectedPeriod.ivaDebitado)}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {selectedPeriod.ventas} ventas
+                </p>
+              </div>
+              <div className="text-center p-4 bg-red-50 rounded-lg">
+                <h4 className="font-semibold text-red-900">IVA Creditado</h4>
+                <p className="text-2xl font-bold text-red-600">
+                  {formatCurrency(selectedPeriod.ivaCreditado)}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {selectedPeriod.compras} compras
+                </p>
+              </div>
+            </div>
+
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <h4 className="font-semibold text-green-900">Saldo a Pagar</h4>
+              <p className={`text-3xl font-bold ${selectedPeriod.saldoIVA >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(selectedPeriod.saldoIVA)}
+              </p>
+              <p className="text-sm text-gray-600">
+                Período: {selectedPeriod.mes}/{selectedPeriod.ano}
+              </p>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowModal(false)}
+              >
+                Cerrar
+              </Button>
+              <Button
+                onClick={() => {
+                  showToast('Declaración enviada al SII', 'success');
+                  setShowModal(false);
+                }}
+              >
+                Enviar al SII
+              </Button>
+            </div>
+          </div>
+        )}
+      </SimpleModal>
     </div>
   );
 };

@@ -1,45 +1,43 @@
-# Dependencies
-node_modules/
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Build outputs
-dist/
-build/
+node_modules
+dist
+dist-ssr
+*.local
 
-# Environment variables
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local env files
+.env*.local
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
-env.local
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage/
 
 # Vercel
 .vercel
 
-.vercel
-.env*.local
+# Supabase
+.branches
+.temp
+
+# PostgresTools
+postgrestools.log
+postgrestools-*.log
+*.postgrestools-cache
+
+# OS
+.DS_Store
+Thumbs.db

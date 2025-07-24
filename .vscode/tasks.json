@@ -1,0 +1,25 @@
+{
+    "version":  "2.0.0",
+    "tasks":  [
+                  {
+                      "label":  "Verificar PostgresTools",
+                      "command":  "powershell",
+                      "type":  "shell",
+                      "args":  [
+                                   "-ExecutionPolicy",
+                                   "Bypass",
+                                   "-File",
+                                   "check-setup.ps1"
+                               ],
+                      "presentation":  {
+                                           "reveal":  "always",
+                                           "panel":  "shared",
+                                           "focus":  false,
+                                           "showReuseMessage":  true,
+                                           "echo":  true,
+                                           "clear":  false
+                                       },
+                      "group":  "build"
+                  }
+              ]
+}
