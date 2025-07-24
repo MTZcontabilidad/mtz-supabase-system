@@ -227,7 +227,17 @@ class DataService {
 
       if (error) {
         console.log('⚠️ Error obteniendo cobranzas de Supabase, usando datos mock');
-        return this.getDatosMock().cobranzas;
+        const mockData = this.getDatosMock().cobranzas;
+        console.log('✅ Datos mock de cobranzas cargados:', mockData.length, 'registros');
+        return mockData;
+      }
+
+      // Si no hay datos en Supabase, usar datos mock
+      if (!data || data.length === 0) {
+        console.log('⚠️ No hay datos de cobranzas en Supabase, usando datos mock');
+        const mockData = this.getDatosMock().cobranzas;
+        console.log('✅ Datos mock de cobranzas cargados:', mockData.length, 'registros');
+        return mockData;
       }
 
       // Transformar datos para que coincidan con la estructura esperada
@@ -247,10 +257,13 @@ class DataService {
         dias_vencimiento: cobranza.dias_vencimiento || 30
       }));
 
+      console.log('✅ Datos de cobranzas de Supabase cargados:', cobranzasTransformadas.length, 'registros');
       return cobranzasTransformadas;
     } catch (error) {
       console.error('Error obteniendo cobranzas:', error);
-      return this.getDatosMock().cobranzas;
+      const mockData = this.getDatosMock().cobranzas;
+      console.log('✅ Datos mock de cobranzas cargados como fallback:', mockData.length, 'registros');
+      return mockData;
     }
   }
 

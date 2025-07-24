@@ -85,15 +85,23 @@ const CobranzaPage = () => {
       console.log('🔄 Cargando cobranzas desde Supabase...');
 
       const data = await dataService.getCobranzas();
-      setCobranzas(data || []);
-      console.log('✅ Cobranzas cargadas:', data?.length || 0);
+
+      if (data && data.length > 0) {
+        setCobranzas(data);
+        console.log('✅ Cobranzas cargadas exitosamente:', data.length, 'registros');
+      } else {
+        console.log('⚠️ No se obtuvieron datos de cobranzas, usando datos mock');
+        const mockData = dataService.getDatosMock().cobranzas;
+        setCobranzas(mockData);
+        console.log('✅ Datos mock de cobranzas cargados:', mockData.length, 'registros');
+      }
     } catch (error) {
       console.error('Error cargando cobranzas:', error);
       setError('Error al cargar las cobranzas');
       // Usar datos mock como fallback
-      const data = dataService.getDatosMock().cobranzas;
-      setCobranzas(data || []);
-      console.log('⚠️ Usando datos mock como fallback:', data?.length || 0);
+      const mockData = dataService.getDatosMock().cobranzas;
+      setCobranzas(mockData);
+      console.log('⚠️ Usando datos mock como fallback:', mockData.length, 'registros');
     } finally {
       setLoading(false);
     }
@@ -105,12 +113,14 @@ const CobranzaPage = () => {
 
   // Filtrar cobranzas
   const cobranzasFiltradas = cobranzas.filter(cobranza => {
+    if (!cobranza) return false;
+
     const matchSearch =
-      cobranza.numero_factura
+      (cobranza.numero_factura || '')
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      cobranza.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cobranza.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
+      (cobranza.cliente || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (cobranza.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchEstado = !filterEstado || cobranza.estado === filterEstado;
     const matchCliente = !filterCliente || cobranza.cliente === filterCliente;
@@ -121,12 +131,11 @@ const CobranzaPage = () => {
   // Calcular estadísticas
   const estadisticas = {
     total_cobranzas: cobranzas.length,
-    total_monto: cobranzas.reduce((sum, c) => sum + c.monto_total, 0),
-    total_pagado: cobranzas.reduce((sum, c) => sum + c.monto_pagado, 0),
-    total_pendiente: cobranzas.reduce((sum, c) => sum + c.monto_pendiente, 0),
-    cobranzas_pendientes: cobranzas.filter(c => c.estado === 'Pendiente')
-      .length,
-    cobranzas_vencidas: cobranzas.filter(c => c.estado === 'Vencida').length,
+    total_monto: cobranzas.reduce((sum, c) => sum + (c?.monto_total || 0), 0),
+    total_pagado: cobranzas.reduce((sum, c) => sum + (c?.monto_pagado || 0), 0),
+    total_pendiente: cobranzas.reduce((sum, c) => sum + (c?.monto_pendiente || 0), 0),
+    cobranzas_pendientes: cobranzas.filter(c => c?.estado === 'Pendiente').length,
+    cobranzas_vencidas: cobranzas.filter(c => c?.estado === 'Vencida').length,
   };
 
   return (
