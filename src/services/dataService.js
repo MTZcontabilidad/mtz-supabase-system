@@ -133,13 +133,33 @@ class DataService {
       const { data, error } = await supabase
         .from('ventas')
         .select('*')
-        .order('fecha_venta', { ascending: false });
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data || [];
+      if (error) {
+        console.log('⚠️ Error obteniendo ventas de Supabase, usando datos mock');
+        return this.getDatosMock().ventas;
+      }
+
+      // Transformar datos para que coincidan con la estructura esperada
+      const ventasTransformadas = (data || []).map(venta => ({
+        id: venta.id,
+        numero_factura: venta.numero_factura || `F${venta.id}-2024`,
+        cliente: venta.cliente || 'Cliente sin nombre',
+        descripcion: venta.descripcion || 'Sin descripción',
+        monto_subtotal: venta.monto_subtotal || 0,
+        monto_iva: venta.monto_iva || 0,
+        monto_total: venta.monto_total || 0,
+        estado: venta.estado || 'Pendiente',
+        forma_pago: venta.forma_pago || 'Transferencia',
+        categoria: venta.categoria || 'General',
+        fecha_emision: venta.fecha_emision || venta.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+        fecha_vencimiento: venta.fecha_vencimiento || venta.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+        dias_vencimiento: venta.dias_vencimiento || 30
+      }));
+
+      return ventasTransformadas;
     } catch (error) {
       console.error('Error obteniendo ventas:', error);
-      // Retornar datos mock en lugar de lanzar error
       return this.getDatosMock().ventas;
     }
   }
@@ -270,13 +290,29 @@ class DataService {
       const { data, error } = await supabase
         .from('compras')
         .select('*')
-        .order('fecha_orden', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.log('⚠️ Tabla compras no existe, usando datos mock');
+        console.log('⚠️ Tabla compras no existe o error, usando datos mock');
         return this.getDatosMock().compras;
       }
-      return data || [];
+
+      // Transformar datos para que coincidan con la estructura esperada
+      const comprasTransformadas = (data || []).map(compra => ({
+        id: compra.id,
+        numero_orden: compra.numero_orden || `OC-2024-${compra.id.toString().padStart(3, '0')}`,
+        proveedor: compra.proveedor || 'Proveedor sin nombre',
+        descripcion: compra.descripcion || 'Sin descripción',
+        monto_total: compra.monto_total || 0,
+        fecha_orden: compra.fecha_orden || compra.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+        fecha_entrega: compra.fecha_entrega || compra.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+        estado: compra.estado || 'Pendiente',
+        categoria: compra.categoria || 'General',
+        forma_pago: compra.forma_pago || 'Transferencia',
+        prioridad: compra.prioridad || 'Normal'
+      }));
+
+      return comprasTransformadas;
     } catch (error) {
       console.error('Error obteniendo compras:', error);
       return this.getDatosMock().compras;

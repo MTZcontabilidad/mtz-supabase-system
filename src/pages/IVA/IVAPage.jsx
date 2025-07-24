@@ -62,12 +62,24 @@ const IVAPage = () => {
       let compras = [];
 
       try {
-        [ventas, compras] = await Promise.all([
-          dataService.getVentas(),
-          dataService.getCompras()
-        ]);
+        // Intentar cargar datos de forma individual para mejor manejo de errores
+        try {
+          ventas = await dataService.getVentas();
+          console.log('✅ Datos de ventas cargados:', ventas.length, 'registros');
+        } catch (error) {
+          console.log('⚠️ Error cargando ventas, usando datos mock');
+          ventas = dataService.getDatosMock().ventas;
+        }
+
+        try {
+          compras = await dataService.getCompras();
+          console.log('✅ Datos de compras cargados:', compras.length, 'registros');
+        } catch (error) {
+          console.log('⚠️ Error cargando compras, usando datos mock');
+          compras = dataService.getDatosMock().compras;
+        }
       } catch (error) {
-        console.log('Usando datos mock para IVA');
+        console.log('⚠️ Error general cargando datos, usando datos mock completos');
         const mockData = dataService.getDatosMock();
         ventas = mockData.ventas;
         compras = mockData.compras;
@@ -171,6 +183,14 @@ const IVAPage = () => {
         proximasFechas: proximasFechas,
       });
 
+      console.log('✅ Datos de IVA cargados exitosamente');
+      console.log('📊 Resumen:', {
+        ventas: ventas.length,
+        compras: compras.length,
+        ivaDebitado: ivaDebitado,
+        ivaCreditado: ivaCreditado,
+        saldoActual: saldoActual
+      });
       showToast('Datos de IVA cargados exitosamente', 'success');
     } catch (error) {
       console.error('❌ Error cargando datos de IVA:', error);
@@ -195,8 +215,8 @@ const IVAPage = () => {
       const compras = await dataService.getCompras();
 
       // Filtrar por período (simulado)
-      const ventasPeriodo = ventas.filter(v => v.fecha_venta?.includes(`${ano}-${mes.toString().padStart(2, '0')}`));
-      const comprasPeriodo = compras.filter(c => c.fecha_compra?.includes(`${ano}-${mes.toString().padStart(2, '0')}`));
+      const ventasPeriodo = ventas.filter(v => v.fecha_emision?.includes(`${ano}-${mes.toString().padStart(2, '0')}`));
+      const comprasPeriodo = compras.filter(c => c.fecha_orden?.includes(`${ano}-${mes.toString().padStart(2, '0')}`));
 
       // Calcular IVA
       const ivaDebitado = ventasPeriodo.reduce((total, v) => total + (v.monto_total * 0.19), 0);
