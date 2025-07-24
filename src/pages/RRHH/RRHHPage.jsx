@@ -353,26 +353,30 @@ const RRHHPage = () => {
   return (
     <div className='space-y-6'>
       {/* Header */}
-      <div className='flex justify-between items-center'>
-        <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Recursos Humanos</h1>
-          <p className='text-gray-600'>Gestión de empleados y nóminas</p>
-        </div>
-        <div className='flex space-x-2'>
-          <Button
-            onClick={() => setActiveTab('empleados')}
-            variant={activeTab === 'empleados' ? 'primary' : 'secondary'}
-          >
-            <Users className='w-4 h-4 mr-2' />
-            Empleados
-          </Button>
-          <Button
-            onClick={() => setActiveTab('nominas')}
-            variant={activeTab === 'nominas' ? 'primary' : 'secondary'}
-          >
-            <FileText className='w-4 h-4 mr-2' />
-            Nóminas
-          </Button>
+      <div className='bg-gradient-to-r from-orange-600 to-red-600 shadow-lg rounded-lg p-6 text-white'>
+        <div className='flex justify-between items-center'>
+          <div>
+            <h1 className='text-3xl font-bold mb-2'>Recursos Humanos</h1>
+            <p className='text-orange-100'>Gestión de empleados y nóminas</p>
+          </div>
+          <div className='flex space-x-2'>
+            <Button
+              onClick={() => setActiveTab('empleados')}
+              variant={activeTab === 'empleados' ? 'primary' : 'secondary'}
+              className={activeTab === 'empleados' ? 'bg-white text-orange-600' : 'text-white border-white hover:bg-white hover:text-orange-600'}
+            >
+              <Users className='w-4 h-4 mr-2' />
+              Empleados
+            </Button>
+            <Button
+              onClick={() => setActiveTab('nominas')}
+              variant={activeTab === 'nominas' ? 'primary' : 'secondary'}
+              className={activeTab === 'nominas' ? 'bg-white text-orange-600' : 'text-white border-white hover:bg-white hover:text-orange-600'}
+            >
+              <FileText className='w-4 h-4 mr-2' />
+              Nóminas
+            </Button>
+          </div>
         </div>
       </div>
 

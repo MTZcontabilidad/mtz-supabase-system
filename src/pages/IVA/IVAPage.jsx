@@ -329,21 +329,28 @@ const IVAPage = () => {
 
   return (
     <div className='space-y-6'>
-      <div className='flex justify-between items-center'>
-        <h1 className='text-2xl font-bold text-gray-900'>Gestión de IVA</h1>
-        <div className='flex gap-2'>
-          <Button variant='outline'>
-            <Upload className='h-4 w-4 mr-2' />
-            Importar Declaración
-          </Button>
-          <Button variant='outline'>
-            <Download className='h-4 w-4 mr-2' />
-            Exportar Datos
-          </Button>
-          <Button onClick={cargarDatosIVA} variant='outline'>
-            <RefreshCw className='h-4 w-4 mr-2' />
-            Actualizar
-          </Button>
+      <div className='bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg rounded-lg p-6 text-white'>
+        <div className='flex justify-between items-center'>
+          <div>
+            <h1 className='text-3xl font-bold mb-2'>Gestión de IVA</h1>
+            <p className='text-purple-100'>
+              Administra y gestiona todas las declaraciones de IVA
+            </p>
+          </div>
+          <div className='flex gap-2'>
+            <Button variant='outline' className='text-white border-white hover:bg-white hover:text-purple-600'>
+              <Upload className='h-4 w-4 mr-2' />
+              Importar Declaración
+            </Button>
+            <Button variant='outline' className='text-white border-white hover:bg-white hover:text-purple-600'>
+              <Download className='h-4 w-4 mr-2' />
+              Exportar Datos
+            </Button>
+            <Button onClick={cargarDatosIVA} variant='outline' className='text-white border-white hover:bg-white hover:text-purple-600'>
+              <RefreshCw className='h-4 w-4 mr-2' />
+              Actualizar
+            </Button>
+          </div>
         </div>
       </div>
 
