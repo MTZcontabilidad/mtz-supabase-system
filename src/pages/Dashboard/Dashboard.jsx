@@ -13,8 +13,8 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
-import { Card } from '../../components/ui/Card.jsx';
-import { Button } from '../../components/ui/Button.jsx';
+import Card from '../../components/ui/Card.jsx';
+import Button from '../../components/ui/Button.jsx';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {

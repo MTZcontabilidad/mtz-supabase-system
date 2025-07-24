@@ -1,44 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { AuthContext } from '../../contexts/AuthContext.jsx';
 import {
   Home,
   Users,
   TrendingUp,
-  Building,
-  Calculator,
-  Menu,
-  X,
-  LogOut,
-  User,
-  Settings,
-  BarChart3,
-  FileText,
   DollarSign,
-  ChevronDown,
-  ChevronRight
+  Building,
+  FileText,
+  Settings,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  User,
+  Calculator
 } from 'lucide-react';
+import Button from '../ui/Button.jsx';
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, signOut } = useContext(AuthContext);
   const [collapsed, setCollapsed] = useState(false);
-  const [expandedMenu, setExpandedMenu] = useState(null);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
-  };
 
   const menuItems = [
     {
       path: '/dashboard',
-      label: 'Dashboard',
+      name: 'Dashboard',
       icon: Home,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
@@ -46,7 +34,7 @@ const Sidebar = () => {
     },
     {
       path: '/clientes',
-      label: 'Clientes',
+      name: 'Clientes',
       icon: Users,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
@@ -54,7 +42,7 @@ const Sidebar = () => {
     },
     {
       path: '/ventas',
-      label: 'Ventas',
+      name: 'Ventas',
       icon: TrendingUp,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
@@ -62,7 +50,7 @@ const Sidebar = () => {
     },
     {
       path: '/cobranza',
-      label: 'Cobranzas',
+      name: 'Cobranzas',
       icon: DollarSign,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
@@ -70,7 +58,7 @@ const Sidebar = () => {
     },
     {
       path: '/rrhh',
-      label: 'RRHH',
+      name: 'RRHH',
       icon: Building,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
@@ -78,7 +66,7 @@ const Sidebar = () => {
     },
     {
       path: '/iva',
-      label: 'IVA',
+      name: 'IVA',
       icon: Calculator,
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
@@ -90,33 +78,37 @@ const Sidebar = () => {
     return location.pathname === path;
   };
 
-  const getActiveItem = () => {
-    return menuItems.find(item => isActive(item.path));
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
 
-  const activeItem = getActiveItem();
-
   return (
-    <div className={`bg-white shadow-lg transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'} min-h-screen`}>
+    <div className={`bg-white shadow-lg transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           {!collapsed && (
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Building className="h-5 w-5 text-white" />
+                <span className="text-white font-bold text-sm">M</span>
               </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">MTZ Sistema</h1>
-                <p className="text-xs text-gray-500">v3.0</p>
-              </div>
+              <span className="font-bold text-gray-800">MTZ Sistema</span>
             </div>
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            {collapsed ? <Menu className="h-5 w-5 text-gray-600" /> : <X className="h-5 w-5 text-gray-600" />}
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4 text-gray-600" />
+            ) : (
+              <ChevronLeft className="h-4 w-4 text-gray-600" />
+            )}
           </button>
         </div>
       </div>
@@ -131,72 +123,61 @@ const Sidebar = () => {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center px-3 py-3 rounded-lg transition-all duration-200 ${
+              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                 active
-                  ? `${item.bgColor} ${item.color} shadow-sm`
+                  ? `${item.bgColor} ${item.color} font-medium`
                   : 'text-gray-600 hover:bg-gray-50'
-              } ${collapsed ? 'justify-center' : 'justify-start'}`}
+              } ${item.hoverColor}`}
             >
-              <IconComponent className={`h-5 w-5 ${collapsed ? '' : 'mr-3'}`} />
-              {!collapsed && (
-                <span className="font-medium">{item.label}</span>
-              )}
+              <IconComponent className="h-5 w-5" />
+              {!collapsed && <span>{item.name}</span>}
             </button>
           );
         })}
       </nav>
 
       {/* User Section */}
-      {!collapsed && (
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-              <User className="h-4 w-4 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.email || 'Usuario'}
-              </p>
-              <p className="text-xs text-gray-500">Sesión activa</p>
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
+        {!collapsed && (
+          <div className="mb-3">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                <User className="h-4 w-4 text-gray-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {user?.email || 'Usuario'}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {user?.user_metadata?.nombre || 'Sin nombre'}
+                </p>
+              </div>
             </div>
           </div>
+        )}
 
-          <div className="flex space-x-2">
-            <button
-              onClick={() => navigate('/settings')}
-              className="flex-1 flex items-center justify-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Config
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex-1 flex items-center justify-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Salir
-            </button>
-          </div>
-        </div>
-      )}
+        <div className="flex items-center space-x-2">
+          <Button
+            onClick={() => navigate('/settings')}
+            variant="outline"
+            size="sm"
+            className="flex-1"
+          >
+            {!collapsed && <Settings className="h-4 w-4 mr-2" />}
+            {!collapsed && 'Configuración'}
+          </Button>
 
-      {/* Collapsed User Section */}
-      {collapsed && (
-        <div className="absolute bottom-0 left-0 right-0 p-2 border-t border-gray-200 bg-gray-50">
-          <div className="flex flex-col items-center space-y-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-              <User className="h-4 w-4 text-white" />
-            </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              title="Cerrar sesión"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            size="sm"
+            className="text-red-600 border-red-200 hover:bg-red-50"
+          >
+            {!collapsed && <LogOut className="h-4 w-4 mr-2" />}
+            {!collapsed && 'Salir'}
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 };
