@@ -356,6 +356,9 @@ const useAuth = () => {
     checkRole,
     getProfile,
     isSessionValid,
+
+    // Modo demo (para compatibilidad con componentes existentes)
+    isDemoMode: false,
   };
 };
 

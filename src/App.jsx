@@ -2,6 +2,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import SimpleLogin from './components/auth/SimpleLogin';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard/Dashboard';
 import ClientesPage from './pages/Clientes/ClientesPage';
@@ -19,7 +20,14 @@ function App() {
       <div className='App'>
         <Routes>
           <Route path='/login' element={<SimpleLogin />} />
-          <Route path='/' element={<Layout />}>
+          <Route
+            path='/'
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
             <Route path='/dashboard' element={<Dashboard />} />
             <Route path='/clientes' element={<ClientesPage />} />
             <Route path='/ventas' element={<VentasPageSimple />} />

@@ -13,14 +13,15 @@ import useAuth from '@/hooks/useAuth.js';
  * @returns {JSX.Element|null} Banner de demo o null si no está en modo demo
  */
 const DemoBanner = () => {
-  const { isDemoMode, disableDemoMode } = useAuth();
+  const { isDemoMode } = useAuth();
 
   if (!isDemoMode) {
     return null;
   }
 
   const handleCloseDemo = () => {
-    disableDemoMode();
+    // Por ahora solo ocultar el banner
+    console.log('Demo mode banner closed');
   };
 
   return (
