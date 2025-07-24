@@ -113,6 +113,9 @@ export const AuthProvider = ({ children }) => {
         };
         localStorage.setItem('mtz-test-session', JSON.stringify(demoSession));
 
+        // Redirigir al dashboard después del login exitoso
+        window.location.href = '/app/dashboard';
+
         return { success: true, data: { user: demoUser } };
       }
 

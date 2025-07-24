@@ -21,7 +21,7 @@ function SimpleLogin() {
 
       if (result.success) {
         console.log('✅ Login exitoso');
-        navigate('/dashboard');
+        navigate('/app/dashboard');
       } else {
         console.error('❌ Error en login:', result.error);
         setError(result.error);

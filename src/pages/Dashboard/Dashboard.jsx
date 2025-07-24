@@ -186,42 +186,42 @@ function Dashboard() {
           Acciones Rápidas
         </h2>
         <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-          <button
-            onClick={() => navigate('/clientes')}
-            className='bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700 transition-colors'
-          >
-            <div className='text-center'>
-              <div className='text-2xl mb-1'>👥</div>
-              <div className='text-sm font-medium'>Gestionar Clientes</div>
-            </div>
-          </button>
-          <button
-            onClick={() => navigate('/ventas')}
-            className='bg-green-600 text-white p-4 rounded-lg hover:bg-green-700 transition-colors'
-          >
-            <div className='text-center'>
-              <div className='text-2xl mb-1'>📈</div>
-              <div className='text-sm font-medium'>Gestionar Ventas</div>
-            </div>
-          </button>
-          <button
-            onClick={() => navigate('/cobranza')}
-            className='bg-orange-600 text-white p-4 rounded-lg hover:bg-orange-700 transition-colors'
-          >
-            <div className='text-center'>
-              <div className='text-2xl mb-1'>💰</div>
-              <div className='text-sm font-medium'>Gestionar Cobranzas</div>
-            </div>
-          </button>
-          <button
-            onClick={() => navigate('/rrhh')}
-            className='bg-purple-600 text-white p-4 rounded-lg hover:bg-purple-700 transition-colors'
-          >
-            <div className='text-center'>
-              <div className='text-2xl mb-1'>👨‍💼</div>
-              <div className='text-sm font-medium'>Gestionar RRHH</div>
-            </div>
-          </button>
+                      <button
+              onClick={() => navigate('/app/clientes')}
+              className='bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700 transition-colors'
+            >
+              <div className='text-center'>
+                <div className='text-2xl mb-1'>👥</div>
+                <div className='text-sm font-medium'>Gestionar Clientes</div>
+              </div>
+            </button>
+            <button
+              onClick={() => navigate('/app/ventas')}
+              className='bg-green-600 text-white p-4 rounded-lg hover:bg-green-700 transition-colors'
+            >
+              <div className='text-center'>
+                <div className='text-2xl mb-1'>📈</div>
+                <div className='text-sm font-medium'>Gestionar Ventas</div>
+              </div>
+            </button>
+            <button
+              onClick={() => navigate('/app/cobranza')}
+              className='bg-orange-600 text-white p-4 rounded-lg hover:bg-orange-700 transition-colors'
+            >
+              <div className='text-center'>
+                <div className='text-2xl mb-1'>💰</div>
+                <div className='text-sm font-medium'>Gestionar Cobranzas</div>
+              </div>
+            </button>
+            <button
+              onClick={() => navigate('/app/rrhh')}
+              className='bg-purple-600 text-white p-4 rounded-lg hover:bg-purple-700 transition-colors'
+            >
+              <div className='text-center'>
+                <div className='text-2xl mb-1'>👨‍💼</div>
+                <div className='text-sm font-medium'>Gestionar RRHH</div>
+              </div>
+            </button>
         </div>
       </div>
 

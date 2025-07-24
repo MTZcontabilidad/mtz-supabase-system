@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext.jsx';
 import SimpleLogin from './components/auth/SimpleLogin';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Layout from './components/layout/Layout';
+import LandingPage from './pages/Landing/LandingPage';
 import Dashboard from './pages/Dashboard/Dashboard';
 import ClientesPage from './pages/Clientes/ClientesPage';
 import VentasPageSimple from './pages/Ventas/VentasPageSimple';
@@ -19,42 +20,50 @@ function App() {
     <AuthProvider>
       <div className='App'>
         <Routes>
+          {/* Landing Page - Pública */}
+          <Route path='/' element={<LandingPage />} />
+
+          {/* Login - Público */}
           <Route path='/login' element={<SimpleLogin />} />
+
+          {/* Rutas Protegidas */}
           <Route
-            path='/'
+            path='/app'
             element={
               <ProtectedRoute>
                 <Layout />
               </ProtectedRoute>
             }
           >
-            <Route path='/dashboard' element={<Dashboard />} />
-            <Route path='/clientes' element={<ClientesPage />} />
-            <Route path='/ventas' element={<VentasPageSimple />} />
-            <Route path='/rrhh' element={<RRHHPage />} />
-            <Route path='/iva' element={<IVAPage />} />
-            <Route path='/contratos' element={<ContratosPanel />} />
-            <Route path='/carga-masiva' element={<CargaMasivaPageSimple />} />
-            <Route path='/cobranza' element={<CobranzaPage />} />
-            <Route path='/compras' element={<ComprasPage />} />
+            <Route path='/app/dashboard' element={<Dashboard />} />
+            <Route path='/app/clientes' element={<ClientesPage />} />
+            <Route path='/app/ventas' element={<VentasPageSimple />} />
+            <Route path='/app/rrhh' element={<RRHHPage />} />
+            <Route path='/app/iva' element={<IVAPage />} />
+            <Route path='/app/contratos' element={<ContratosPanel />} />
+            <Route path='/app/carga-masiva' element={<CargaMasivaPageSimple />} />
+            <Route path='/app/cobranza' element={<CobranzaPage />} />
+            <Route path='/app/compras' element={<ComprasPage />} />
             <Route
-              path='/reportes'
+              path='/app/reportes'
               element={<div>Página de Reportes (En desarrollo)</div>}
             />
             <Route
-              path='/configuracion'
+              path='/app/configuracion'
               element={<div>Página de Configuración (En desarrollo)</div>}
             />
             <Route
-              path='/admin/usuarios'
+              path='/app/admin/usuarios'
               element={<div>Página de Administración (En desarrollo)</div>}
             />
             <Route
-              path='/portal-clientes'
+              path='/app/portal-clientes'
               element={<div>Portal de Clientes (En desarrollo)</div>}
             />
           </Route>
-          <Route path='/' element={<Navigate to='/dashboard' replace />} />
+
+          {/* Redirección por defecto */}
+          <Route path='/dashboard' element={<Navigate to='/app/dashboard' replace />} />
         </Routes>
       </div>
     </AuthProvider>
