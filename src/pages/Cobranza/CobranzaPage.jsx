@@ -1,539 +1,446 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import dataService from '../../services/dataService.js';
+import React, { useState, useEffect } from 'react';
+import { dataService } from '../../services/dataService.js';
 import {
   DollarSign,
-  Plus,
   Search,
   Filter,
-  Download,
+  Plus,
+  RefreshCw,
+  Eye,
   Edit,
   Trash2,
-  Eye,
-  RefreshCw,
-  FileText,
   Calendar,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
   User,
-  Receipt,
-  CreditCard,
-  Coins,
-  Banknote,
-  TrendingUp,
-  TrendingDown,
+  FileText
 } from 'lucide-react';
-import Button from '../../components/ui/Button.jsx';
-import Card from '../../components/ui/Card.jsx';
-import Badge from '../../components/ui/Badge.jsx';
-import Input from '../../components/ui/Input.jsx';
-import SimpleModal from '../../components/ui/SimpleModal';
-
-// Funciones de utilidad
-const formatCurrency = amount => {
-  return new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-  }).format(amount);
-};
-
-const formatDate = dateString => {
-  return new Date(dateString).toLocaleDateString('es-CL');
-};
-
-const getStatusColor = status => {
-  switch (status) {
-    case 'Pagada':
-      return 'success';
-    case 'Pendiente':
-      return 'warning';
-    case 'Vencida':
-      return 'danger';
-    default:
-      return 'info';
-  }
-};
-
-const getStatusLabel = status => {
-  switch (status) {
-    case 'Pagada':
-      return 'Pagada';
-    case 'Pendiente':
-      return 'Pendiente';
-    case 'Vencida':
-      return 'Vencida';
-    default:
-      return status;
-  }
-};
+import { Card } from '../../components/ui/Card.jsx';
+import { Button } from '../../components/ui/Button.jsx';
+import toast from 'react-hot-toast';
 
 const CobranzaPage = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [cobranzas, setCobranzas] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterEstado, setFilterEstado] = useState('');
-  const [filterCliente, setFilterCliente] = useState('');
+  const [filterStatus, setFilterStatus] = useState('todos');
   const [showModal, setShowModal] = useState(false);
   const [selectedCobranza, setSelectedCobranza] = useState(null);
+  const [estadisticas, setEstadisticas] = useState({
+    total: 0,
+    pagadas: 0,
+    pendientes: 0,
+    vencidas: 0,
+    montoTotal: 0,
+    montoPagado: 0,
+    montoPendiente: 0
+  });
 
-  // Cargar datos de cobranza
-  const cargarCobranzas = useCallback(async () => {
+  const cargarCobranzas = async () => {
     try {
       setLoading(true);
-      setError(null);
-      console.log('🔄 Cargando cobranzas desde Supabase...');
-
       const data = await dataService.getCobranzas();
 
       if (data && data.length > 0) {
         setCobranzas(data);
-        console.log('✅ Cobranzas cargadas exitosamente:', data.length, 'registros');
+        calcularEstadisticas(data);
+        console.log('✅ Cobranzas cargadas exitosamente:', data.length);
       } else {
-        console.log('⚠️ No se obtuvieron datos de cobranzas, usando datos mock');
-        const mockData = dataService.getDatosMock().cobranzas;
-        setCobranzas(mockData);
-        console.log('✅ Datos mock de cobranzas cargados:', mockData.length, 'registros');
+        setCobranzas([]);
+        setEstadisticas({
+          total: 0,
+          pagadas: 0,
+          pendientes: 0,
+          vencidas: 0,
+          montoTotal: 0,
+          montoPagado: 0,
+          montoPendiente: 0
+        });
+        console.log('ℹ️ No hay cobranzas en la base de datos');
       }
     } catch (error) {
-      console.error('Error cargando cobranzas:', error);
-      setError('Error al cargar las cobranzas');
-      // Usar datos mock como fallback
-      const mockData = dataService.getDatosMock().cobranzas;
-      setCobranzas(mockData);
-      console.log('⚠️ Usando datos mock como fallback:', mockData.length, 'registros');
+      console.error('❌ Error cargando cobranzas:', error);
+      toast.error('Error al cargar las cobranzas');
+      setCobranzas([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
+
+  const calcularEstadisticas = (data) => {
+    const total = data.length;
+    const pagadas = data.filter(c => c.estado?.toLowerCase() === 'pagada').length;
+    const pendientes = data.filter(c => c.estado?.toLowerCase() === 'pendiente').length;
+    const vencidas = data.filter(c => c.estado?.toLowerCase() === 'vencida').length;
+
+    const montoTotal = data.reduce((sum, c) => sum + (c.monto_total || 0), 0);
+    const montoPagado = data.reduce((sum, c) => sum + (c.monto_pagado || 0), 0);
+    const montoPendiente = data.reduce((sum, c) => sum + (c.monto_pendiente || 0), 0);
+
+    setEstadisticas({
+      total,
+      pagadas,
+      pendientes,
+      vencidas,
+      montoTotal,
+      montoPagado,
+      montoPendiente
+    });
+  };
 
   useEffect(() => {
     cargarCobranzas();
-  }, [cargarCobranzas]);
+  }, []);
 
-  // Filtrar cobranzas
   const cobranzasFiltradas = cobranzas.filter(cobranza => {
     if (!cobranza) return false;
 
-    const matchSearch =
-      (cobranza.numero_factura || '')
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (cobranza.cliente || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (cobranza.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      (cobranza.numero_factura || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (cobranza.cliente_nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (cobranza.cliente_ruc || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchEstado = !filterEstado || cobranza.estado === filterEstado;
-    const matchCliente = !filterCliente || cobranza.cliente === filterCliente;
+    const matchesStatus = filterStatus === 'todos' ||
+      (cobranza.estado || '').toLowerCase() === filterStatus.toLowerCase();
 
-    return matchSearch && matchEstado && matchCliente;
+    return matchesSearch && matchesStatus;
   });
 
-  // Calcular estadísticas
-  const estadisticas = {
-    total_cobranzas: cobranzas.length,
-    total_monto: cobranzas.reduce((sum, c) => sum + (c?.monto_total || 0), 0),
-    total_pagado: cobranzas.reduce((sum, c) => sum + (c?.monto_pagado || 0), 0),
-    total_pendiente: cobranzas.reduce((sum, c) => sum + (c?.monto_pendiente || 0), 0),
-    cobranzas_pendientes: cobranzas.filter(c => c?.estado === 'Pendiente').length,
-    cobranzas_vencidas: cobranzas.filter(c => c?.estado === 'Vencida').length,
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP',
+      minimumFractionDigits: 0
+    }).format(amount || 0);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Sin fecha';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('es-CL', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return 'Fecha inválida';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'pagada':
+        return 'bg-green-100 text-green-800';
+      case 'pendiente':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'vencida':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta cobranza?')) {
+      try {
+        await dataService.eliminarCobranza(id);
+        toast.success('Cobranza eliminada exitosamente');
+        cargarCobranzas();
+      } catch (error) {
+        console.error('Error eliminando cobranza:', error);
+        toast.error('Error al eliminar la cobranza');
+      }
+    }
   };
 
   return (
-    <div className='space-y-6'>
+    <div className="space-y-6">
       {/* Header */}
-      <div className='flex justify-between items-center'>
-        <div>
-          <h1 className='text-2xl font-bold text-gray-900'>
-            Gestión de Cobranza
-          </h1>
-          <p className='text-gray-600'>
-            Administra y gestiona todas las cobranzas del sistema
-          </p>
-        </div>
-        <div className='flex items-center space-x-3'>
-          <Button onClick={cargarCobranzas} variant='outline'>
-            <RefreshCw className='h-4 w-4 mr-2' />
-            Actualizar
-          </Button>
-          <Button
-            onClick={() => {
-              setSelectedCobranza(null);
-              setShowModal(true);
-            }}
-          >
-            <Plus className='h-4 w-4 mr-2' />
-            Nueva Cobranza
-          </Button>
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg rounded-lg p-6 text-white">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Gestión de Cobranzas</h1>
+            <p className="text-purple-100">
+              Administra y gestiona todas las cobranzas del sistema
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button
+              onClick={cargarCobranzas}
+              variant="outline"
+              className="text-white border-white hover:bg-white hover:text-purple-600"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Actualizar
+            </Button>
+            <Button
+              onClick={() => {
+                setSelectedCobranza(null);
+                setShowModal(true);
+              }}
+              className="bg-white text-purple-600 hover:bg-purple-50"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva Cobranza
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Estadísticas */}
-      <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6'>
-        <Card>
-          <div className='p-4'>
-            <div className='flex items-center'>
-              <div className='p-2 bg-blue-100 rounded-lg'>
-                <FileText className='h-6 w-6 text-blue-600' />
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <div className="p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-white" />
               </div>
-              <div className='ml-4'>
-                <p className='text-sm font-medium text-gray-600'>
-                  Total Cobranzas
-                </p>
-                <p className='text-2xl font-bold text-gray-900'>
-                  {estadisticas.total_cobranzas}
-                </p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className='p-4'>
-            <div className='flex items-center'>
-              <div className='p-2 bg-green-100 rounded-lg'>
-                <TrendingUp className='h-6 w-6 text-green-600' />
-              </div>
-              <div className='ml-4'>
-                <p className='text-sm font-medium text-gray-600'>Total Monto</p>
-                <p className='text-2xl font-bold text-gray-900'>
-                  {formatCurrency(estadisticas.total_monto)}
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Cobranzas</p>
+                <p className="text-2xl font-bold text-gray-900">{estadisticas.total}</p>
+                <p className="text-sm text-purple-600 font-medium">
+                  {formatCurrency(estadisticas.montoTotal)}
                 </p>
               </div>
             </div>
           </div>
         </Card>
 
-        <Card>
-          <div className='p-4'>
-            <div className='flex items-center'>
-              <div className='p-2 bg-green-100 rounded-lg'>
-                <CheckCircle className='h-6 w-6 text-green-600' />
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <div className="p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-white" />
               </div>
-              <div className='ml-4'>
-                <p className='text-sm font-medium text-gray-600'>Pagado</p>
-                <p className='text-2xl font-bold text-gray-900'>
-                  {formatCurrency(estadisticas.total_pagado)}
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Pagadas</p>
+                <p className="text-2xl font-bold text-gray-900">{estadisticas.pagadas}</p>
+                <p className="text-sm text-green-600 font-medium">
+                  {formatCurrency(estadisticas.montoPagado)}
                 </p>
               </div>
             </div>
           </div>
         </Card>
 
-        <Card>
-          <div className='p-4'>
-            <div className='flex items-center'>
-              <div className='p-2 bg-yellow-100 rounded-lg'>
-                <Clock className='h-6 w-6 text-yellow-600' />
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <div className="p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-white" />
               </div>
-              <div className='ml-4'>
-                <p className='text-sm font-medium text-gray-600'>Pendiente</p>
-                <p className='text-2xl font-bold text-gray-900'>
-                  {formatCurrency(estadisticas.total_pendiente)}
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Pendientes</p>
+                <p className="text-2xl font-bold text-gray-900">{estadisticas.pendientes}</p>
+                <p className="text-sm text-yellow-600 font-medium">
+                  {formatCurrency(estadisticas.montoPendiente)}
                 </p>
               </div>
             </div>
           </div>
         </Card>
 
-        <Card>
-          <div className='p-4'>
-            <div className='flex items-center'>
-              <div className='p-2 bg-orange-100 rounded-lg'>
-                <AlertTriangle className='h-6 w-6 text-orange-600' />
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <div className="p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-white" />
               </div>
-              <div className='ml-4'>
-                <p className='text-sm font-medium text-gray-600'>Pendientes</p>
-                <p className='text-2xl font-bold text-gray-900'>
-                  {estadisticas.cobranzas_pendientes}
-                </p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className='p-4'>
-            <div className='flex items-center'>
-              <div className='p-2 bg-red-100 rounded-lg'>
-                <TrendingDown className='h-6 w-6 text-red-600' />
-              </div>
-              <div className='ml-4'>
-                <p className='text-sm font-medium text-gray-600'>Vencidas</p>
-                <p className='text-2xl font-bold text-gray-900'>
-                  {estadisticas.cobranzas_vencidas}
-                </p>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Vencidas</p>
+                <p className="text-2xl font-bold text-gray-900">{estadisticas.vencidas}</p>
               </div>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Filtros y Búsqueda */}
+      {/* Filters and Search */}
       <Card>
-        <div className='p-6'>
-          <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Buscar
-              </label>
-              <div className='relative'>
-                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400' />
-                <Input
-                  type='text'
-                  placeholder='Buscar por factura, cliente...'
+        <div className="p-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <input
+                  type="text"
+                  placeholder="Buscar por factura, cliente o RUC..."
                   value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className='pl-10'
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
             </div>
-
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Estado
-              </label>
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4 text-gray-400" />
               <select
-                value={filterEstado}
-                onChange={e => setFilterEstado(e.target.value)}
-                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
-                <option value=''>Todos los estados</option>
-                <option value='Pagada'>Pagada</option>
-                <option value='Pendiente'>Pendiente</option>
-                <option value='Vencida'>Vencida</option>
+                <option value="todos">Todos los estados</option>
+                <option value="pagada">Pagadas</option>
+                <option value="pendiente">Pendientes</option>
+                <option value="vencida">Vencidas</option>
               </select>
             </div>
+          </div>
+        </div>
+      </Card>
 
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Cliente
-              </label>
-              <select
-                value={filterCliente}
-                onChange={e => setFilterCliente(e.target.value)}
-                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+      {/* Cobranzas Table */}
+      <Card>
+        <div className="p-6">
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                <p className="mt-2 text-gray-600">Cargando cobranzas...</p>
+              </div>
+            ) : cobranzasFiltradas.length > 0 ? (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Factura
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Cliente
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Monto
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Fecha Vencimiento
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {cobranzasFiltradas.map((cobranza) => (
+                    <tr key={cobranza.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <FileText className="h-4 w-4 text-gray-400 mr-2" />
+                          <span className="text-sm font-medium text-gray-900">
+                            {cobranza.numero_factura || 'Sin número'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <User className="h-4 w-4 text-gray-400 mr-2" />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {cobranza.cliente_nombre || 'Cliente no encontrado'}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {cobranza.cliente_ruc || 'Sin RUC'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {formatCurrency(cobranza.monto_total)}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Pagado: {formatCurrency(cobranza.monto_pagado)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(cobranza.estado)}`}>
+                          {cobranza.estado || 'Sin estado'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 text-gray-400 mr-2" />
+                          <span className="text-sm text-gray-900">
+                            {formatDate(cobranza.fecha_vencimiento)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => {
+                              setSelectedCobranza(cobranza);
+                              setShowModal(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedCobranza(cobranza);
+                              setShowModal(true);
+                            }}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(cobranza.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center py-8">
+                <DollarSign className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">
+                  {searchTerm || filterStatus !== 'todos'
+                    ? 'No se encontraron cobranzas con los filtros aplicados'
+                    : 'No hay cobranzas registradas'
+                  }
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Modal placeholder - You can implement the modal for creating/editing cobranzas */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              {selectedCobranza ? 'Editar Cobranza' : 'Nueva Cobranza'}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Funcionalidad de formulario en desarrollo...
+            </p>
+            <div className="flex justify-end space-x-2">
+              <Button
+                onClick={() => setShowModal(false)}
+                variant="outline"
               >
-                <option value=''>Todos los clientes</option>
-                {Array.from(new Set(cobranzas.map(c => c.cliente))).map(
-                  cliente => (
-                    <option key={cliente} value={cliente}>
-                      {cliente}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-
-            <div className='flex items-end'>
-              <Button variant='outline' className='w-full'>
-                <Filter className='h-4 w-4 mr-2' />
-                Limpiar Filtros
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowModal(false);
+                  toast.success('Funcionalidad en desarrollo');
+                }}
+              >
+                Guardar
               </Button>
             </div>
           </div>
         </div>
-      </Card>
-
-      {/* Tabla de Cobranzas */}
-      <Card>
-        <div className='overflow-x-auto'>
-          <table className='min-w-full divide-y divide-gray-200'>
-            <thead className='bg-gray-50'>
-              <tr>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Factura
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Cliente
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Descripción
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Monto Total
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Pendiente
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Estado
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Vencimiento
-                </th>
-                <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className='bg-white divide-y divide-gray-200'>
-              {cobranzasFiltradas.map(cobranza => (
-                <tr key={cobranza.id} className='hover:bg-gray-50'>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
-                    {cobranza.numero_factura}
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-                    {cobranza.cliente}
-                  </td>
-                  <td className='px-6 py-4 text-sm text-gray-500 max-w-xs truncate'>
-                    {cobranza.descripcion}
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-                    {formatCurrency(cobranza.monto_total)}
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-                    {formatCurrency(cobranza.monto_pendiente)}
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap'>
-                    <Badge variant={getStatusColor(cobranza.estado)}>
-                      {getStatusLabel(cobranza.estado)}
-                    </Badge>
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                    {formatDate(cobranza.fecha_vencimiento)}
-                    {cobranza.dias_vencimiento > 0 && (
-                      <span className='ml-2 text-orange-600'>
-                        ({cobranza.dias_vencimiento} días)
-                      </span>
-                    )}
-                    {cobranza.dias_vencimiento < 0 && (
-                      <span className='ml-2 text-red-600'>
-                        (Vencida {Math.abs(cobranza.dias_vencimiento)} días)
-                      </span>
-                    )}
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
-                    <div className='flex items-center space-x-2'>
-                      <button
-                        onClick={() => {
-                          setSelectedCobranza(cobranza);
-                          setShowModal(true);
-                        }}
-                        className='text-blue-600 hover:text-blue-900'
-                      >
-                        <Eye className='h-4 w-4' />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedCobranza(cobranza);
-                          setShowModal(true);
-                        }}
-                        className='text-green-600 hover:text-green-900'
-                      >
-                        <Edit className='h-4 w-4' />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              '¿Estás seguro de eliminar esta cobranza?'
-                            )
-                          ) {
-                            setCobranzas(prev =>
-                              prev.filter(c => c.id !== cobranza.id)
-                            );
-                          }
-                        }}
-                        className='text-red-600 hover:text-red-900'
-                      >
-                        <Trash2 className='h-4 w-4' />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Modal de Cobranza */}
-      <SimpleModal
-        isOpen={showModal}
-        onClose={() => {
-          setShowModal(false);
-          setSelectedCobranza(null);
-        }}
-        title={selectedCobranza ? 'Editar Cobranza' : 'Nueva Cobranza'}
-      >
-        <div className='space-y-4'>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Número de Factura
-              </label>
-              <Input
-                type='text'
-                placeholder='F001-2024'
-                defaultValue={selectedCobranza?.numero_factura || ''}
-              />
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Cliente
-              </label>
-              <Input
-                type='text'
-                placeholder='Nombre del cliente'
-                defaultValue={selectedCobranza?.cliente || ''}
-              />
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Monto Total
-              </label>
-              <Input
-                type='number'
-                placeholder='0'
-                defaultValue={selectedCobranza?.monto_total || ''}
-              />
-            </div>
-
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Estado
-              </label>
-              <select
-                defaultValue={selectedCobranza?.estado || 'Pendiente'}
-                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-              >
-                <option value='Pendiente'>Pendiente</option>
-                <option value='Pagada'>Pagada</option>
-                <option value='Vencida'>Vencida</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
-              Descripción
-            </label>
-            <textarea
-              rows={3}
-              placeholder='Descripción de la cobranza'
-              defaultValue={selectedCobranza?.descripcion || ''}
-              className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            />
-          </div>
-
-          <div className='flex justify-end space-x-3 pt-4'>
-            <Button
-              variant='outline'
-              onClick={() => {
-                setShowModal(false);
-                setSelectedCobranza(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button>
-              {selectedCobranza ? 'Actualizar' : 'Crear'} Cobranza
-            </Button>
-          </div>
-        </div>
-      </SimpleModal>
+      )}
     </div>
   );
 };
